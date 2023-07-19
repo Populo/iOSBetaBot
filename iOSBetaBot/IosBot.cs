@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Net;
 using Discord.WebSocket;
-using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
 
@@ -26,7 +25,12 @@ namespace iOSBot.Bot
             _client = new DiscordSocketClient();
 
             await _client.LoginAsync(TokenType.Bot, args[0]);
+
+#if DEBUG
+            await _client.SetGameAsync("in testing mode");
+#else
             await _client.SetGameAsync("for new releases", type: ActivityType.Watching);
+#endif
             await _client.StartAsync();
 
             _client.Log += _client_Log;

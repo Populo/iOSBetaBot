@@ -69,7 +69,7 @@ namespace iOSBot.Bot
 
                 foreach (var server in servers)
                 {
-                    await SendAlert(update, Bot.GetChannel(server.ChannelId) as SocketTextChannel, update.Device);
+                    await SendAlert(update, Bot.GetChannel(server.ChannelId) as SocketTextChannel);
                 }
 
                 var newUpdate = new Data.Update()
@@ -87,27 +87,26 @@ namespace iOSBot.Bot
             db.SaveChanges();
         }
 
-        private async Task SendAlert(Update update, SocketTextChannel? channel, Device device)
+        private async Task SendAlert(Update update, SocketTextChannel? channel)
         {
-            var categoryInfo = Helpers.CategoryColors.FirstOrDefault(c => c.Category == device.Category);
+            var categoryInfo = Helpers.CategoryColors.FirstOrDefault(c => c.Category == update.Device.Category);
 
             var embed = new EmbedBuilder
             {
                 Color = categoryInfo.Color,
-                Title = $"New {device.FriendlyName} Release!",
+                Title = $"New {update.Device.FriendlyName} Release!",
                 Timestamp = DateTime.Now,
             };
             embed.AddField(name: "Version", value: update.VersionReadable)
                 .AddField(name: "Build", value: update.Build)
                 .AddField(name: "Size", value: update.Size);
 
-            if (!device.Category.Contains("audioOS"))
+            if (!update.Device.Category.Contains("audioOS"))
             {
-                categoryInfo.Version = update.ChangelogVersion;
-                categoryInfo.Category = device.Changelog.ToLower();
-                embed.Url = categoryInfo.ChangeUrl;
+                embed.Url = categoryInfo.GetChangeUrl(update.Device.Changelog.ToLower(), update.ChangelogVersion);
             }
 
+            Logger.Info($"Posting {update.VersionReadable} to {channel.Name}");
             await channel.SendMessageAsync(embed: embed.Build());
         }
 

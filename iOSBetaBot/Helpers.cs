@@ -172,7 +172,11 @@ namespace iOSBot.Bot
         public string CategoryFriendly { get; set; }
         public string Category { get; set; }
         public string Version { get; set; }
-        public string ChangeUrl => $"https://developer.apple.com/go/?id={Category}-{Version}-rn";
+
+        public string GetChangeUrl(string cat, string version)
+        {
+            return $"https://developer.apple.com/go/?id={cat}-{version}-rn";
+        }
 
         public CategoryInfo(Color color, string category, string categoryFriendly)
         {
