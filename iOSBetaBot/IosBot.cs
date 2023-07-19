@@ -47,7 +47,7 @@ namespace iOSBot.Bot
                     Commands.InitCommand(arg);
                     break;
                 case "unwatch":
-                    Commands.RemoveCommand(arg); 
+                    Commands.RemoveCommand(arg);
                     break;
                 default:
                     break;

@@ -41,6 +41,13 @@ namespace iOSBot.Bot
             bool isBeta = VersionDocId.Contains("beta", StringComparison.CurrentCultureIgnoreCase);
             string betaNumber = VersionDocId.Split("Beta").Last();
             string releaseType = ReleaseType == ReleaseType.DEVBETA ? "Developer" : "Public";
+            if (ReleaseType != ReleaseType.RELEASE)
+            {
+                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    majorVersion += " Release Candidate";
+                }
+            }
 
             return !isBeta ? majorVersion : $"{majorVersion} {releaseType} Beta {betaNumber}";
         }
