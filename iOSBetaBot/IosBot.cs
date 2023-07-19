@@ -9,6 +9,8 @@ namespace iOSBot.Bot
 {
     public class IosBot
     {
+        // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=2048&scope=bot
+
         private Logger Logger = LogManager.GetCurrentClassLogger();
 
         private DiscordSocketClient _client { get; set; }
