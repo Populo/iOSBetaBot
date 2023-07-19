@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Net;
 using Discord.WebSocket;
+using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
 
@@ -38,6 +39,8 @@ namespace iOSBot.Bot
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
         {
+            Logger.Info($"Command received: {arg.CommandName} in {arg.Channel}");
+
             switch (arg.CommandName)
             {
                 case "watch":
