@@ -14,7 +14,7 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
 
             command.DeferAsync(ephemeral: true);
-
+            
             var category = Helpers.CategoryColors.FirstOrDefault(c => c.Category == (string)command.Data.Options.FirstOrDefault().Value);
 
             var server = db.Servers.FirstOrDefault(s => s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == category.Category);

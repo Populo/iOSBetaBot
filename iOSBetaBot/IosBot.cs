@@ -101,7 +101,7 @@ namespace iOSBot.Bot
 
         private Task _client_Log(LogMessage arg)
         {
-            Logger.Info(arg.Message);
+            Logger.Info(arg.Exception);
 
             return Task.CompletedTask;
         }
