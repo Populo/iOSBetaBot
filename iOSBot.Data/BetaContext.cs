@@ -5,7 +5,7 @@ namespace iOSBot.Data
 {
     public class BetaContext : DbContext
     {
-        public DbSet<Post> Posts { get; set; }
+        public DbSet<Update> Updates { get; set; }
         public DbSet<Server> Servers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -14,28 +14,38 @@ namespace iOSBot.Data
                 var connection = new MySqlConnectionStringBuilder();
                 connection.Server = "pinas";
                 connection.UserID = "BetaBot";
-                connection.Password = "1UwDO;FHwz{*Z+@IJY4a";
+                connection.Password = "h_XUs6g!Q8aE2pL-wpta";
 
 #if DEBUG
-                connection.Database = "BetaBotDev";
+                connection.Database = "iOSBetaDev";
 #else
-                connection.Database = "BetaBot";
+                connection.Database = "iOSBeta";
 #endif
 
                 optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString));
             }
         }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+        }
     }
 
-    public class Post
+    [PrimaryKey(nameof(Guid))]
+    public class Update
     {
-        public string Guid { get; set; }
-        public DateTime PostDate { get; set; }
+        public Guid Guid { get; set; }
+        public string Version { get; set; }
+        public string Build { get; set; }
+        public string Category { get; set; }
     }
 
     public class Server
     {
+        public Guid Id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
+        public string Category { get; set; }
     }
 }
