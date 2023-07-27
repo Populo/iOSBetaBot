@@ -1,7 +1,9 @@
 ﻿using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
 using Newtonsoft.Json;
+using NLog.Config;
 using RestSharp;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,7 +15,7 @@ namespace iOSBot.Bot
     {
         private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public DiscordSocketClient Bot { get; set; }
+        public DiscordRestClient Bot { get; set; }
 
         private RestClient RestClient { get; set; }
 
@@ -35,7 +37,7 @@ namespace iOSBot.Bot
             Timer = new Timer();
 
 #if DEBUG
-            Timer.Interval = 15 * 1000; // 60 seconds
+            Timer.Interval = 5000 * 1000; // 60 seconds
 #else
             Timer.Interval = 5 * 1000 * 60; // 5 minutes
 #endif
@@ -43,7 +45,7 @@ namespace iOSBot.Bot
             Timer.Elapsed += Timer_Elapsed;
         }
 
-        private async void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        public async void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             Logger.Info("Tick");
             ConcurrentBag<Update> updates = new ConcurrentBag<Update>();
@@ -69,7 +71,7 @@ namespace iOSBot.Bot
 
                 foreach (var server in servers)
                 {
-                    await SendAlert(update, Bot.GetChannel(server.ChannelId) as SocketTextChannel);
+                    await SendAlert(update, server);
                 }
 
                 var newUpdate = new Data.Update()
@@ -87,9 +89,11 @@ namespace iOSBot.Bot
             db.SaveChanges();
         }
 
-        private async Task SendAlert(Update update, SocketTextChannel? channel)
+        private async Task SendAlert(Update update, Server server)
         {
             var categoryInfo = Helpers.CategoryColors.FirstOrDefault(c => c.Category == update.Device.Category);
+            var channel = Bot.GetChannelAsync(server.ChannelId).Result as RestTextChannel;
+            var role = server.TagId != "" ? Bot.GetGuildAsync(server.ServerId).Result.GetRole(ulong.Parse(server.TagId)).Mention : "";
 
             var embed = new EmbedBuilder
             {
@@ -107,7 +111,7 @@ namespace iOSBot.Bot
             }
 
             Logger.Info($"Posting {update.VersionReadable} to {channel.Name}");
-            await channel.SendMessageAsync(embed: embed.Build());
+            await channel.SendMessageAsync(text: role, embed: embed.Build());
         }
 
         public void Start()

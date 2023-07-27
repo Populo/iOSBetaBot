@@ -1,8 +1,12 @@
 {
   "profiles": {
-    "iOSBot.Bot": {
+    "iOSBot.Bot - Prod": {
       "commandName": "Project",
       "commandLineArgs": "MTEyNjcwMzAyOTYxODQ3NTExOA.G7dOE0.xm2jf4dsSxCqq9bxftAxPDC5jzfkYcVHkUmZtU"
+    },
+    "iOSBot.Bot - Dev": {
+      "commandName": "Project",
+      "commandLineArgs": "MTEzMzQ2OTQxNjQ1ODMwMTUxMA.GJfaQc.wnPJDXd8OT5LPEN_arOra0gCE3fFPPKULUmqJ4"
     }
   }
 }

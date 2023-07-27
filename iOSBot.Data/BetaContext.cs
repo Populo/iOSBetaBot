@@ -47,5 +47,6 @@ namespace iOSBot.Data
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
         public string Category { get; set; }
+        public string TagId { get; set; }
     }
 }
