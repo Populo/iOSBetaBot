@@ -39,7 +39,7 @@ namespace iOSBot.Bot
 #if DEBUG
             Timer.Interval = 5000 * 1000; // 60 seconds
 #else
-            Timer.Interval = 5 * 1000 * 60; // 5 minutes
+            Timer.Interval = 2.5 * 1000 * 60; // 5 minutes
 #endif
             //Timer.AutoReset = true;
             Timer.Elapsed += Timer_Elapsed;
