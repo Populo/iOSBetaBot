@@ -58,9 +58,9 @@ namespace iOSBot.Bot
             Parallel.ForEach(watchedDevices, device =>
             {
                 var u = GetUpdate(device.Audience, device.BuildId, device.BoardId, device.Product, device.Version, device.Type, device.Category);
-                u.Device = device;
+                if (null != u) u.Device = device;
 
-                if (!dbUpdates.Any(dbU => dbU.Version == u.VersionReadable && dbU.Build == u.Build)) updates.Add(u);
+                if (null != u && !dbUpdates.Any(dbU => dbU.Version == u.VersionReadable && dbU.Build == u.Build)) updates.Add(u);
                 else Logger.Info("No update found for " + device.FriendlyName);
             });
 
@@ -137,11 +137,11 @@ namespace iOSBot.Bot
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
 
             Logger.Trace(request.Parameters.First().Value);
-            
-            var response = RestClient.Post(request);
 
             try
             {
+                var response = RestClient.Post(request);
+            
                 var jwt = new JwtSecurityToken(response.Content);
 
                 var claim = jwt.Claims.First(j => j.Type == "Assets").Value;
@@ -163,7 +163,8 @@ namespace iOSBot.Bot
             } 
             catch (Exception e)
             {
-                throw;
+                Logger.Error($"Error checking {category}:\n {e.Message}");
+                return null;
             }
         }
     }
