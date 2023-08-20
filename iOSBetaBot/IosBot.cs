@@ -41,7 +41,7 @@ namespace iOSBot.Bot
 #if DEBUG
             Status = "in testing mode";
 #else
-            Status = "for new releases"
+            Status = "for new releases";
 #endif
             await _client.SetGameAsync(Status, type: ActivityType.Watching);
 
