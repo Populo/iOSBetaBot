@@ -173,9 +173,9 @@ namespace iOSBot.Bot
 
         List<Device> GetDevices()
         {
-
             using var db = new BetaContext();
 
+            Logger.Info(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
 
             Logger.Info(db.Model.GetDefaultSchema() + "__|__" + string.Join('|', db.Model.GetEntityTypes()
                 .Select(t => t.GetTableName())
