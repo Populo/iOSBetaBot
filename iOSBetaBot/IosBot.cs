@@ -3,6 +3,7 @@ using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NLog;
 
@@ -172,7 +173,14 @@ namespace iOSBot.Bot
 
         List<Device> GetDevices()
         {
+
             using var db = new BetaContext();
+
+
+            Logger.Info(db.Model.GetEntityTypes()
+                .Select(t => t.GetTableName())
+                .Distinct()
+                .ToList());
 
             return db.Devices.ToList();
         }
