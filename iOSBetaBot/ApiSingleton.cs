@@ -1,9 +1,7 @@
 ﻿using Discord;
 using Discord.Rest;
-using Discord.WebSocket;
 using iOSBot.Data;
 using Newtonsoft.Json;
-using NLog.Config;
 using RestSharp;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
@@ -37,9 +35,9 @@ namespace iOSBot.Bot
             Timer = new Timer();
 
 #if DEBUG
-            Timer.Interval = 5000 * 1000; // 60 seconds
+            Timer.Interval = 60 * 1000; // 60 seconds
 #else
-            Timer.Interval = 2.5 * 1000 * 60; // 5 minutes
+            Timer.Interval = 2.5 * 1000 * 60; // 2.5 minutes
 #endif
             //Timer.AutoReset = true;
             Timer.Elapsed += Timer_Elapsed;
@@ -51,13 +49,14 @@ namespace iOSBot.Bot
             ConcurrentBag<Update> updates = new ConcurrentBag<Update>();
             using var db = new BetaContext();
             List<Data.Update> dbUpdates = db.Updates.ToList();
+            List<Device> dbDevices = db.Devices.ToList();
 
             var watchedCategories = db.Servers.Select(s => s.Category).Distinct();
-            List<Device> watchedDevices = Helpers.Devices.Where(d => watchedCategories.Contains(d.Category)).ToList();
+            List<Device> watchedDevices = dbDevices.Where(d => watchedCategories.Contains(d.Category)).ToList();
 
             Parallel.ForEach(watchedDevices, device =>
             {
-                var u = GetUpdate(device.Audience, device.BuildId, device.BoardId, device.Product, device.Version, device.Type, device.Category);
+                var u = GetUpdate(device);
                 if (null != u) u.Device = device;
 
                 if (null != u && !dbUpdates.Any(dbU => dbU.Version == u.VersionReadable && dbU.Build == u.Build)) updates.Add(u);
@@ -86,18 +85,19 @@ namespace iOSBot.Bot
                 Logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
             }
 
+            Timer.Interval = int.Parse(db.Configs.FirstOrDefault(c => c.Name == "Timer").Value);
+
             db.SaveChanges();
         }
 
         private async Task SendAlert(Update update, Server server)
         {
-            var categoryInfo = Helpers.CategoryColors.FirstOrDefault(c => c.Category == update.Device.Category);
             var channel = Bot.GetChannelAsync(server.ChannelId).Result as RestTextChannel;
             var role = server.TagId != "" ? Bot.GetGuildAsync(server.ServerId).Result.GetRole(ulong.Parse(server.TagId)).Mention : "";
 
             var embed = new EmbedBuilder
             {
-                Color = categoryInfo.Color,
+                Color = new Color(update.Device.Color),
                 Title = $"New {update.Device.FriendlyName} Release!",
                 Timestamp = DateTime.Now,
             };
@@ -105,9 +105,9 @@ namespace iOSBot.Bot
                 .AddField(name: "Build", value: update.Build)
                 .AddField(name: "Size", value: update.Size);
 
-            if (!update.Device.Category.Contains("audioOS"))
+            if (!string.IsNullOrEmpty(update.Device.Changelog))
             {
-                embed.Url = categoryInfo.GetChangeUrl(update.Device.Changelog.ToLower(), update.ChangelogVersion);
+                embed.Url = update.Device.Changelog;
             }
 
             Logger.Info($"Posting {update.VersionReadable} to {channel.Name}");
@@ -119,20 +119,20 @@ namespace iOSBot.Bot
             Timer.Start();
         }
 
-        private Update GetUpdate(string audience, string build, string model, string product, string version, ReleaseType releaseType, string category)
+        private Update GetUpdate(Device device)
         {
             var request = new RestRequest();
             var reqBody = new AssetRequest
             {
-                AssetAudience = audience,
+                AssetAudience = device.AudienceId,
                 ClientVersion = 2,
-                BuildVersion = build,
-                HWModelStr = model,
-                ProductType = product,
-                ProductVersion = version
+                BuildVersion = device.BuildId,
+                HWModelStr = device.BoardId,
+                ProductType = device.Product,
+                ProductVersion = device.Version
             };
 
-            reqBody.AssetType = category.Contains("macOS") ? "com.apple.MobileAsset.MacSoftwareUpdate" : "com.apple.MobileAsset.SoftwareUpdate";
+            reqBody.AssetType = device.Category.Contains("macOS") ? "com.apple.MobileAsset.MacSoftwareUpdate" : "com.apple.MobileAsset.SoftwareUpdate";
 
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
 
@@ -154,8 +154,8 @@ namespace iOSBot.Bot
                     ReleaseDate = DateTime.Parse(jwt.Claims.First(j => j.Type == "PostingDate").Value),
                     VersionDocId = json.SUDocumentationID,
                     Version = json.OSVersion.Replace("9.9.", ""),
-                    ReleaseType = releaseType,
-                    Group = category
+                    ReleaseType = (ReleaseType)device.Type,
+                    Group = device.Category
                 };
 
                 return update;
@@ -163,7 +163,7 @@ namespace iOSBot.Bot
             } 
             catch (Exception e)
             {
-                Logger.Error($"Error checking {category}:\n {e.Message}");
+                Logger.Error($"Error checking {device.Category}:\n {e.Message}");
                 return null;
             }
         }

@@ -14,7 +14,7 @@ namespace iOSBot.Bot
         public string VersionDocId { get; set; }
         public string Build { get; set; }
         public long SizeBytes { get; set; }
-        public Device Device { get; set; }
+        public Data.Device Device { get; set; }
         public ReleaseType ReleaseType { get; set; }
         public string VersionReadable => GetReadableVersion();
         public string Size => GetReadableSize();

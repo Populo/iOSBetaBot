@@ -2,6 +2,7 @@
 using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
+using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
 
@@ -87,17 +88,41 @@ namespace iOSBot.Bot
 
         private async Task _client_Ready()
         {
+            try
+            {
+                WatchUnwatch();
+
+                var forceCommand = new SlashCommandBuilder();
+       
+                forceCommand.WithName("force");
+
+            
+                forceCommand.WithDescription("Force bot to check for new updates");
+
+            
+                forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
+
+            
+                await _client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
+            }
+            catch (HttpException e)
+            {
+                var json = JsonConvert.SerializeObject(e.Reason, Formatting.Indented);
+                Logger.Error(json);
+            }
+            
+        }
+
+        public async void WatchUnwatch()
+        {
             var initCommand = new SlashCommandBuilder();
             var removeCommand = new SlashCommandBuilder();
-            var forceCommand = new SlashCommandBuilder();
 
             initCommand.WithName("watch");
             removeCommand.WithName("unwatch");
-            forceCommand.WithName("force");
 
             initCommand.WithDescription("Begin posting OS updates to this channel");
             removeCommand.WithDescription("Discontinue posting updates to this channel");
-            forceCommand.WithDescription("Force bot to check for new updates");
 
             var param = new SlashCommandOptionBuilder()
             {
@@ -107,9 +132,11 @@ namespace iOSBot.Bot
                 Type = ApplicationCommandOptionType.String
             };
 
-            foreach (var c in Helpers.CategoryColors)
+            var devices = GetDevices();
+
+            foreach (var c in devices)
             {
-                param.AddChoice(c.CategoryFriendly, c.Category);
+                param.AddChoice(c.FriendlyName, c.Category);
             }
 
             initCommand.AddOption(param);
@@ -127,20 +154,9 @@ namespace iOSBot.Bot
 
             initCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
             removeCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-            forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
 
-            try
-            {
-                await _client.CreateGlobalApplicationCommandAsync(initCommand.Build());
-                await _client.CreateGlobalApplicationCommandAsync(removeCommand.Build());
-                await _client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
-            }
-            catch (HttpException e)
-            {
-                var json = JsonConvert.SerializeObject(e.Reason, Formatting.Indented);
-                Logger.Error(json);
-            }
-            
+            await _client.CreateGlobalApplicationCommandAsync(initCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(removeCommand.Build());
         }
 
         private Task _client_Log(LogMessage arg)
@@ -152,6 +168,13 @@ namespace iOSBot.Bot
             }
 
             return Task.CompletedTask;
+        }
+
+        List<Device> GetDevices()
+        {
+            using var db = new BetaContext();
+
+            return db.Devices.ToList();
         }
     }
 }

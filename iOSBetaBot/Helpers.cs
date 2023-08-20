@@ -4,192 +4,160 @@ namespace iOSBot.Bot
 {
     public static class Helpers
     {
-        public static List<CategoryInfo> CategoryColors = new ()
-        {
-            { new CategoryInfo(Color.Teal, "iOS17Dev", "iOS/iPadOS 17 Developer Beta") },
-            { new CategoryInfo(Color.Teal, "iOS17Public", "iOS/iPadOS 17 Public Beta") },
-            { new CategoryInfo(Color.Teal, "iOS16Dev", "iOS/iPadOS 16 Developer Beta") },
-            { new CategoryInfo(Color.Teal, "iOS16Public", "iOS/iPadOS 16 Public Beta") },
-            { new CategoryInfo(Color.Teal, "iOSRetail", "iOS/iPadOS Stable") },
-            { new CategoryInfo(Color.Green, "tvOSDev", "tvOS 17 Beta") },
-            { new CategoryInfo(Color.Magenta, "macOSDev", "macOS 14 Beta") },
-            { new CategoryInfo(Color.Blue, "watchOSDev", "watchOS 10 Beta") },
-            { new CategoryInfo(Color.Purple, "audioOSDev", "audioOS 17 Beta") },
-        };
+        //public static List<CategoryInfo> CategoryColors = new ()
+        //{
+        //    { new CategoryInfo(Color.Teal, "iOS17Dev", "iOS/iPadOS 17 Developer Beta") },
+        //    { new CategoryInfo(Color.Teal, "iOS17Public", "iOS/iPadOS 17 Public Beta") },
+        //    { new CategoryInfo(Color.Teal, "iOS16Dev", "iOS/iPadOS 16 Developer Beta") },
+        //    { new CategoryInfo(Color.Teal, "iOS16Public", "iOS/iPadOS 16 Public Beta") },
+        //    { new CategoryInfo(Color.Teal, "iOSRetail", "iOS/iPadOS Stable") },
+        //    { new CategoryInfo(Color.Green, "tvOSDev", "tvOS 17 Beta") },
+        //    { new CategoryInfo(Color.Magenta, "macOSDev", "macOS 14 Beta") },
+        //    { new CategoryInfo(Color.Blue, "watchOSDev", "watchOS 10 Beta") },
+        //    { new CategoryInfo(Color.Purple, "audioOSDev", "audioOS 17 Beta") },
+        //};
 
-        public static List<Device> Devices = new List<Device>()
-        {
-            Device.IOS17DevBeta,
-            Device.IOS17PubBeta,
-            Device.IOS16DevBeta,
-            Device.IOS16PubBeta,
-            Device.IOSReleases,
-            Device.TVOS17DevBeta,
-            Device.AudiOS17DevBeta,
-            Device.MacOSDevBeta,
-            Device.WatchOSDevBeta,
-        };
+        //public static List<Device> Devices = new List<Device>()
+        //{
+        //    Device.IOS17DevBeta,
+        //    Device.IOS17PubBeta,
+        //    Device.IOS16DevBeta,
+        //    Device.IOS16PubBeta,
+        //    Device.IOSReleases,
+        //    Device.TVOS17DevBeta,
+        //    Device.AudiOS17DevBeta,
+        //    Device.MacOSDevBeta,
+        //    Device.WatchOSDevBeta,
+        //};
         
     }
     
-    public sealed class Device
-    {
         #region Devices
 
-        public static Device IOS17DevBeta = new Device()
-        {
-            Audience = "9dcdaf87-801d-42f6-8ec6-307bd2ab9955",
-            BuildId = "20D67",
-            Product = "iPhone15,3",
-            BoardId = "D74AP",
-            Name = "iPhone 14 Pro Max",
-            Version = "16.3.1",
-            FriendlyName = "iOS/iPadOS 17 Dev Beta",
-            Category = "iOS17Dev",
-            Changelog = "ios",
-            Type = ReleaseType.DEVBETA
-        };
-        public static Device IOS17PubBeta = new Device()
-        {
-            Audience = "48407998-4446-46b0-9f57-f76b935dc223",
-            BuildId = "20D67",
-            Product = "iPhone15,3",
-            BoardId = "D74AP",
-            Name = "iPhone 14 Pro Max",
-            Version = "16.3.1",
-            Category = "iOS17Public",
-            FriendlyName = "iOS/iPadOS 17 Public Beta",
-            Changelog = "ios",
-            Type = ReleaseType.PUBLICBETA
-        };
-        public static Device IOS16DevBeta = new Device()
-        {
-            Audience = "a6050bca-50d8-4e45-adc2-f7333396a42c",
-            BuildId = "20D67",
-            Product = "iPhone15,3",
-            BoardId = "D74AP",
-            Name = "iPhone 14 Pro Max",
-            Version = "16.3.1",
-            FriendlyName = "iOS/iPadOS 16 Dev Beta",
-            Changelog = "ios",
-            Category = "iOS16Dev",
-            Type = ReleaseType.DEVBETA
-        };
-        public static Device IOS16PubBeta = new Device()
-        {
-            Audience = "7466521f-cc37-4267-8f46-78033fa700c2",
-            BuildId = "20D67",
-            Product = "iPhone15,3",
-            BoardId = "D74AP",
-            Name = "iPhone 14 Pro Max",
-            Version = "16.3.1",
-            FriendlyName = "iOS/iPadOS 16 Public Beta",
-            Changelog = "ios",
-            Category = "iOS16Public",
-            Type = ReleaseType.DEVBETA
-        };
-        public static Device IOSReleases = new Device()
-        {
-            Audience = "01c1d682-6e8f-4908-b724-5501fe3f5e5c",
-            BuildId = "20D67",
-            Product = "iPhone15,3",
-            BoardId = "D74AP",
-            Name = "iPhone 14 Pro Max",
-            Version = "16.3.1",
-            FriendlyName = "iOS/iPadOS Stable",
-            Changelog = "ios",
-            Category = "iOSRetail",
-            Type = ReleaseType.RELEASE
-        };
-        public static Device TVOS17DevBeta = new Device()
-        {
-            Audience = "61693fed-ab18-49f3-8983-7c3adf843913",
-            BuildId = "17M61",
-            Product = "AppleTV6,2",
-            BoardId = "J105aAP",
-            Name = "Apple TV 4k",
-            Version = "13.4.8",
-            FriendlyName = "AppleTV 17 Dev Beta",
-            Category = "tvOSDev",
-            Changelog = "tvos",
-            Type = ReleaseType.DEVBETA
-        };
-        public static Device AudiOS17DevBeta = new Device()
-        {
-            Audience = "17536d4c-1a9d-4169-bc62-920a3873f7a5",
-            BuildId = "20L563",
-            Product = "AudioAccessory6,1",
-            BoardId = "B620AP",
-            Name = "HomePod 2nd Generation",
-            Version = "9.9.16.5",
-            FriendlyName = "HomePod Beta",
-            Category = "audioOSDev",
-            Type = ReleaseType.DEVBETA
-        };
-        public static Device MacOSDevBeta = new Device()
-        {
-            Audience = "77c3bd36-d384-44e8-b550-05122d7da438",
-            BuildId = "22F66",
-            Product = "Mac14,3",
-            BoardId = "J473AP",
-            Name = "M2 Mac Mini",
-            Version = "13.4",
-            FriendlyName = "Mac OS 14 Dev Beta",
-            Category = "macOSDev",
-            Changelog = "macos",
-            Type = ReleaseType.DEVBETA
-        };
-        public static Device WatchOSDevBeta = new Device()
-        {
-            Audience = "7ae7f3b9-886a-437f-9b22-e9f017431b0e",
-            BuildId = "20T571",
-            Product = "Watch6,15",
-            BoardId = "N197bAP",
-            Name = "Apple Watch Series 8",
-            Version = "9.5.2",
-            FriendlyName = "Watch OS Dev Beta",
-            Category = "watchOSDev",
-            Changelog = "watchos",
-            Type = ReleaseType.DEVBETA
-        };
+        //public static Device IOS17DevBeta = new Device()
+        //{
+        //    Audience = "9dcdaf87-801d-42f6-8ec6-307bd2ab9955",
+        //    BuildId = "20D67",
+        //    Product = "iPhone15,3",
+        //    BoardId = "D74AP",
+        //    Name = "iPhone 14 Pro Max",
+        //    Version = "16.3.1",
+        //    FriendlyName = "iOS/iPadOS 17 Dev Beta",
+        //    Category = "iOS17Dev",
+        //    Changelog = "ios",
+        //    Type = ReleaseType.DEVBETA
+        //};
+        //public static Device IOS17PubBeta = new Device()
+        //{
+        //    Audience = "48407998-4446-46b0-9f57-f76b935dc223",
+        //    BuildId = "20D67",
+        //    Product = "iPhone15,3",
+        //    BoardId = "D74AP",
+        //    Name = "iPhone 14 Pro Max",
+        //    Version = "16.3.1",
+        //    Category = "iOS17Public",
+        //    FriendlyName = "iOS/iPadOS 17 Public Beta",
+        //    Changelog = "ios",
+        //    Type = ReleaseType.PUBLICBETA
+        //};
+        //public static Device IOS16DevBeta = new Device()
+        //{
+        //    Audience = "a6050bca-50d8-4e45-adc2-f7333396a42c",
+        //    BuildId = "20D67",
+        //    Product = "iPhone15,3",
+        //    BoardId = "D74AP",
+        //    Name = "iPhone 14 Pro Max",
+        //    Version = "16.3.1",
+        //    FriendlyName = "iOS/iPadOS 16 Dev Beta",
+        //    Changelog = "ios",
+        //    Category = "iOS16Dev",
+        //    Type = ReleaseType.DEVBETA
+        //};
+        //public static Device IOS16PubBeta = new Device()
+        //{
+        //    Audience = "7466521f-cc37-4267-8f46-78033fa700c2",
+        //    BuildId = "20D67",
+        //    Product = "iPhone15,3",
+        //    BoardId = "D74AP",
+        //    Name = "iPhone 14 Pro Max",
+        //    Version = "16.3.1",
+        //    FriendlyName = "iOS/iPadOS 16 Public Beta",
+        //    Changelog = "ios",
+        //    Category = "iOS16Public",
+        //    Type = ReleaseType.DEVBETA
+        //};
+        //public static Device IOSReleases = new Device()
+        //{
+        //    Audience = "01c1d682-6e8f-4908-b724-5501fe3f5e5c",
+        //    BuildId = "20D67",
+        //    Product = "iPhone15,3",
+        //    BoardId = "D74AP",
+        //    Name = "iPhone 14 Pro Max",
+        //    Version = "16.3.1",
+        //    FriendlyName = "iOS/iPadOS Stable",
+        //    Changelog = "ios",
+        //    Category = "iOSRetail",
+        //    Type = ReleaseType.RELEASE
+        //};
+        //public static Device TVOS17DevBeta = new Device()
+        //{
+        //    Audience = "61693fed-ab18-49f3-8983-7c3adf843913",
+        //    BuildId = "17M61",
+        //    Product = "AppleTV6,2",
+        //    BoardId = "J105aAP",
+        //    Name = "Apple TV 4k",
+        //    Version = "13.4.8",
+        //    FriendlyName = "AppleTV 17 Dev Beta",
+        //    Category = "tvOSDev",
+        //    Changelog = "tvos",
+        //    Type = ReleaseType.DEVBETA
+        //};
+        //public static Device AudiOS17DevBeta = new Device()
+        //{
+        //    Audience = "17536d4c-1a9d-4169-bc62-920a3873f7a5",
+        //    BuildId = "20L563",
+        //    Product = "AudioAccessory6,1",
+        //    BoardId = "B620AP",
+        //    Name = "HomePod 2nd Generation",
+        //    Version = "9.9.16.5",
+        //    FriendlyName = "HomePod Beta",
+        //    Category = "audioOSDev",
+        //    Type = ReleaseType.DEVBETA
+        //};
+        //public static Device MacOSDevBeta = new Device()
+        //{
+        //    Audience = "77c3bd36-d384-44e8-b550-05122d7da438",
+        //    BuildId = "22F66",
+        //    Product = "Mac14,3",
+        //    BoardId = "J473AP",
+        //    Name = "M2 Mac Mini",
+        //    Version = "13.4",
+        //    FriendlyName = "Mac OS 14 Dev Beta",
+        //    Category = "macOSDev",
+        //    Changelog = "macos",
+        //    Type = ReleaseType.DEVBETA
+        //};
+        //public static Device WatchOSDevBeta = new Device()
+        //{
+        //    Audience = "7ae7f3b9-886a-437f-9b22-e9f017431b0e",
+        //    BuildId = "20T571",
+        //    Product = "Watch6,15",
+        //    BoardId = "N197bAP",
+        //    Name = "Apple Watch Series 8",
+        //    Version = "9.5.2",
+        //    FriendlyName = "Watch OS Dev Beta",
+        //    Category = "watchOSDev",
+        //    Changelog = "watchos",
+        //    Type = ReleaseType.DEVBETA
+        //};
 
         #endregion
-        public string Audience { get; set; }
-        public string Name { get; set; }
-        public string Version { get; set; }
-        public string BuildId { get; set; }
-        public string Product { get; set; }
-        public string BoardId { get; set; }
-        public string FriendlyName { get; set; }
-        public string Category { get; set; }
-        public string Changelog { get; set; }
-        public ReleaseType Type { get; set; }
-    }
 
-    public class CategoryInfo
-    {
-        public Color Color { get; set; }
-        public string CategoryFriendly { get; set; }
-        public string Category { get; set; }
-        public string Version { get; set; }
-
-        public string GetChangeUrl(string cat, string version)
-        {
-            return $"https://developer.apple.com/go/?id={cat}-{version}-rn";
-        }
-
-        public CategoryInfo(Color color, string category, string categoryFriendly)
-        {
-            Color = color;
-            Category = category;
-            CategoryFriendly = categoryFriendly;
-        }
-    }
     public enum ReleaseType
     {
-        DEVBETA,
-        PUBLICBETA,
-        RELEASE
+        DEVBETA = 0,
+        PUBLICBETA = 1,
+        RELEASE = 2
     }
 }
 

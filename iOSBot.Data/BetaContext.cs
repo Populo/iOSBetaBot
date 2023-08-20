@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace iOSBot.Data
 {
