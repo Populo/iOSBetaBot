@@ -177,7 +177,7 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
 
 
-            Logger.Info(string.Join('|', db.Model.GetEntityTypes()
+            Logger.Info(db.Model.GetDefaultSchema() + "__|__" + string.Join('|', db.Model.GetEntityTypes()
                 .Select(t => t.GetTableName())
                 .Distinct()
                 .ToList()));
