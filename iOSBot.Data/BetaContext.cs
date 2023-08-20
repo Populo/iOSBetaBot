@@ -18,11 +18,7 @@ namespace iOSBot.Data
                 connection.UserID = "BetaBot";
                 connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
 
-#if DEBUG
-                connection.Database = "iOSBetaDev";
-#else
-                connection.Database = "iOSBeta";
-#endif
+                connection.Database = Environment.GetEnvironmentVariable("BetaBotDbName");
 
                 optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString));
             }

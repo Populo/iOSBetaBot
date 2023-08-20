@@ -34,7 +34,7 @@ namespace iOSBot.Bot
 
             Timer = new Timer();
 
-            Timer.Interval = 60 * 1000; // 60 seconds
+            Timer.Interval = 30 * 1000; // 10 seconds
 
             Timer.Elapsed += Timer_Elapsed;
         }
@@ -64,11 +64,21 @@ namespace iOSBot.Bot
                 var category = update.Device.Category;
                 var servers = db.Servers.Where(s => s.Category == category);
 
-                foreach (var server in servers)
-                {
-                    await SendAlert(update, server);
-                }
+                Logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
 
+                // dont post if older than 12 hours, still add to db tho
+                if (update.ReleaseDate.DayOfYear == DateTime.Today.DayOfYear)
+                {
+                    foreach (var server in servers)
+                    {
+                        await SendAlert(update, server);
+                    }
+                } 
+                else
+                {
+                    Logger.Info($"{update.VersionReadable}:{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.");
+                }
+                
                 var newUpdate = new Data.Update()
                 {
                     Build = update.Build,
@@ -77,8 +87,6 @@ namespace iOSBot.Bot
                     Version = update.VersionReadable
                 };
                 db.Updates.Add(newUpdate);
-
-                Logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
             }
 
             Timer.Interval = int.Parse(db.Configs.FirstOrDefault(c => c.Name == "Timer").Value);
@@ -132,7 +140,7 @@ namespace iOSBot.Bot
 
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
 
-            Logger.Trace(request.Parameters.First().Value);
+            Logger.Trace($"Checking for {device.FriendlyName} update");
 
             try
             {
