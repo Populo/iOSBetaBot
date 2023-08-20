@@ -177,10 +177,10 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
 
 
-            Logger.Info(db.Model.GetEntityTypes()
+            Logger.Info(string.Join('|', db.Model.GetEntityTypes()
                 .Select(t => t.GetTableName())
                 .Distinct()
-                .ToList());
+                .ToList()));
 
             return db.Devices.ToList();
         }
