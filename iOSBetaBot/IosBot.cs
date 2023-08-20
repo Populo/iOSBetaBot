@@ -3,7 +3,6 @@ using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NLog;
 
@@ -19,6 +18,8 @@ namespace iOSBot.Bot
         private DiscordRestClient _restClient { get; set; }
 
         private ApiSingleton apiFeed = ApiSingleton.Instance;
+
+        private string Status { get; set; }
 
         public static Task Main(string[] args) => new IosBot().MainAsync(args);
 
@@ -38,10 +39,12 @@ namespace iOSBot.Bot
             await _client.LoginAsync(TokenType.Bot, args[0]);
 
 #if DEBUG
-            await _client.SetGameAsync("in testing mode");
+            Status = "in testing mode";
 #else
-            await _client.SetGameAsync("for new releases", type: ActivityType.Watching);
+            Status = "for new releases"
 #endif
+            await _client.SetGameAsync(Status, type: ActivityType.Watching);
+
             await _client.StartAsync();
 
             _client.Log += _client_Log;
@@ -175,12 +178,7 @@ namespace iOSBot.Bot
         {
             using var db = new BetaContext();
 
-            Logger.Info(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
-
-            Logger.Info(db.Model.GetDefaultSchema() + "__|__" + string.Join('|', db.Model.GetEntityTypes()
-                .Select(t => t.GetTableName())
-                .Distinct()
-                .ToList()));
+            Logger.Info($"Status: {Status}");
 
             return db.Devices.ToList();
         }

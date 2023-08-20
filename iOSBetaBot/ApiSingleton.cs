@@ -34,12 +34,8 @@ namespace iOSBot.Bot
 
             Timer = new Timer();
 
-#if DEBUG
             Timer.Interval = 60 * 1000; // 60 seconds
-#else
-            Timer.Interval = 2.5 * 1000 * 60; // 2.5 minutes
-#endif
-            //Timer.AutoReset = true;
+
             Timer.Elapsed += Timer_Elapsed;
         }
 
