@@ -158,7 +158,7 @@ namespace iOSBot.Bot
                     ReleaseDate = DateTime.Parse(jwt.Claims.First(j => j.Type == "PostingDate").Value),
                     VersionDocId = json.SUDocumentationID,
                     Version = json.OSVersion.Replace("9.9.", ""),
-                    ReleaseType = (ReleaseType)device.Type,
+                    ReleaseType = device.Type,
                     Group = device.Category
                 };
 
