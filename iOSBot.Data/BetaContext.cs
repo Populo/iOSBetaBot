@@ -18,7 +18,11 @@ namespace iOSBot.Data
                 connection.UserID = "BetaBot";
                 connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
 
-                connection.Database = Environment.GetEnvironmentVariable("BetaBotDbName");
+#if DEBUG
+                connection.Database = "iOSBetaDev";
+#else
+                connection.Database = "iOSBeta";
+#endif
 
                 optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString));
             }
@@ -60,12 +64,8 @@ namespace iOSBot.Data
         public string BoardId { get; set; }
         public string Category { get; set; }
         public string Changelog { get; set; }
-        /*
-         * 0 - Dev Beta
-         * 1 - Public Beta
-         * 2 - Release
-         */
-        public int Type { get; set; }
+        // Developer, Public, Release
+        public string Type { get; set; }
         public uint Color { get; set; }
     }
 
