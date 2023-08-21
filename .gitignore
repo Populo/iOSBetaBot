@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /.idea/.idea.iOSBetaBot/.idea
 /iOSBetaBot/Properties/launchSettings.json
+/iOSBot.Bot/Properties/launchSettings.json
