@@ -9,6 +9,7 @@ namespace iOSBot.Data
         public DbSet<Server> Servers { get; set; }
         public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
+        public DbSet<ErrorServer> ErrorServers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -74,5 +75,12 @@ namespace iOSBot.Data
     {
         public string Name { get; set; }
         public string Value { get; set; }
+    }
+
+    public class ErrorServer
+    {
+        public Guid Id { get; set; }
+        public ulong ServerId { get; set; }
+        public ulong ChannelId { get; set; }
     }
 }

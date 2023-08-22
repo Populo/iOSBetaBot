@@ -89,5 +89,25 @@ namespace iOSBot.Bot
             Logger.Info($"Update forced by {command.User.GlobalName}");
             command.FollowupAsync("Updates checked.");
         }
+
+        internal static void ErrorCommand(SocketSlashCommand arg, DiscordRestClient restClient)
+        {
+            // only me
+            if (arg.User.Id != 191051620430249984)
+            {
+                arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                return;
+            }
+
+            using var db = new BetaContext();
+            db.ErrorServers.Add(new ErrorServer
+            {
+                ChannelId = arg.ChannelId.Value,
+                ServerId = arg.GuildId.Value,
+                Id = Guid.NewGuid()
+            });
+
+            arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral:true);
+        }
     }
 }

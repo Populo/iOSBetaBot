@@ -83,6 +83,9 @@ namespace iOSBot.Bot
                 case "force":
                     Commands.ForceCommand(arg, _restClient);
                     break;
+                case "error":
+                    Commands.ErrorCommand(arg, _restClient);
+                    break;
                 default:
                     break;
             }
@@ -97,24 +100,25 @@ namespace iOSBot.Bot
                 WatchUnwatch();
 
                 var forceCommand = new SlashCommandBuilder();
+                var errorCommand = new SlashCommandBuilder();
        
                 forceCommand.WithName("force");
-
+                errorCommand.WithName("error");
             
                 forceCommand.WithDescription("Force bot to check for new updates");
-
+                errorCommand.WithDescription("Post bot errors to this channel");
             
                 forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-
+                errorCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
             
                 await _client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
+                await _client.CreateGlobalApplicationCommandAsync(errorCommand.Build());
             }
             catch (HttpException e)
             {
                 var json = JsonConvert.SerializeObject(e.Reason, Formatting.Indented);
-                Logger.Error(json);
+                await _client_Log(new LogMessage(LogSeverity.Error, "_client_Ready", json, e));
             }
-            
         }
 
         public async void WatchUnwatch()
@@ -163,15 +167,36 @@ namespace iOSBot.Bot
             await _client.CreateGlobalApplicationCommandAsync(removeCommand.Build());
         }
 
-        private Task _client_Log(LogMessage arg)
+        private async Task _client_Log(LogMessage arg)
         {
-            Logger.Info(arg.Message);
+            Logger.Error(arg.Message);
             if (null != arg.Exception)
             {
                 Logger.Error(arg.Exception);
+                try
+                {
+                    using var db = new BetaContext();
+
+                    foreach(var s in db.ErrorServers)
+                    {
+                        var server = (RestTextChannel)_restClient.GetChannelAsync(s.ChannelId).Result;
+                        if (null == server)
+                        {
+                            db.ErrorServers.Remove(s);
+                            db.SaveChanges();
+                            continue;
+                        }
+                        await server.SendMessageAsync(arg.Exception.Message);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                    Environment.Exit(1);
+                }
             }
 
-            return Task.CompletedTask;
+            return;
         }
 
         List<Device> GetDevices()

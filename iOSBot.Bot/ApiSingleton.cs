@@ -97,6 +97,16 @@ namespace iOSBot.Bot
         private async Task SendAlert(Update update, Server server)
         {
             var channel = Bot.GetChannelAsync(server.ChannelId).Result as RestTextChannel;
+            if (null == channel)
+            {
+                Logger.Warn($"Channel with id {server.ChannelId} doesnt exist. Removing");
+                using var db = new BetaContext();
+
+                db.Servers.Remove(server);
+                db.SaveChanges();
+
+                return;
+            }
             var role = server.TagId != "" ? Bot.GetGuildAsync(server.ServerId).Result.GetRole(ulong.Parse(server.TagId)).Mention : "";
 
             var embed = new EmbedBuilder
