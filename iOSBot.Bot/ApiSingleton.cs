@@ -57,7 +57,7 @@ namespace iOSBot.Bot
                 if (null != u) u.Device = device;
 
                 if (null != u && !dbUpdates.Any(dbU => dbU.Version == u.VersionReadable && dbU.Build == u.Build)) updates.Add(u);
-                else Logger.Info("No update found for " + device.FriendlyName);
+                else Logger.Info("No new update found for " + device.FriendlyName);
             });
 
             foreach (var update in updates)
