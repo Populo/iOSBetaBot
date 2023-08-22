@@ -169,31 +169,11 @@ namespace iOSBot.Bot
 
         private async Task _client_Log(LogMessage arg)
         {
-            Logger.Error(arg.Message);
+            Logger.Info(arg.Message);
             if (null != arg.Exception)
             {
                 Logger.Error(arg.Exception);
-                try
-                {
-                    using var db = new BetaContext();
-
-                    foreach(var s in db.ErrorServers)
-                    {
-                        var server = (RestTextChannel)_restClient.GetChannelAsync(s.ChannelId).Result;
-                        if (null == server)
-                        {
-                            db.ErrorServers.Remove(s);
-                            db.SaveChanges();
-                            continue;
-                        }
-                        await server.SendMessageAsync(arg.Exception.Message);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                    Environment.Exit(1);
-                }
+                apiFeed.PostError(arg.Exception.Message);
             }
 
             return;

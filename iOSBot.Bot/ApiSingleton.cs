@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Net.Rest;
 using Discord.Rest;
 using iOSBot.Data;
 using Newtonsoft.Json;
@@ -76,7 +77,9 @@ namespace iOSBot.Bot
                 } 
                 else
                 {
-                    Logger.Info($"{update.VersionReadable}:{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.");
+                    string error = $"{update.VersionReadable}:{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
+                    Logger.Info(error);
+                    PostError(error);
                 }
                 
                 var newUpdate = new Data.Update()
@@ -179,6 +182,31 @@ namespace iOSBot.Bot
             {
                 Logger.Error($"Error checking {device.Category}:\n {e.Message}");
                 return null;
+            }
+        }
+
+        public async void PostError(string message)
+        {
+            try
+            {
+                using var db = new BetaContext();
+
+                foreach (var s in db.ErrorServers)
+                {
+                    var server = (RestTextChannel)Bot.GetChannelAsync(s.ChannelId).Result;
+                    if (null == server)
+                    {
+                        db.ErrorServers.Remove(s);
+                        db.SaveChanges();
+                        continue;
+                    }
+                    await server.SendMessageAsync(message);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                Environment.Exit(1);
             }
         }
     }
