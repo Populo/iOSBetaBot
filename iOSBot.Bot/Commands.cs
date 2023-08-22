@@ -92,22 +92,62 @@ namespace iOSBot.Bot
 
         internal static void ErrorCommand(SocketSlashCommand arg, DiscordRestClient restClient)
         {
-            // only me
-            if (arg.User.Id != 191051620430249984)
-            {
+            if (!IsAllowed(arg.User.Id))
+            { 
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
-                return;
             }
 
             using var db = new BetaContext();
-            db.ErrorServers.Add(new ErrorServer
-            {
-                ChannelId = arg.ChannelId.Value,
-                ServerId = arg.GuildId.Value,
-                Id = Guid.NewGuid()
-            });
 
-            arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral:true);
+            var ErrorServer = db.ErrorServers.FirstOrDefault(s => s.ServerId == arg.GuildId.Value && s.ChannelId == arg.ChannelId.Value);
+            if (null == ErrorServer)
+            {
+                db.ErrorServers.Add(new ErrorServer
+                {
+                    ChannelId = arg.ChannelId.Value,
+                    ServerId = arg.GuildId.Value,
+                    Id = Guid.NewGuid()
+                });
+
+                arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral: true);
+
+                db.SaveChanges();
+            }
+            else
+            {
+                arg.RespondAsync("Errors are already set to be posted here.", ephemeral:true);
+            }
+        }
+
+        internal static void RemoveErrorCommand(SocketSlashCommand arg, DiscordRestClient restClient)
+        {
+            if (!IsAllowed(arg.User.Id))
+            {
+                arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            }
+
+            using var db = new BetaContext();
+
+            var ErrorServer = db.ErrorServers.FirstOrDefault(s => s.ServerId == arg.GuildId.Value && s.ChannelId == arg.ChannelId.Value);
+
+            if (null == ErrorServer)
+            {
+                arg.RespondAsync("bot errors were not set to go here", ephemeral: true);
+            }
+            else
+            {
+                db.ErrorServers.Remove(ErrorServer);
+
+                arg.RespondAsync("errors will not post here anymore", ephemeral: true);
+
+                db.SaveChanges();
+            }
+        }
+
+        private static bool IsAllowed(ulong userId)
+        {
+            // only me
+            return userId == 191051620430249984;
         }
     }
 }

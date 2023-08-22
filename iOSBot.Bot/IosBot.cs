@@ -86,6 +86,9 @@ namespace iOSBot.Bot
                 case "error":
                     Commands.ErrorCommand(arg, _restClient);
                     break;
+                case "noerror":
+                    Commands.RemoveErrorCommand(arg, _restClient);
+                    break;
                 default:
                     break;
             }
@@ -101,18 +104,25 @@ namespace iOSBot.Bot
 
                 var forceCommand = new SlashCommandBuilder();
                 var errorCommand = new SlashCommandBuilder();
+                var removeErrorCommand = new SlashCommandBuilder();
        
                 forceCommand.WithName("force");
                 errorCommand.WithName("error");
-            
+                removeErrorCommand.WithName("noerror");
+
+
                 forceCommand.WithDescription("Force bot to check for new updates");
                 errorCommand.WithDescription("Post bot errors to this channel");
-            
+                removeErrorCommand.WithDescription("Dont post bot errors to this channel");
+
+
                 forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-                errorCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-            
+                errorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
+                removeErrorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
+
                 await _client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
                 await _client.CreateGlobalApplicationCommandAsync(errorCommand.Build());
+                await _client.CreateGlobalApplicationCommandAsync(removeErrorCommand.Build());
             }
             catch (HttpException e)
             {
