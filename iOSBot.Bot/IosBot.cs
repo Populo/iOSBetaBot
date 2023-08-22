@@ -40,8 +40,10 @@ namespace iOSBot.Bot
 
 #if DEBUG
             Status = "in testing mode";
+            Logger.Info("Environment: Dev");
 #else
             Status = "for new releases";
+            Logger.Info("Environment: Prod");
 #endif
             await _client.SetGameAsync(Status, type: ActivityType.Watching);
 
@@ -192,8 +194,6 @@ namespace iOSBot.Bot
         List<Device> GetDevices()
         {
             using var db = new BetaContext();
-
-            Logger.Info($"Status: {Status}");
 
             return db.Devices.ToList();
         }
