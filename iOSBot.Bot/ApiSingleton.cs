@@ -204,7 +204,10 @@ namespace iOSBot.Bot
                         db.SaveChanges();
                         continue;
                     }
-                    await server.SendMessageAsync(message);
+                    if (message != "Server requested a reconnect")
+                    {
+                        await server.SendMessageAsync(message);
+                    } 
                 }
             }
             catch (Exception e)
