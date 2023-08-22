@@ -68,8 +68,10 @@ namespace iOSBot.Bot
                 Logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
 
                 // dont post if older than 12 hours, still add to db tho
-                if (update.ReleaseDate.DayOfYear == DateTime.Today.DayOfYear)
-                {
+                bool postOld = Convert.ToBoolean(Convert.ToInt16(db.Configs.First(c => c.Name == "PostOld").Value));
+                
+                if (postOld || update.ReleaseDate.DayOfYear == DateTime.Today.DayOfYear)
+                {    
                     foreach (var server in servers)
                     {
                         await SendAlert(update, server);
