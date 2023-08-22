@@ -77,7 +77,7 @@ namespace iOSBot.Bot
                 } 
                 else
                 {
-                    string error = $"{update.VersionReadable}:{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
+                    string error = $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
                     Logger.Info(error);
                     PostError(error);
                 }
