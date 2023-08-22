@@ -19,6 +19,86 @@ namespace iOSBot.Data.Migrations
                 .HasAnnotation("ProductVersion", "7.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("iOSBot.Data.Config", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("Configs");
+                });
+
+            modelBuilder.Entity("iOSBot.Data.Device", b =>
+                {
+                    b.Property<string>("AudienceId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("BoardId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BuildId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Changelog")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<uint>("Color")
+                        .HasColumnType("int unsigned");
+
+                    b.Property<string>("FriendlyName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Product")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("AudienceId");
+
+                    b.ToTable("Devices");
+                });
+
+            modelBuilder.Entity("iOSBot.Data.ErrorServer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<ulong>("ChannelId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("ServerId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ErrorServers");
+                });
+
             modelBuilder.Entity("iOSBot.Data.Server", b =>
                 {
                     b.Property<Guid>("Id")

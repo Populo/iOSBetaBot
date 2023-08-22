@@ -361,6 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/iOSBetaBot/Properties/launchSettings.json
 /.idea/.idea.iOSBetaBot/.idea
+/iOSBetaBot/Properties/launchSettings.json
 /iOSBot.Bot/Properties/launchSettings.json

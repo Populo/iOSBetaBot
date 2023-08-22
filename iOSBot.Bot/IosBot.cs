@@ -2,6 +2,7 @@
 using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
+using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
 
@@ -17,6 +18,8 @@ namespace iOSBot.Bot
         private DiscordRestClient _restClient { get; set; }
 
         private ApiSingleton apiFeed = ApiSingleton.Instance;
+
+        private string Status { get; set; }
 
         public static Task Main(string[] args) => new IosBot().MainAsync(args);
 
@@ -36,10 +39,14 @@ namespace iOSBot.Bot
             await _client.LoginAsync(TokenType.Bot, args[0]);
 
 #if DEBUG
-            await _client.SetGameAsync("in testing mode");
+            Status = "in testing mode";
+            Logger.Info("Environment: Dev");
 #else
-            await _client.SetGameAsync("for new releases", type: ActivityType.Watching);
+            Status = "for new releases";
+            Logger.Info("Environment: Prod");
 #endif
+            await _client.SetGameAsync(Status, type: ActivityType.Watching);
+
             await _client.StartAsync();
 
             _client.Log += _client_Log;
@@ -78,6 +85,12 @@ namespace iOSBot.Bot
                 case "force":
                     Commands.ForceCommand(arg, _restClient);
                     break;
+                case "error":
+                    Commands.ErrorCommand(arg, _restClient);
+                    break;
+                case "noerror":
+                    Commands.RemoveErrorCommand(arg, _restClient);
+                    break;
                 default:
                     break;
             }
@@ -87,17 +100,49 @@ namespace iOSBot.Bot
 
         private async Task _client_Ready()
         {
+            try
+            {
+                WatchUnwatch();
+
+                var forceCommand = new SlashCommandBuilder();
+                var errorCommand = new SlashCommandBuilder();
+                var removeErrorCommand = new SlashCommandBuilder();
+       
+                forceCommand.WithName("force");
+                errorCommand.WithName("error");
+                removeErrorCommand.WithName("noerror");
+
+
+                forceCommand.WithDescription("Force bot to check for new updates");
+                errorCommand.WithDescription("Post bot errors to this channel");
+                removeErrorCommand.WithDescription("Dont post bot errors to this channel");
+
+
+                forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
+                errorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
+                removeErrorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
+
+                await _client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
+                await _client.CreateGlobalApplicationCommandAsync(errorCommand.Build());
+                await _client.CreateGlobalApplicationCommandAsync(removeErrorCommand.Build());
+            }
+            catch (HttpException e)
+            {
+                var json = JsonConvert.SerializeObject(e.Reason, Formatting.Indented);
+                await _client_Log(new LogMessage(LogSeverity.Error, "_client_Ready", json, e));
+            }
+        }
+
+        public async void WatchUnwatch()
+        {
             var initCommand = new SlashCommandBuilder();
             var removeCommand = new SlashCommandBuilder();
-            var forceCommand = new SlashCommandBuilder();
 
             initCommand.WithName("watch");
             removeCommand.WithName("unwatch");
-            forceCommand.WithName("force");
 
             initCommand.WithDescription("Begin posting OS updates to this channel");
             removeCommand.WithDescription("Discontinue posting updates to this channel");
-            forceCommand.WithDescription("Force bot to check for new updates");
 
             var param = new SlashCommandOptionBuilder()
             {
@@ -107,9 +152,11 @@ namespace iOSBot.Bot
                 Type = ApplicationCommandOptionType.String
             };
 
-            foreach (var c in Helpers.CategoryColors)
+            var devices = GetDevices();
+
+            foreach (var c in devices)
             {
-                param.AddChoice(c.CategoryFriendly, c.Category);
+                param.AddChoice(c.FriendlyName, c.Category);
             }
 
             initCommand.AddOption(param);
@@ -127,31 +174,28 @@ namespace iOSBot.Bot
 
             initCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
             removeCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-            forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
 
-            try
-            {
-                await _client.CreateGlobalApplicationCommandAsync(initCommand.Build());
-                await _client.CreateGlobalApplicationCommandAsync(removeCommand.Build());
-                await _client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
-            }
-            catch (HttpException e)
-            {
-                var json = JsonConvert.SerializeObject(e.Reason, Formatting.Indented);
-                Logger.Error(json);
-            }
-            
+            await _client.CreateGlobalApplicationCommandAsync(initCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(removeCommand.Build());
         }
 
-        private Task _client_Log(LogMessage arg)
+        private async Task _client_Log(LogMessage arg)
         {
             Logger.Info(arg.Message);
             if (null != arg.Exception)
             {
                 Logger.Error(arg.Exception);
+                apiFeed.PostError(arg.Exception.Message);
             }
 
-            return Task.CompletedTask;
+            return;
+        }
+
+        List<Device> GetDevices()
+        {
+            using var db = new BetaContext();
+
+            return db.Devices.ToList();
         }
     }
 }

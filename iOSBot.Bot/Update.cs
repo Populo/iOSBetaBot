@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using iOSBot.Data;
 
 namespace iOSBot.Bot
 {
@@ -15,7 +11,7 @@ namespace iOSBot.Bot
         public string Build { get; set; }
         public long SizeBytes { get; set; }
         public Device Device { get; set; }
-        public ReleaseType ReleaseType { get; set; }
+        public string ReleaseType { get; set; }
         public string VersionReadable => GetReadableVersion();
         public string Size => GetReadableSize();
         public string ChangelogVersion => GetChangelogVersion();
@@ -40,8 +36,7 @@ namespace iOSBot.Bot
             string majorVersion = Version.Replace("9.9.", "");
             bool isBeta = VersionDocId.Contains("beta", StringComparison.CurrentCultureIgnoreCase);
             string betaNumber = VersionDocId.Split("Beta").Last();
-            string releaseType = ReleaseType == ReleaseType.DEVBETA ? "Developer" : "Public";
-            if (ReleaseType != ReleaseType.RELEASE)
+            if (ReleaseType != "Release")
             {
                 if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -49,7 +44,7 @@ namespace iOSBot.Bot
                 }
             }
 
-            return !isBeta ? majorVersion : $"{majorVersion} {releaseType} Beta {betaNumber}";
+            return !isBeta ? majorVersion : $"{majorVersion} {ReleaseType} Beta {betaNumber}";
         }
 
         private string GetReadableSize()
