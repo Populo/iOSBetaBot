@@ -182,7 +182,9 @@ namespace iOSBot.Bot
             } 
             catch (Exception e)
             {
-                Logger.Error($"Error checking {device.Category}:\n {e.Message}");
+                string error = $"Error checking {device.Category}:\n {e.Message}";
+                Logger.Error(error);
+                PostError(error);
                 return null;
             }
         }
