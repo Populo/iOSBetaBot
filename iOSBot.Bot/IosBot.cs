@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
+using System.Net.WebSockets;
 
 namespace iOSBot.Bot
 {
@@ -52,6 +53,7 @@ namespace iOSBot.Bot
             _client.Log += _client_Log;
             _client.Ready += _client_Ready;
             _client.SlashCommandExecuted += _client_SlashCommandExecuted;
+            _client.LoggedOut += _client_LoggedOut;
             //_client.MessageReceived += _client_MessageReceived;
 
             apiFeed.Bot = _restClient;
@@ -184,11 +186,19 @@ namespace iOSBot.Bot
             Logger.Info(arg.Message);
             if (null != arg.Exception)
             {
+                if (arg.Exception.GetType() != typeof(WebSocketException)) {
+                    apiFeed.PostError(arg.Exception.Message);
+                }
                 Logger.Error(arg.Exception);
-                apiFeed.PostError(arg.Exception.Message);
             }
 
             return;
+        }
+
+        private Task _client_LoggedOut()
+        {
+            apiFeed.PostError("Logging Out");
+            return Task.CompletedTask;
         }
 
         List<Device> GetDevices()
