@@ -204,7 +204,8 @@ namespace iOSBot.Bot
                         db.SaveChanges();
                         continue;
                     }
-                    if (message != "Server requested a reconnect")
+                    if (message != "Server requested a reconnect" &&
+                            message != "WebSocket connection was closed")
                     {
                         await server.SendMessageAsync(message);
                     } 
