@@ -186,9 +186,7 @@ namespace iOSBot.Bot
             Logger.Info(arg.Message);
             if (null != arg.Exception)
             {
-                if (arg.Exception.GetType() != typeof(WebSocketException)) {
-                    apiFeed.PostError(arg.Exception.Message);
-                }
+                apiFeed.PostError(arg.Exception.Message);
                 Logger.Error(arg.Exception);
             }
 
