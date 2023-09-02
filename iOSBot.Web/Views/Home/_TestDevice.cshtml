@@ -1,0 +1,26 @@
+﻿@model iOSBot.Service.Update
+
+@if (Model.Version == "bad")
+{
+    <div class="alert alert-danger alert-dismissible" role="alert">
+       <div>invalid device</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <br />
+        <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#errorCollapse" aria-expanded="false" aria-controls="errorCollapse">More Info</button>
+    
+        <div class="collapse" id="errorCollapse">
+            <div class="card card-body">
+                @Model.Build
+            </div>
+        </div>
+    </div>
+}
+else if (Model.Version != "none")
+{
+    <div class="alert alert-success alert-dismissible" role="alert">
+        <div>@($"Device is valid: {Model.VersionReadable} found. Released on {Model.ReleaseDate:D}")</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <br />
+        <button type="submit" class="btn btn-success" id="submit">Submit</button>
+    </div>
+}

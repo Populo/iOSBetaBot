@@ -16,8 +16,6 @@ namespace iOSBot.Data
             if (!optionsBuilder.IsConfigured) {
                 var connection = new MySqlConnectionStringBuilder();
                 connection.Server = "pinas";
-                connection.UserID = "BetaBot";
-                connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
 
 #if DEBUG
                 connection.Database = "iOSBetaDev";
@@ -25,7 +23,16 @@ namespace iOSBot.Data
                 connection.Database = "iOSBeta";
 #endif
 
-                optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString));
+                connection.UserID = "BetaBot";
+                connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
+
+                connection.ForceSynchronous = true;
+
+                optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString),
+                    options =>
+                    {
+                        options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
+                    });
             }
         }
 
@@ -68,6 +75,7 @@ namespace iOSBot.Data
         // Developer, Public, Release
         public string Type { get; set; }
         public uint Color { get; set; }
+        public string AssetType { get; set; }
     }
 
     [PrimaryKey("Name")]

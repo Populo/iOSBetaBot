@@ -38,6 +38,10 @@ namespace iOSBot.Data.Migrations
                     b.Property<string>("AudienceId")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("AssetType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("BoardId")
                         .IsRequired()
                         .HasColumnType("longtext");

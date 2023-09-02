@@ -8,11 +8,33 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Mapster.Core" Version="1.2.0" />
+      <PackageReference Include="Mapster.DependencyInjection" Version="1.0.0" />
       <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.16" />
+      <PackageReference Include="NLog" Version="5.2.3" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\iOSBot.Data\iOSBot.Data.csproj" />
+      <ProjectReference Include="..\iOSBot.Service\iOSBot.Service.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Pages\" />
+      <Folder Include="wwwroot\lib\jscolor\dist\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Views\Home\_TestDevice.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Config\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Home\_TestDevice.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Views\Config\Index.cshtml" />
     </ItemGroup>
 
 </Project>
