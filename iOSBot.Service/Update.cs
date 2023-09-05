@@ -1,8 +1,8 @@
 ﻿using iOSBot.Data;
 
-namespace iOSBot.Bot
+namespace iOSBot.Service
 {
-    internal class Update
+    public class Update
     {
         public DateTime ReleaseDate { get; set; }
         public string Group { get; set; }

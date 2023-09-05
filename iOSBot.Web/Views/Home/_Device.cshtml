@@ -1,0 +1,72 @@
+﻿@model DeviceViewModel
+
+@using (@Html.BeginForm("Index", "Home", FormMethod.Post, true)) {
+    <div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.AudienceId, new {@class="form-control", @id="audienceId", placeholder="1234"})
+            <label for="audienceId">@Html.DisplayNameFor(d => d.AudienceId)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.Name, new {@class="form-control", @id="deviceName", placeholder="1234"})
+            <label for="deviceName">@Html.DisplayNameFor(d => d.Name)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.Product, new {@class="form-control", @id="hwid", placeholder="1234"})
+            <label for="hwid">@Html.DisplayNameFor(d => d.Product)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.BoardId, new {@class="form-control", @id="boardId", placeholder="1234"})
+            <label for="boardId">@Html.DisplayNameFor(d => d.BoardId)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.Version, new {@class="form-control", @id="deviceVersion", placeholder="1234"})
+            <label for="deviceVersion">@Html.DisplayNameFor(d => d.Version)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.BuildId, new {@class="form-control", @id="deviceFwBuild", placeholder="1234"})
+            <label for="deviceFwBuild">@Html.DisplayNameFor(d => d.BuildId)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.Changelog, new {@class="form-control", @id="updateChangelog", placeholder="1234"})
+            <label for="updateChangelog">@Html.DisplayNameFor(d => d.Changelog)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.FriendlyName, new {@class="form-control", @id="friendlyName", placeholder="1234"})
+            <label for="friendlyName">@Html.DisplayNameFor(d => d.FriendlyName)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.Category, new {@class="form-control", @id="category", placeholder="1234"})
+            <label for="category">@Html.DisplayNameFor(d => d.Category)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.DropDownListFor(t => t.AssetType, new List<SelectListItem>()
+            {
+                new ("Mobile", "com.apple.MobileAsset.SoftwareUpdate"),
+                new ("Mac OS", "com.apple.MobileAsset.MacSoftwareUpdate"),
+            }, new {@class="form-select", @id="assetDropdown", placeholder="1234"})
+            <label for="assetDropdown">@Html.DisplayNameFor(d => d.AssetType)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.DropDownListFor(t => t.Type, new List<SelectListItem>()
+            {
+                new ("Developer Beta", "Developer"),
+                new ("Public Beta", "Public"),
+                new ("Stable Release", "Release"),
+            }, new {@class="form-select", @id="typeDropdown", placeholder="1234"})
+            <label for="typeDropdown">@Html.DisplayNameFor(d => d.Type)</label>
+        </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.Color, new { type="color", @class="form-control", @id="embedColor", placeholder="#000000"})
+            <label for="embedColor">@Html.DisplayNameFor(d => d.Color)</label>
+        </div>
+        <div class="form-floating text-start p-3 row">
+            <div class="p-2 text-start col-2">
+                <button type="button" id="testDevice" class="btn btn-primary">Test Device</button>
+            </div>
+            <div class="p-2 text-end col">
+                <button type="reset" id="resetDevice" class="btn btn-danger">Clear</button>
+            </div>
+        </div>
+        <div class="form-floating p-2 text-start" id="testalert"></div>
+    </div>
+}

@@ -1,83 +1,67 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using iOSBot.Service;
+using iOSBot.Web.Models;
+using iOSBot.Web.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace iOSBot.Web.Controllers
 {
     public class HomeController : Controller
     {
-        // GET: HomeController
-        public ActionResult Index()
+        private IDeviceService _devices { get; }
+
+        public HomeController(IDeviceService service)
         {
+            _devices = service;
+        }
+
+        public IActionResult Index()
+        {
+            ViewBag.Title = "Devices";
             return View();
         }
 
-        // GET: HomeController/Details/5
-        public ActionResult Details(string audienceId)
-        {
-            return View();
-        }
-
-        // GET: HomeController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: HomeController/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public IActionResult Index(DeviceViewModel device)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
+            ViewBag.Title = "Devices";
 
-        // GET: HomeController/Edit/5
-        public ActionResult Edit(int id)
-        {
+            if (null != _devices.GetDeviceByAudience(device.AudienceId))
+            {
+                _devices.ModifyDevice(device);
+            }
+            else
+            {
+                _devices.CreateDevice(device);
+            }
+
             return View();
         }
 
-        // POST: HomeController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public IActionResult DevicePartial(string audienceId)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            var device = _devices.GetDeviceByAudience(audienceId);
+            return PartialView("_Device", device);
         }
 
-        // GET: HomeController/Delete/5
-        public ActionResult Delete(int id)
+        public IActionResult ListDevicePartial()
         {
-            return View();
+            List<DeviceViewModel> devices = _devices.GetAllDevices();
+            return PartialView("_ExistingDevices", devices);
         }
 
-        // POST: HomeController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public IActionResult TestDevicePartial(string audienceId, string product, string boardId, string fwVersion,
+            string fwBuild, string assetType)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            var update = _devices.TestDevice(audienceId, product, boardId, fwVersion, fwBuild, assetType).Result;
+
+            return PartialView("_TestDevice", update);
+        }
+
+        [HttpPost]
+        public IActionResult DeleteDevice(string audienceId)
+        {
+            _devices.DeleteDevice(audienceId);
+            return RedirectToAction("Index");
         }
     }
 }
