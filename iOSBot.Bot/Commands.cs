@@ -3,6 +3,7 @@ using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
 using NLog;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace iOSBot.Bot
 {
@@ -148,6 +149,20 @@ namespace iOSBot.Bot
         {
             // only me
             return userId == 191051620430249984;
+        }
+
+        internal static void UpdateOptions(SocketSlashCommand arg, IosBot bot)
+        {
+            if (!IsAllowed(arg.User.Id))
+            {
+                arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            }
+
+            arg.DeferAsync(ephemeral: true);
+
+            bot.WatchUnwatch();
+
+            arg.FollowupAsync("Reloaded commands.", ephemeral: true);
         }
     }
 }

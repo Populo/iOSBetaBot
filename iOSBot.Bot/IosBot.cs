@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NLog;
 using iOSBot.Service;
+using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot
 {
@@ -116,6 +117,9 @@ namespace iOSBot.Bot
                 case "noerror":
                     Commands.RemoveErrorCommand(arg, RestClient);
                     break;
+                case "update":
+                    Commands.UpdateOptions(arg, this);
+                    break;
                 default:
                     break;
             }
@@ -132,24 +136,29 @@ namespace iOSBot.Bot
                 var forceCommand = new SlashCommandBuilder();
                 var errorCommand = new SlashCommandBuilder();
                 var removeErrorCommand = new SlashCommandBuilder();
+                var updateCommand = new SlashCommandBuilder();
        
                 forceCommand.WithName("force");
                 errorCommand.WithName("error");
                 removeErrorCommand.WithName("noerror");
+                updateCommand.WithName("update");
 
 
                 forceCommand.WithDescription("Force bot to check for new updates");
                 errorCommand.WithDescription("Post bot errors to this channel");
                 removeErrorCommand.WithDescription("Dont post bot errors to this channel");
+                updateCommand.WithDescription("Update categories available for watching");
 
 
                 forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
                 errorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
                 removeErrorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
+                updateCommand.DefaultMemberPermissions = GuildPermission.Administrator;
 
                 await Client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
                 await Client.CreateGlobalApplicationCommandAsync(errorCommand.Build());
                 await Client.CreateGlobalApplicationCommandAsync(removeErrorCommand.Build());
+                await Client.CreateGlobalApplicationCommandAsync(updateCommand.Build());
             }
             catch (HttpException e)
             {
