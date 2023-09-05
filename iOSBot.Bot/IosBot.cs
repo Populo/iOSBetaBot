@@ -131,7 +131,7 @@ namespace iOSBot.Bot
         {
             try
             {
-                WatchUnwatch();
+                await WatchUnwatch();
 
                 var forceCommand = new SlashCommandBuilder();
                 var errorCommand = new SlashCommandBuilder();
@@ -155,10 +155,15 @@ namespace iOSBot.Bot
                 removeErrorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
                 updateCommand.DefaultMemberPermissions = GuildPermission.Administrator;
 
-                await Client.CreateGlobalApplicationCommandAsync(forceCommand.Build());
-                await Client.CreateGlobalApplicationCommandAsync(errorCommand.Build());
-                await Client.CreateGlobalApplicationCommandAsync(removeErrorCommand.Build());
-                await Client.CreateGlobalApplicationCommandAsync(updateCommand.Build());
+                await Client.BulkOverwriteGlobalApplicationCommandsAsync(new List<ApplicationCommandProperties>()
+                {
+                    forceCommand.Build(),
+                    errorCommand.Build(),
+                    removeErrorCommand.Build(),
+                    updateCommand.Build(),
+                }.ToArray());
+
+                _logger.Info(string.Join('|', Client.GetGlobalApplicationCommandsAsync().Result.Select(c => c.Name)));
             }
             catch (HttpException e)
             {
@@ -167,8 +172,10 @@ namespace iOSBot.Bot
             }
         }
 
-        public async void WatchUnwatch()
+        public async Task WatchUnwatch()
         {
+            _logger.Info("Registering watch commands");
+
             var initCommand = new SlashCommandBuilder();
             var removeCommand = new SlashCommandBuilder();
 
@@ -209,8 +216,11 @@ namespace iOSBot.Bot
             initCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
             removeCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
 
-            await Client.CreateGlobalApplicationCommandAsync(initCommand.Build());
-            await Client.CreateGlobalApplicationCommandAsync(removeCommand.Build());
+            await Client.BulkOverwriteGlobalApplicationCommandsAsync(new List<ApplicationCommandProperties>()
+            {
+                initCommand.Build(),
+                removeCommand.Build()
+            }.ToArray());
         }
 
         private async Task _client_Log(LogMessage arg)

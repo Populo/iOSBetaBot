@@ -28,7 +28,7 @@ namespace iOSBot.Bot
 
             _timer = new Timer
             {
-                Interval = 30 * 1000 // 30 seconds
+                Interval = 90 * 1000 // 90 seconds
             };
 
             _timer.Elapsed += Timer_Elapsed;
