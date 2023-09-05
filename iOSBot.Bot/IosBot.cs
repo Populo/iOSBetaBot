@@ -68,7 +68,7 @@ namespace iOSBot.Bot
             _logger.Info("Environment: Dev");
 #else
             Status = "for new releases";
-            Logger.Info("Environment: Prod");
+            _logger.Info("Environment: Prod");
 #endif
             await Client.SetGameAsync(Status, type: ActivityType.Watching);
 
