@@ -7,7 +7,7 @@ namespace iOSBot.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private IDeviceService _devices { get; set; }
+        private IDeviceService _devices { get; }
 
         public HomeController(IDeviceService service)
         {
@@ -24,6 +24,7 @@ namespace iOSBot.Web.Controllers
         public IActionResult Index(DeviceViewModel device)
         {
             ViewBag.Title = "Devices";
+
             if (null != _devices.GetDeviceByAudience(device.AudienceId))
             {
                 _devices.ModifyDevice(device);

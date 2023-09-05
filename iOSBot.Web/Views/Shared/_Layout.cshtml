@@ -1,9 +1,18 @@
-﻿<!DOCTYPE html>
+﻿@{
+    string environment;
+    #if DEBUG
+            environment = "Develop";
+    #else
+        environment = "Prod";
+    #endif
+}
+
+<!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>BetaBot - @ViewBag.Title</title>
+    <title>BetaBot - @environment</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/iOSBot.Web.styles.css" asp-append-version="true"/>
@@ -38,12 +47,6 @@
         @RenderBody()
     </main>
 </div>
-
-<footer class="border-top footer text-muted">
-    <div class="container">
-            @($"iOS Bot - {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}")
-    </div>
-</footer>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="lib/jscolor/dist/jscolor.min.js"></script>

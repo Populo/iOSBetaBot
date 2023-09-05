@@ -89,7 +89,8 @@ namespace iOSBot.Web.Service
                 u = new Update()
                 {
                     Version = "bad",
-                    Build = ex.StackTrace
+                    Build = ex.StackTrace,
+                    Group = ex.Message
                 };
             }
             
