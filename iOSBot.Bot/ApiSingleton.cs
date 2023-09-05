@@ -11,7 +11,7 @@ namespace iOSBot.Bot
     {
         private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public DiscordRestClient Bot { get; set; }
+        public DiscordRestClient? Bot { get; set; }
 
         private Timer _timer;
 
@@ -22,7 +22,9 @@ namespace iOSBot.Bot
 
         private IAppleService AppleService { get; }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public ApiSingleton(IAppleService service)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             AppleService = service;
 
@@ -88,14 +90,14 @@ namespace iOSBot.Bot
                 AppleService.SaveUpdate(update);
             }
 
-            _timer.Interval = int.Parse(db.Configs.FirstOrDefault(c => c.Name == "Timer").Value);
+            _timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
 
             await db.SaveChangesAsync();
         }
 
         private async Task SendAlert(Service.Update update, Server server)
         {
-            var channel = Bot.GetChannelAsync(server.ChannelId).Result as RestTextChannel;
+            var channel = (await Bot!.GetChannelAsync(server.ChannelId)) as RestTextChannel;
             if (null == channel)
             {
                 Logger.Warn($"Channel with id {server.ChannelId} doesnt exist. Removing");
@@ -129,7 +131,7 @@ namespace iOSBot.Bot
             _timer.Start();
         }
 
-        public async void PostError(string message)
+        public async void PostError(string? message)
         {
             try
             {

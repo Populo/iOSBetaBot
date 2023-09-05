@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NLog;
 using iOSBot.Service;
+using Microsoft.EntityFrameworkCore;
 using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot
@@ -19,12 +20,12 @@ namespace iOSBot.Bot
 
         private readonly IServiceProvider _serviceProvider;
 
-        private DiscordSocketClient Client { get; set; }
-        private DiscordRestClient RestClient { get; set; }
+        private DiscordSocketClient? Client { get; set; }
+        private DiscordRestClient? RestClient { get; set; }
 
-        private ApiSingleton _apiFeed = ApiSingleton.Instance;
+        private readonly ApiSingleton _apiFeed = ApiSingleton.Instance;
 
-        private string Status { get; set; }
+        private string? Status { get; set; }
 
         public IosBot()
         {
@@ -93,12 +94,12 @@ namespace iOSBot.Bot
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             _logger.Error(e);
-            _apiFeed.PostError(e.ExceptionObject.ToString());
+            _apiFeed.PostError(e.ToString());
         }
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
         {
-            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId.Value).Result}");
+            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result}");
 
             switch (arg.CommandName)
             {
@@ -109,16 +110,16 @@ namespace iOSBot.Bot
                     Commands.RemoveCommand(arg, RestClient);
                     break;
                 case "force":
-                    Commands.ForceCommand(arg, RestClient);
+                    Commands.ForceCommand(arg);
                     break;
                 case "error":
                     Commands.ErrorCommand(arg, RestClient);
                     break;
                 case "noerror":
-                    Commands.RemoveErrorCommand(arg, RestClient);
+                    Commands.RemoveErrorCommand(arg);
                     break;
                 case "update":
-                    Commands.UpdateOptions(arg, this);
+                    Commands.UpdateOptions(arg, Client);
                     break;
                 default:
                     break;
@@ -129,98 +130,7 @@ namespace iOSBot.Bot
 
         private async Task _client_Ready()
         {
-            try
-            {
-                await WatchUnwatch();
-
-                var forceCommand = new SlashCommandBuilder();
-                var errorCommand = new SlashCommandBuilder();
-                var removeErrorCommand = new SlashCommandBuilder();
-                var updateCommand = new SlashCommandBuilder();
-       
-                forceCommand.WithName("force");
-                errorCommand.WithName("error");
-                removeErrorCommand.WithName("noerror");
-                updateCommand.WithName("update");
-
-
-                forceCommand.WithDescription("Force bot to check for new updates");
-                errorCommand.WithDescription("Post bot errors to this channel");
-                removeErrorCommand.WithDescription("Dont post bot errors to this channel");
-                updateCommand.WithDescription("Update categories available for watching");
-
-
-                forceCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-                errorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
-                removeErrorCommand.DefaultMemberPermissions = GuildPermission.Administrator;
-                updateCommand.DefaultMemberPermissions = GuildPermission.Administrator;
-
-                await Client.BulkOverwriteGlobalApplicationCommandsAsync(new List<ApplicationCommandProperties>()
-                {
-                    forceCommand.Build(),
-                    errorCommand.Build(),
-                    removeErrorCommand.Build(),
-                    updateCommand.Build(),
-                }.ToArray());
-
-                _logger.Info(string.Join('|', Client.GetGlobalApplicationCommandsAsync().Result.Select(c => c.Name)));
-            }
-            catch (HttpException e)
-            {
-                var json = JsonConvert.SerializeObject(e.Reason, Formatting.Indented);
-                await _client_Log(new LogMessage(LogSeverity.Error, "_client_Ready", json, e));
-            }
-        }
-
-        public async Task WatchUnwatch()
-        {
-            _logger.Info("Registering watch commands");
-
-            var initCommand = new SlashCommandBuilder();
-            var removeCommand = new SlashCommandBuilder();
-
-            initCommand.WithName("watch");
-            removeCommand.WithName("unwatch");
-
-            initCommand.WithDescription("Begin posting OS updates to this channel");
-            removeCommand.WithDescription("Discontinue posting updates to this channel");
-
-            var param = new SlashCommandOptionBuilder()
-            {
-                Name = "category",
-                Description = "Which OS updates",
-                IsRequired = true,
-                Type = ApplicationCommandOptionType.String
-            };
-
-            var devices = GetDevices();
-
-            foreach (var c in devices)
-            {
-                param.AddChoice(c.FriendlyName, c.Category);
-            }
-
-            initCommand.AddOption(param);
-            removeCommand.AddOption(param);
-
-            var roleParam = new SlashCommandOptionBuilder()
-            {
-                Name = "role",
-                Description = "Role to ping",
-                IsRequired = false,
-                Type = ApplicationCommandOptionType.Role
-            };
-
-            initCommand.AddOption(roleParam);
-
-            initCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-            removeCommand.DefaultMemberPermissions = GuildPermission.ManageGuild;
-
-            await Client.BulkOverwriteGlobalApplicationCommandsAsync(new List<ApplicationCommandProperties>()
-            {
-                initCommand.Build(),
-                removeCommand.Build()
-            }.ToArray());
+            Commands.UpdateCommands(Client);
         }
 
         private async Task _client_Log(LogMessage arg)
@@ -231,21 +141,12 @@ namespace iOSBot.Bot
                 _apiFeed.PostError(arg.Exception.Message);
                 _logger.Error(arg.Exception);
             }
-
-            return;
         }
 
         private Task _client_LoggedOut()
         {
             _apiFeed.PostError("Logging Out");
             return Task.CompletedTask;
-        }
-
-        List<Device> GetDevices()
-        {
-            using var db = new BetaContext();
-
-            return db.Devices.ToList();
         }
     }
 }
