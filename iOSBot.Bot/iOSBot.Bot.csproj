@@ -29,4 +29,10 @@
     <ProjectReference Include="..\iOSBot.Service\iOSBot.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Images\bless-hands.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
