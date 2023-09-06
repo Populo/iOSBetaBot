@@ -97,7 +97,7 @@ namespace iOSBot.Bot
         {
             Name = "manifest",
             Description = "Manifest a beta release",
-            DefaultMemberPermissions = GuildPermission.SendMessages,
+            DefaultMemberPermissions = GuildPermission.AddReactions,
             Options = new List<SlashCommandOptionBuilder>() { }
         };
 
