@@ -130,7 +130,7 @@ namespace iOSBot.Bot
             _timer.Start();
         }
 
-        public async void PostError(string? message)
+        public async void PostError(string message)
         {
             try
             {
@@ -144,8 +144,8 @@ namespace iOSBot.Bot
                         AppleService.DeleteErrorServer(s, db);
                         continue;
                     }
-                    if (message != "Server requested a reconnect" &&
-                        message != "WebSocket connection was closed")
+                    if (!message.EndsWith("Server requested a reconnect") &&
+                        !message.EndsWith("WebSocket connection was closed"))
                     {
                         await server.SendMessageAsync(message);
                     }
