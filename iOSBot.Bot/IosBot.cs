@@ -31,7 +31,7 @@ namespace iOSBot.Bot
         {
             var config = new DiscordSocketConfig()
             {
-                GatewayIntents = GatewayIntents.GuildMessageReactions | GatewayIntents.MessageContent | GatewayIntents.GuildMessages,
+                GatewayIntents = GatewayIntents.GuildMessages,
                 MessageCacheSize = 15
             };
 
@@ -73,7 +73,6 @@ namespace iOSBot.Bot
             Client.Log += _client_Log;
             Client.Ready += _client_Ready;
             Client.SlashCommandExecuted += _client_SlashCommandExecuted;
-            Client.LoggedOut += _client_LoggedOut;
             //Client.MessageReceived += _client_MessageReceived;
 
             _apiFeed.Bot = RestClient;
@@ -96,7 +95,7 @@ namespace iOSBot.Bot
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             _logger.Error(e);
-            _apiFeed.PostError(e.ToString());
+            _apiFeed.PostError($"Unhandled Exception:\n{e.ToString()}");
         }
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
@@ -143,15 +142,9 @@ namespace iOSBot.Bot
             _logger.Info(arg.Message);
             if (null != arg.Exception)
             {
-                _apiFeed.PostError(arg.Exception.Message);
+                _apiFeed.PostError($"Bot error:\n{arg.Exception.Message}");
                 _logger.Error(arg.Exception);
             }
-        }
-
-        private Task _client_LoggedOut()
-        {
-            _apiFeed.PostError("Logging Out");
-            return Task.CompletedTask;
         }
     }
 }

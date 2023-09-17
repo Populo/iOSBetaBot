@@ -76,6 +76,27 @@ namespace iOSBot.Service
                     Device = device
                 };
 
+                /*
+                 * 3 cases:
+                 *
+                 * 1. completely new version
+                 *  - proceed as normal, no revision
+                 * 2. new build of existing version
+                 *  - revision + 1
+                 * 3. same build of same version
+                 *  - do nothing
+                 */
+
+                using var db = new BetaContext();
+                var dbUpdates = db.Updates.Where(u => u.Version.Contains(update.VersionReadable));
+
+                // case 1 || 3, short circuit to prevent any kind of npe
+                // first update of this version (17.0 beta 8, 17.0 GM, etc)
+                if (!dbUpdates.Any() || dbUpdates.Any(u => u.Build == update.Build)) return update;
+                
+                // case 2
+                update.Revision = dbUpdates.Count();
+
                 return update;
 
             }

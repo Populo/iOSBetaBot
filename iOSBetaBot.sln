@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iOSBot.Data", "iOSBot.Data\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iOSBot.Web", "iOSBot.Web\iOSBot.Web.csproj", "{D10A834D-657E-4C48-A330-AAF5562D2BB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iOSBot.Service", "iOSBot.Service\iOSBot.Service.csproj", "{31C53570-001C-4376-904B-D7CD377180B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iOSBot.Service", "iOSBot.Service\iOSBot.Service.csproj", "{31C53570-001C-4376-904B-D7CD377180B4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iOSBot.Tests", "iOSBot.Tests\iOSBot.Tests.csproj", "{3A695898-D34B-4708-AC53-D52C6930D5D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{31C53570-001C-4376-904B-D7CD377180B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31C53570-001C-4376-904B-D7CD377180B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31C53570-001C-4376-904B-D7CD377180B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

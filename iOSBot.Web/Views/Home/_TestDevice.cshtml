@@ -1,4 +1,6 @@
-﻿@model iOSBot.Service.Update
+﻿@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@model iOSBot.Service.Update
 
 @if (Model.Version == "bad")
 {
@@ -31,6 +33,23 @@ else if (Model.Version != "none")
         <div>@($"Device is valid: {Model.VersionReadable} found. Released on {Model.ReleaseDate:D}")</div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         <br />
-        <button type="submit" class="btn btn-success" id="submit">Submit</button>
+        
+        <div class="row">
+            <div class="text-start col">
+                <button type="submit" class="btn btn-success" id="submit">Submit</button>
+            </div>
+            <div class="text-end col">
+                <button type="button" class="btn btn-outline-info" id="showrequest" data-bs-toggle="collapse" data-bs-target="#requestCollapse" aria-expanded="false" aria-controls="requestCollapse">Show Request</button>
+            </div>
+        </div>
+       
+
+        <div class="collapse" id="requestCollapse">
+            <br />
+            <div class="card card-body">
+                <pre>@Html.Raw(JObject.Parse(Model.JsonRequest.ToString(Formatting.Indented)))</pre>
+            </div>
+        </div>
     </div>
 }
+
