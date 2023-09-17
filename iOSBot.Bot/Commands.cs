@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using System.Timers;
 using Discord;
 using Discord.Net;
@@ -92,6 +93,14 @@ namespace iOSBot.Bot
             Options = new List<SlashCommandOptionBuilder>() { }
         };
 
+        private static SlashCommandBuilder blessBuilder = new()
+        {
+            Name = "manifest",
+            Description = "Manifest a beta release",
+            DefaultMemberPermissions = GuildPermission.AddReactions,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
+
         private static List<SlashCommandBuilder> CommandBuilders = new()
         {
             watchBuilder,
@@ -99,7 +108,8 @@ namespace iOSBot.Bot
             errorBuilder,
             noerrorBuilder,
             forceBuilder,
-            updateBuilder
+            updateBuilder,
+            blessBuilder
         };
 
         #endregion
@@ -265,7 +275,13 @@ namespace iOSBot.Bot
 
             arg.FollowupAsync("Reloaded commands.", ephemeral: true);
         }
-#endregion
+
+        internal static void Manifest(SocketSlashCommand arg)
+        {
+            Logger.Trace(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            arg.RespondWithFileAsync($"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}/Images/bless-hands.gif");
+        }
+        #endregion
         #region helpers
 
         private static List<ApplicationCommandOptionChoiceProperties> GetDeviceCategories()
@@ -303,6 +319,6 @@ namespace iOSBot.Bot
 
             return db.Devices.ToList();
         }
-#endregion
+        #endregion
     }
 }

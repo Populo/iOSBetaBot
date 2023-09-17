@@ -1,4 +1,5 @@
 ﻿using iOSBot.Data;
+using Newtonsoft.Json.Linq;
 
 namespace iOSBot.Service
 {
@@ -12,24 +13,10 @@ namespace iOSBot.Service
         public long SizeBytes { get; set; }
         public Device Device { get; set; }
         public string ReleaseType { get; set; }
+        public int Revision { get; set; }
         public string VersionReadable => GetReadableVersion();
         public string Size => GetReadableSize();
-        public string ChangelogVersion => GetChangelogVersion();
-
-        private string GetChangelogVersion()
-        {
-            var parts = Version.Split('.');
-            string version = "";
-            if (parts.Length > 0)
-            {
-                version += parts[0];
-            }
-            if (parts.Length > 1)
-            {
-                if (parts[1] != "0") version += "." + parts[1];
-            }
-            return version;
-        }
+        public JObject JsonRequest => GetJsonRequest();
 
         private string GetReadableVersion()
         {
@@ -38,18 +25,30 @@ namespace iOSBot.Service
             string betaNumber = VersionDocId.Split("Beta").Last();
             if (ReleaseType != "Release")
             {
-                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase))
+                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase) 
+                    || VersionDocId.Contains("rc", StringComparison.CurrentCultureIgnoreCase))
                 {
                     majorVersion += " Release Candidate";
                 }
+                else if (VersionDocId.Contains("long", StringComparison.CurrentCultureIgnoreCase) 
+                         || VersionDocId.Contains("gm", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    majorVersion += " Golden Master";
+                }
             }
 
-            return !isBeta ? majorVersion : $"{majorVersion} {ReleaseType} Beta {betaNumber}";
+            string revisionAppend = "";
+            if (Revision != 0)
+            {
+                revisionAppend = " Revision " + Revision;
+            }
+
+            return (!isBeta ? majorVersion : $"{majorVersion} {ReleaseType} Beta {betaNumber}") + revisionAppend;
         }
 
         private string GetReadableSize()
         {
-            string[] units = new[] { "B", "KB", "MB", "GB", "TB" }; // should never be bigger than gb but you know
+            string[] units = { "B", "KB", "MB", "GB", "TB" }; // should never be bigger than gb but you know
 
             int i = 0;
             decimal size = SizeBytes;
@@ -61,6 +60,18 @@ namespace iOSBot.Service
             }
 
             return $"{Math.Round(size, 2)} {units[i]}";
+        }
+
+        private JObject GetJsonRequest()
+        {
+            return new JObject(
+                new JProperty("AssetAudience", Device.AudienceId),
+                new JProperty("AssetType", Device.AssetType),
+                new JProperty("ClientVersion", 2),
+                new JProperty("BuildVersion", Device.BuildId),
+                new JProperty("HWModelStr", Device.BoardId),
+                new JProperty("ProductType", Device.Product),
+                new JProperty("ProductVersion", Device.Version));
         }
     }
 }

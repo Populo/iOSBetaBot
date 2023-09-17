@@ -2,6 +2,8 @@
 using Discord.Rest;
 using iOSBot.Data;
 using System.Collections.Concurrent;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices.ComTypes;
 using iOSBot.Service;
 using Timer = System.Timers.Timer;
 
@@ -22,9 +24,7 @@ namespace iOSBot.Bot
 
         private IAppleService AppleService { get; }
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public ApiSingleton(IAppleService service)
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             AppleService = service;
 
@@ -52,14 +52,13 @@ namespace iOSBot.Bot
                 try
                 {
                     Service.Update u = AppleService.GetUpdate(device).Result;
-
-                    if (!dbUpdates.Any(dbU => dbU.Version == u.VersionReadable && dbU.Build == u.Build))
-                        updates.Add(u);
+                    
+                    if (!dbUpdates.Any(up => up.Version == u.VersionReadable && up.Build == u.Build)) updates.Add(u);
                     else Logger.Info("No new update found for " + device.FriendlyName);
                 }
                 catch (Exception ex)
                 {
-                    PostError(ex.Message);
+                    PostError($"Error checking update for {device.FriendlyName}:\n{ex.Message}");
                 }
             });
 

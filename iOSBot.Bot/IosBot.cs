@@ -1,20 +1,15 @@
 ﻿using Discord;
-using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
-using iOSBot.Data;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using NLog;
 using iOSBot.Service;
-using Microsoft.EntityFrameworkCore;
-using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot
 {
     public class IosBot
     {
-        // https://discord.com/api/oauth2/authorize?client_id=1133469416458301510&permissions=133120&scope=bot
+        // https://discord.com/api/oauth2/authorize?client_id=1133469416458301510&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
@@ -36,7 +31,8 @@ namespace iOSBot.Bot
         {
             var config = new DiscordSocketConfig()
             {
-                GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.MessageContent
+                GatewayIntents = GatewayIntents.GuildMessages,
+                MessageCacheSize = 15
             };
 
             var collection = new ServiceCollection();
@@ -68,7 +64,7 @@ namespace iOSBot.Bot
             _logger.Info("Environment: Dev");
 #else
             Status = "for new releases";
-            Logger.Info("Environment: Prod");
+            _logger.Info("Environment: Prod");
 #endif
             await Client.SetGameAsync(Status, type: ActivityType.Watching);
 
@@ -77,8 +73,7 @@ namespace iOSBot.Bot
             Client.Log += _client_Log;
             Client.Ready += _client_Ready;
             Client.SlashCommandExecuted += _client_SlashCommandExecuted;
-            Client.LoggedOut += _client_LoggedOut;
-            //_client.MessageReceived += _client_MessageReceived;
+            //Client.MessageReceived += _client_MessageReceived;
 
             _apiFeed.Bot = RestClient;
             _apiFeed.Start();
@@ -86,15 +81,21 @@ namespace iOSBot.Bot
             await Task.Delay(-1);
         }
 
+        // disabled for release because it isnt working
         private Task _client_MessageReceived(SocketMessage arg)
         {
+            if (arg.Author.Id == 191051620430249984)
+            {
+                _logger.Trace(arg.Author.Username);
+            }
+
             return Task.CompletedTask;
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             _logger.Error(e);
-            _apiFeed.PostError(e.ToString());
+            _apiFeed.PostError($"Unhandled Exception:\n{e.ToString()}");
         }
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
@@ -121,6 +122,9 @@ namespace iOSBot.Bot
                 case "update":
                     Commands.UpdateOptions(arg, Client);
                     break;
+                case "manifest":
+                    Commands.Manifest(arg);
+                    break;
                 default:
                     break;
             }
@@ -138,15 +142,9 @@ namespace iOSBot.Bot
             _logger.Info(arg.Message);
             if (null != arg.Exception)
             {
-                _apiFeed.PostError(arg.Exception.Message);
+                _apiFeed.PostError($"Bot error:\n{arg.Exception.Message}");
                 _logger.Error(arg.Exception);
             }
-        }
-
-        private Task _client_LoggedOut()
-        {
-            _apiFeed.PostError("Logging Out");
-            return Task.CompletedTask;
         }
     }
 }
