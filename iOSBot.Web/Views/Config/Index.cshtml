@@ -11,6 +11,10 @@
             @Html.CheckBoxFor(t => t.PostAnyway, new { @class = "form-check-input", @id = "postanyway", placeholder = "1234" })
             <label class="form-check-label" for="postanyway">Post Old Updates</label>
         </div>
+        <div class="form-floating mb-2">
+            @Html.TextBoxFor(t => t.ManifestGif, new { @class = "form-control", @id = "manifestgif", placeholder = "1234" })
+            <label for="manifestgif">Manifest Gif Location</label>
+        </div>
         <div class="form-floating">
             <button type="submit" class="btn btn-success">Save Changes</button>
         </div>
