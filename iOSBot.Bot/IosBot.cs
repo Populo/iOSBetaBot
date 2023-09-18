@@ -100,7 +100,7 @@ namespace iOSBot.Bot
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
         {
-            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result}");
+            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}");
 
             switch (arg.CommandName)
             {

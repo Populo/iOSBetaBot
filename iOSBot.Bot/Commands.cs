@@ -8,7 +8,6 @@ using Discord.WebSocket;
 using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace iOSBot.Bot
 {
@@ -278,8 +277,9 @@ namespace iOSBot.Bot
 
         internal static void Manifest(SocketSlashCommand arg)
         {
-            Logger.Trace(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-            arg.RespondWithFileAsync($"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}/Images/bless-hands.gif");
+            using var db = new BetaContext();
+            var gifLocation = db.Configs.First(c => c.Name == "ManifestGif").Value;
+            arg.RespondAsync(gifLocation);
         }
         #endregion
         #region helpers
