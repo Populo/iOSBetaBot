@@ -104,7 +104,8 @@ namespace iOSBot.Web.Service
             return new ConfigViewModel()
             {
                 Delay = int.Parse(model["Timer"]),
-                PostAnyway = model["PostOld"] == "1"
+                PostAnyway = model["PostOld"] == "1",
+                ManifestGif = model["ManifestGif"]
             };
         }
 
@@ -121,6 +122,11 @@ namespace iOSBot.Web.Service
                 {
                     Value = model.PostAnyway ? "1" : "0",
                     Name = "PostOld"
+                },
+                new()
+                {
+                    Value = model.ManifestGif,
+                    Name = "ManifestGif"
                 }
             });
         }
