@@ -18,8 +18,9 @@
                 let fwVersion = $('#deviceVersion')[0].value;
                 let fwBuild = $('#deviceFwBuild')[0].value;
                 let assetType = $('#assetDropdown')[0].value;
+                let feed = $("#typeDropdown")[0].value;
 
-                $('#testalert').load("/Home/TestDevicePartial?audienceId=".concat(audienceId, "&product=", product, "&boardId=", boardId, "&fwVersion=", fwVersion, "&fwBuild=", fwBuild, "&assetType=", assetType));
+                $('#testalert').load("/Home/TestDevicePartial?audienceId=".concat(audienceId, "&product=", product, "&boardId=", boardId, "&fwVersion=", fwVersion, "&fwBuild=", fwBuild, "&assetType=", assetType, "&feed=", feed));
             });
 
             $('#resetDevice').click(function(){

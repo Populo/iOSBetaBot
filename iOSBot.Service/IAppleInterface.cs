@@ -123,7 +123,8 @@ namespace iOSBot.Service
                 Build = update.Build,
                 Category = update.Device.Category,
                 Guid = Guid.NewGuid(),
-                Version = update.VersionReadable
+                Version = update.VersionReadable,
+                ReleaseDate = update.ReleaseDate
             };
             db.Updates.Add(newUpdate);
 

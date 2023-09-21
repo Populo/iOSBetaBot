@@ -13,7 +13,7 @@ namespace iOSBot.Web.Service
         public bool CreateDevice(DeviceViewModel device);
         public List<DeviceViewModel> GetAllDevices();
         public DeviceViewModel GetDeviceByAudience(string audienceId);
-        public Task<Update> TestDevice(string audienceId, string product, string boardId, string fwVersion, string fwBuild, string assetType);
+        public Task<Update> TestDevice(string audienceId, string product, string boardId, string fwVersion, string fwBuild, string assetType, string feed);
         public ConfigViewModel GetConfigItems();
         public void SaveConfigItems(ConfigViewModel items);
     }
@@ -68,7 +68,7 @@ namespace iOSBot.Web.Service
             return device.Adapt(new DeviceViewModel());
         }
 
-        public async Task<Update> TestDevice(string audienceId, string product, string boardId, string fwVersion, string fwBuild, string assetType)
+        public async Task<Update> TestDevice(string audienceId, string product, string boardId, string fwVersion, string fwBuild, string assetType, string feed)
         {
             Update u;
             try
@@ -82,6 +82,7 @@ namespace iOSBot.Web.Service
                     BuildId = fwBuild,
                     Product = product,
                     Version = fwVersion,
+                    Type = feed
                 });
             }
             catch (Exception ex)
