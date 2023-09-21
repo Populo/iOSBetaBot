@@ -49,6 +49,7 @@ namespace iOSBot.Data
         public string Version { get; set; }
         public string Build { get; set; }
         public string Category { get; set; }
+        public DateTime ReleaseDate { get; set; }
     }
 
     public class Server

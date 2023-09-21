@@ -88,11 +88,16 @@ namespace iOSBot.Service
                  */
 
                 using var db = new BetaContext();
-                var dbUpdates = db.Updates.Where(u => u.Version.Contains(update.VersionReadable));
+                var dbUpdates = db.Updates
+                                                        .Where(u => u.Version.Contains(update.VersionReadable) &&
+                                                                    u.Category == update.Group)
+                                                        .OrderByDescending(u => u.ReleaseDate);
 
                 // case 1 || 3, short circuit to prevent any kind of npe
                 // first update of this version (17.0 beta 8, 17.0 GM, etc)
-                if (!dbUpdates.Any() || dbUpdates.Any(u => u.Build == update.Build)) return update;
+                if (!dbUpdates.Any() || 
+                    dbUpdates.Any(u => u.Build == update.Build && 
+                                       update.ReleaseDate == u.ReleaseDate)) return update;
                 
                 // case 2
                 update.Revision = dbUpdates.Count();
