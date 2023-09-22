@@ -50,9 +50,9 @@ namespace iOSBot.Web.Controllers
         }
 
         public IActionResult TestDevicePartial(string audienceId, string product, string boardId, string fwVersion,
-            string fwBuild, string assetType)
+            string fwBuild, string assetType, string feed)
         {
-            var update = _devices.TestDevice(audienceId, product, boardId, fwVersion, fwBuild, assetType).Result;
+            var update = _devices.TestDevice(audienceId, product, boardId, fwVersion, fwBuild, assetType, feed).Result;
 
             return PartialView("_TestDevice", update);
         }
