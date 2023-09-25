@@ -61,7 +61,12 @@ namespace iOSBot.Service
 
                 var jwt = new JwtSecurityToken(response.Content);
 
-                var claim = jwt.Claims.First(j => j.Type == "Assets").Value;
+                var claim = jwt.Claims.FirstOrDefault(j => j.Type == "Assets", null).Value;
+                if (null == claim)
+                {
+                    throw new Exception($"No firmware is being signed for {device.FriendlyName}");
+                }
+
                 var json = JsonConvert.DeserializeObject<AssetResponse>(claim);
 
                 var update = new Update
@@ -89,9 +94,9 @@ namespace iOSBot.Service
 
                 using var db = new BetaContext();
                 var dbUpdates = db.Updates
-                                                        .Where(u => u.Version.Contains(update.VersionReadable) &&
-                                                                    u.Category == update.Group)
-                                                        .OrderByDescending(u => u.ReleaseDate);
+                                .Where(u => u.Version.Contains(update.VersionReadable) &&
+                                            u.Category == update.Group)
+                                .OrderByDescending(u => u.ReleaseDate);
 
                 // case 1 || 3, short circuit to prevent any kind of npe
                 // first update of this version (17.0 beta 8, 17.0 GM, etc)
