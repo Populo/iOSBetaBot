@@ -33,6 +33,7 @@
             });
 
             $(document).on('click', '.devicedeletebutton', function () {
+            
                 let id = this.getAttribute('data-devid');
                 let name = this.getAttribute('data-devname');
                 if (confirm('Delete checks for ' + name + '?')) {

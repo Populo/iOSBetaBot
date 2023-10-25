@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Timers;
-using Discord;
+﻿using Discord;
 using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -96,8 +93,60 @@ namespace iOSBot.Bot
         {
             Name = "manifest",
             Description = "Manifest a beta release",
-            DefaultMemberPermissions = GuildPermission.AddReactions,
+            DefaultMemberPermissions = GuildPermission.SendMessages,
             Options = new List<SlashCommandOptionBuilder>() { }
+        };
+        
+        private static SlashCommandBuilder goodBotBuilder = new()
+        {
+            Name = "goodbot",
+            Description = "Tell the bot that it is doing a good job :)",
+            DefaultMemberPermissions = GuildPermission.SendMessages,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new ()
+                {
+                    Name = "reason",
+                    Description = "Something specific? Let me know!",
+                    IsRequired = false,
+                    Type = ApplicationCommandOptionType.String
+                }
+            }
+        };
+        
+        private static SlashCommandBuilder badBotBuilder = new()
+        {
+            Name = "badbot",
+            Description = "Something could be improved :(",
+            DefaultMemberPermissions = GuildPermission.SendMessages,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new ()
+                {
+                    Name = "reason",
+                    Description = "Something specific? Let me know!",
+                    IsRequired = false,
+                    Type = ApplicationCommandOptionType.String
+                }
+            }
+        };
+        
+        private static SlashCommandBuilder infoBuilder = new()
+        {
+            Name = "info",
+            Description = "Which device is being used to check for updates",
+            DefaultMemberPermissions = GuildPermission.SendMessages,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new ()
+                {
+                    Name = "category",
+                    Description = "Which OS updates",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                    Choices = GetDeviceCategories()
+                }
+            }
         };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()
@@ -108,7 +157,10 @@ namespace iOSBot.Bot
             noerrorBuilder,
             forceBuilder,
             updateBuilder,
-            blessBuilder
+            blessBuilder,
+            goodBotBuilder,
+            badBotBuilder,
+            infoBuilder
         };
 
         #endregion
@@ -281,6 +333,84 @@ namespace iOSBot.Bot
             var gifLocation = db.Configs.First(c => c.Name == "ManifestGif").Value;
             arg.RespondAsync(gifLocation);
         }
+
+        internal static void GoodBot(SocketSlashCommand arg, DiscordSocketClient bot)
+        {
+            arg.DeferAsync(ephemeral: true);
+            
+            using var db = new BetaContext();
+            
+            var reason = "";
+            if (arg.Data.Options.Any())
+            {
+                reason = arg.Data.Options.First().Value.ToString();
+
+                foreach (var s in db.ErrorServers)
+                {
+                    (bot.GetChannel(s.ChannelId) as SocketTextChannel).SendMessageAsync(
+                        $"Good Bot: {arg.User.Username}: {reason}");
+                }
+            }
+
+            db.GoodBots.Add(new GoodBot
+            {
+                Username = arg.User.Username,
+                Reason = reason
+            });
+
+            arg.RespondAsync($"Thank you :) I've been called a good bot {db.GoodBots.Count()} times.", ephemeral: true);
+
+            db.SaveChanges();
+        }
+
+        internal static void BadBot(SocketSlashCommand arg, DiscordSocketClient bot)
+        {
+            arg.DeferAsync(ephemeral: true);
+            
+            using var db = new BetaContext();
+            
+            var reason = "";
+            if (arg.Data.Options.Any())
+            {
+                reason = arg.Data.Options.First().Value.ToString();
+
+                foreach (var s in db.ErrorServers)
+                {
+                    (bot.GetChannel(s.ChannelId) as SocketTextChannel).SendMessageAsync(
+                        $"Bad Bot: {arg.User.Username}: {reason}");
+                }
+            }
+            
+            db.BadBots.Add(new BadBot
+            {
+                Username = arg.User.Username,
+                Reason = reason
+            });
+
+            arg.RespondAsync($"Sorry for the experience, my owner has been notified.", ephemeral: true);
+            
+            db.SaveChanges();
+        }
+
+        public static void DeviceInfo(SocketSlashCommand arg, DiscordSocketClient? bot)
+        {
+            arg.DeferAsync(ephemeral: true);
+            
+            using var db = new BetaContext();
+            var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value);
+            
+            var embed = new EmbedBuilder
+            {
+                Color = new Color(device.Color),
+                Title = $"Device Info",
+                Description = device.FriendlyName
+            };
+            embed.AddField(name: "Device", value: device.Name)
+                .AddField(name: "Version", value: device.Version);
+            
+            arg.RespondAsync($"The device being used to search for {device.FriendlyName} is:");
+        }
+        
         #endregion
         #region helpers
 

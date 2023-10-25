@@ -125,6 +125,15 @@ namespace iOSBot.Bot
                 case "manifest":
                     Commands.Manifest(arg);
                     break;
+                case "goodbot":
+                    Commands.GoodBot(arg, Client);
+                    break;
+                case "badbot":
+                    Commands.BadBot(arg, Client);
+                    break;
+                case "info":
+                    Commands.DeviceInfo(arg, Client);
+                    break;
                 default:
                     break;
             }
