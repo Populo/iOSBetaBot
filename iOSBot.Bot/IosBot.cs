@@ -126,13 +126,13 @@ namespace iOSBot.Bot
                     Commands.Manifest(arg);
                     break;
                 case "goodbot":
-                    Commands.GoodBot(arg, Client);
+                    Commands.GoodBot(arg, RestClient);
                     break;
                 case "badbot":
-                    Commands.BadBot(arg, Client);
+                    Commands.BadBot(arg, RestClient);
                     break;
                 case "info":
-                    Commands.DeviceInfo(arg, Client);
+                    Commands.DeviceInfo(arg);
                     break;
                 default:
                     break;
@@ -153,6 +153,7 @@ namespace iOSBot.Bot
             {
                 _apiFeed.PostError($"Bot error:\n{arg.Exception.Message}");
                 _logger.Error(arg.Exception);
+                _logger.Error(arg.Exception.InnerException.StackTrace);
             }
         }
     }

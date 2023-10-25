@@ -10,8 +10,6 @@ namespace iOSBot.Data
         public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
-        public DbSet<GoodBot> GoodBots { get; set; }
-        public DbSet<BadBot> BadBots { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder = null)
         {
@@ -88,23 +86,5 @@ namespace iOSBot.Data
         public Guid Id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
-    }
-
-    [PrimaryKey("Timestamp")]
-    public class GoodBot
-    {
-        public DateTime Timestamp { get; set; }
-        public string Username { get; set; }
-        public string Reason { get; set; }
-    }
-
-    [PrimaryKey("Timestamp")]
-    public class BadBot
-    {
-        public DateTime Timestamp { get; set; }
-        public string Username { get; set; }
-        public string Reason { get; set; }
-        public bool FollowUp { get; set; }
-        public bool FollowedUp { get; set; }
     }
 }

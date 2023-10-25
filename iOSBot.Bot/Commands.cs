@@ -124,8 +124,8 @@ namespace iOSBot.Bot
                 new ()
                 {
                     Name = "reason",
-                    Description = "Something specific? Let me know!",
-                    IsRequired = false,
+                    Description = "Describe your issue, developer will be notified.",
+                    IsRequired = true,
                     Type = ApplicationCommandOptionType.String
                 }
             }
@@ -334,7 +334,7 @@ namespace iOSBot.Bot
             arg.RespondAsync(gifLocation);
         }
 
-        internal static void GoodBot(SocketSlashCommand arg, DiscordSocketClient bot)
+        internal static void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
         {
             arg.DeferAsync(ephemeral: true);
             
@@ -344,57 +344,56 @@ namespace iOSBot.Bot
             if (arg.Data.Options.Any())
             {
                 reason = arg.Data.Options.First().Value.ToString();
+                
+                var embed = new EmbedBuilder
+                {
+                    Color = new Color(0,255,255),
+                    Title = "Good Bot",
+                    Description = $"User: {arg.User.Username}"
+                };
+                embed.AddField(name: "Reason", value: reason)
+                    .AddField(name: "Server", value: bot.GetGuildAsync(arg.GuildId.Value).Result.Name)
+                    .AddField(name: "Channel", value: ((RestTextChannel)bot.GetChannelAsync(arg.ChannelId.Value).Result).Name);
 
                 foreach (var s in db.ErrorServers)
                 {
-                    (bot.GetChannel(s.ChannelId) as SocketTextChannel).SendMessageAsync(
-                        $"Good Bot: {arg.User.Username}: {reason}");
+                    var channel = bot.GetChannelAsync(s.ChannelId).Result as RestTextChannel;
+                    channel.SendMessageAsync(embed: embed.Build());
                 }
             }
 
-            db.GoodBots.Add(new GoodBot
-            {
-                Username = arg.User.Username,
-                Reason = reason
-            });
-
-            arg.RespondAsync($"Thank you :) I've been called a good bot {db.GoodBots.Count()} times.", ephemeral: true);
-
-            db.SaveChanges();
+            arg.FollowupAsync($"Thank you :)", ephemeral: true);
         }
 
-        internal static void BadBot(SocketSlashCommand arg, DiscordSocketClient bot)
+        internal static void BadBot(SocketSlashCommand arg, DiscordRestClient bot)
         {
             arg.DeferAsync(ephemeral: true);
             
             using var db = new BetaContext();
+            var reason = arg.Data.Options.First().Value.ToString();
             
-            var reason = "";
-            if (arg.Data.Options.Any())
+            var embed = new EmbedBuilder
             {
-                reason = arg.Data.Options.First().Value.ToString();
+                Color = new Color(255,0,0),
+                Title = "Bad Bot",
+                Description = $"User: {arg.User.Username}"
+            };
+            embed.AddField(name: "Reason", value: reason)
+                .AddField(name: "Server", value: bot.GetGuildAsync(arg.GuildId.Value).Result.Name)
+                .AddField(name: "Channel", value: ((RestTextChannel)bot.GetChannelAsync(arg.ChannelId.Value).Result).Name);
 
-                foreach (var s in db.ErrorServers)
-                {
-                    (bot.GetChannel(s.ChannelId) as SocketTextChannel).SendMessageAsync(
-                        $"Bad Bot: {arg.User.Username}: {reason}");
-                }
+            foreach (var s in db.ErrorServers)
+            {
+                var channel = bot.GetChannelAsync(s.ChannelId).Result as RestTextChannel;
+                channel.SendMessageAsync(embed: embed.Build());
             }
             
-            db.BadBots.Add(new BadBot
-            {
-                Username = arg.User.Username,
-                Reason = reason
-            });
-
-            arg.RespondAsync($"Sorry for the experience, my owner has been notified.", ephemeral: true);
-            
-            db.SaveChanges();
+            arg.FollowupAsync($"Thank you for your feedback. A developer has been notified and may reach out.", ephemeral: true);
         }
 
-        public static void DeviceInfo(SocketSlashCommand arg, DiscordSocketClient? bot)
+        public static void DeviceInfo(SocketSlashCommand arg)
         {
-            arg.DeferAsync(ephemeral: true);
+            arg.DeferAsync(ephemeral: false);
             
             using var db = new BetaContext();
             var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value);
@@ -402,13 +401,13 @@ namespace iOSBot.Bot
             var embed = new EmbedBuilder
             {
                 Color = new Color(device.Color),
-                Title = $"Device Info",
-                Description = device.FriendlyName
+                Title = "Device Info",
+                Description = $"{device.FriendlyName} feed"
             };
             embed.AddField(name: "Device", value: device.Name)
                 .AddField(name: "Version", value: device.Version);
             
-            arg.RespondAsync($"The device being used to search for {device.FriendlyName} is:", embed: embed.Build());
+            arg.FollowupAsync(embed: embed.Build());
         }
         
         #endregion
