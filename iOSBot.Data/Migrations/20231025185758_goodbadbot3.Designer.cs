@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using iOSBot.Data;
 
@@ -10,14 +11,35 @@ using iOSBot.Data;
 namespace iOSBot.Data.Migrations
 {
     [DbContext(typeof(BetaContext))]
-    partial class BetaContextModelSnapshot : ModelSnapshot
+    [Migration("20231025185758_goodbadbot3")]
+    partial class goodbadbot3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.0-rc.1.23419.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            modelBuilder.Entity("iOSBot.Data.BadBot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BadBots");
+                });
 
             modelBuilder.Entity("iOSBot.Data.Config", b =>
                 {
@@ -101,6 +123,25 @@ namespace iOSBot.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ErrorServers");
+                });
+
+            modelBuilder.Entity("iOSBot.Data.GoodBot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GoodBots");
                 });
 
             modelBuilder.Entity("iOSBot.Data.Server", b =>

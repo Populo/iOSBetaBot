@@ -11,7 +11,7 @@ namespace iOSBot.Data
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder = null)
         {
             if (!optionsBuilder.IsConfigured) {
                 var connection = new MySqlConnectionStringBuilder();
@@ -34,11 +34,6 @@ namespace iOSBot.Data
                         options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
                     });
             }
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
         }
     }
 
