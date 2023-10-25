@@ -397,6 +397,10 @@ namespace iOSBot.Bot
             
             using var db = new BetaContext();
             var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value);
+            var update = db.Updates
+                .Where(u => u.Category == device.Category)
+                .OrderByDescending(u => u.ReleaseDate)
+                .FirstOrDefault();
             
             var embed = new EmbedBuilder
             {
@@ -405,7 +409,8 @@ namespace iOSBot.Bot
                 Description = $"{device.FriendlyName} feed"
             };
             embed.AddField(name: "Device", value: device.Name)
-                .AddField(name: "Version", value: device.Version);
+                .AddField(name: "Device Version", value: $"{device.Version} ({device.BuildId})")
+                .AddField(name: "Newest Version", value: $"{update.Version} ({update.Build})");
             
             arg.FollowupAsync(embed: embed.Build());
         }
