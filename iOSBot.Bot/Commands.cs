@@ -408,7 +408,7 @@ namespace iOSBot.Bot
             embed.AddField(name: "Device", value: device.Name)
                 .AddField(name: "Version", value: device.Version);
             
-            arg.RespondAsync($"The device being used to search for {device.FriendlyName} is:");
+            arg.RespondAsync($"The device being used to search for {device.FriendlyName} is:", embed: embed.Build());
         }
         
         #endregion
