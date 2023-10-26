@@ -393,7 +393,7 @@ namespace iOSBot.Bot
 
         public static void DeviceInfo(SocketSlashCommand arg)
         {
-            arg.DeferAsync(ephemeral: false);
+            arg.DeferAsync(ephemeral: true);
             
             using var db = new BetaContext();
             var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value);
