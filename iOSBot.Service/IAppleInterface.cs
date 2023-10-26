@@ -54,10 +54,10 @@ namespace iOSBot.Service
             };
 
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
-
+            RestResponse response = null;
             try
             {
-                var response = await RestClient.PostAsync(request);
+                response = await RestClient.PostAsync(request);
 
                 var jwt = new JwtSecurityToken(response.Content);
 
@@ -105,7 +105,12 @@ namespace iOSBot.Service
                                        update.ReleaseDate == u.ReleaseDate)) return update;
                 
                 // case 2
-                update.Revision = dbUpdates.Count();
+                // attempt to prevent double counting releases in the situation where it detects
+                // update but then immediately after detects the old version because of apple server stuff 
+                if (dbUpdates.Any(u => u.ReleaseDate.Date != DateTime.Today.Date))
+                {
+                    update.Revision = dbUpdates.Count();
+                }
 
                 return update;
 
@@ -113,6 +118,7 @@ namespace iOSBot.Service
             catch (Exception e)
             {
                 string error = $"Error checking {device.Category}:\n {e.Message}";
+                await File.WriteAllTextAsync("errorResponse", response.Content);
                 _logger.Error(error);
                 ExceptionDispatchInfo.Capture(e.InnerException).Throw();
                 throw;

@@ -150,7 +150,7 @@ namespace iOSBot.Bot
                     if (!message.EndsWith("Server requested a reconnect") &&
                         !message.EndsWith("WebSocket connection was closed"))
                     {
-                        await server.SendMessageAsync(message);
+                        await server.SendFileAsync(filePath:"errorResponse", message);
                     }
                 }
             }
