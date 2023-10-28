@@ -54,19 +54,22 @@ namespace iOSBot.Service
             };
 
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
-
+            RestResponse response = null;
             try
             {
-                var response = await RestClient.PostAsync(request);
+                response = await RestClient.PostAsync(request);
 
                 var jwt = new JwtSecurityToken(response.Content);
 
-                var claim = jwt.Claims.FirstOrDefault(j => j.Type == "Assets", null).Value;
-                if (null == claim)
+                // no assets present
+                if (!jwt.Claims.Any(c => c.Type == "Assets"))
                 {
                     throw new Exception($"No firmware is being signed for {device.FriendlyName}");
                 }
-
+                var claim = jwt.Claims
+                    .FirstOrDefault(j => j.Type == "Assets")
+                    .Value;
+                
                 var json = JsonConvert.DeserializeObject<AssetResponse>(claim);
 
                 var update = new Update
@@ -105,7 +108,12 @@ namespace iOSBot.Service
                                        update.ReleaseDate == u.ReleaseDate)) return update;
                 
                 // case 2
-                update.Revision = dbUpdates.Count();
+                // attempt to prevent double counting releases in the situation where it detects
+                // update but then immediately after detects the old version because of apple server stuff 
+                if (dbUpdates.Any(u => u.ReleaseDate.Date != DateTime.Today.Date))
+                {
+                    update.Revision = dbUpdates.Count();
+                }
 
                 return update;
 
@@ -114,7 +122,7 @@ namespace iOSBot.Service
             {
                 string error = $"Error checking {device.Category}:\n {e.Message}";
                 _logger.Error(error);
-                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(e).Throw();
                 throw;
             }
         }
