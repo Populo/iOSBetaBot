@@ -61,12 +61,15 @@ namespace iOSBot.Service
 
                 var jwt = new JwtSecurityToken(response.Content);
 
-                var claim = jwt.Claims.FirstOrDefault(j => j.Type == "Assets", null).Value;
-                if (null == claim)
+                // no assets present
+                if (!jwt.Claims.Any(c => c.Type == "Assets"))
                 {
                     throw new Exception($"No firmware is being signed for {device.FriendlyName}");
                 }
-
+                var claim = jwt.Claims
+                    .FirstOrDefault(j => j.Type == "Assets")
+                    .Value;
+                
                 var json = JsonConvert.DeserializeObject<AssetResponse>(claim);
 
                 var update = new Update
@@ -118,9 +121,8 @@ namespace iOSBot.Service
             catch (Exception e)
             {
                 string error = $"Error checking {device.Category}:\n {e.Message}";
-                await File.WriteAllTextAsync("errorResponse", response.Content);
                 _logger.Error(error);
-                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(e).Throw();
                 throw;
             }
         }
