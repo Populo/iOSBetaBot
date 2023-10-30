@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using iOSBot.Service;
+using Newtonsoft.Json.Linq;
 
 namespace iOSBot.Bot
 {
@@ -100,7 +101,12 @@ namespace iOSBot.Bot
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
         {
-            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}");
+            JObject jsonArgs = new JObject();
+            foreach (var o in arg.Data.Options)
+            {
+                jsonArgs.Add(new JProperty(o.Name, o.Value));
+            }
+            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
 
             switch (arg.CommandName)
             {
