@@ -44,10 +44,8 @@ namespace iOSBot.Bot
             var dbUpdates = db.Updates.ToList();
             var dbDevices = db.Devices.ToList();
 
-            var watchedCategories = db.Servers.Select(s => s.Category).Distinct();
-            var watchedDevices = dbDevices.Where(d => watchedCategories.Contains(d.Category)).ToList();
-
-            Parallel.ForEach(watchedDevices, device =>
+            // check all devices for /info 
+            Parallel.ForEach(db.Devices, device =>
             {
                 try
                 {
