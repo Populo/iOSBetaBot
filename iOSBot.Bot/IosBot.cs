@@ -104,7 +104,7 @@ namespace iOSBot.Bot
             JObject jsonArgs = new JObject();
             foreach (var o in arg.Data.Options)
             {
-                jsonArgs.Add(new JProperty(o.Name, o.Value));
+                jsonArgs.Add(new JProperty(o.Name, o.Value.ToString()));
             }
             _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
 
