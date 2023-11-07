@@ -1,4 +1,6 @@
-﻿using Discord;
+﻿using System;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +34,7 @@ namespace iOSBot.Bot
         {
             var config = new DiscordSocketConfig()
             {
-                GatewayIntents = GatewayIntents.GuildMessages,
+                GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.DirectMessages,
                 MessageCacheSize = 15
             };
 
@@ -46,27 +48,27 @@ namespace iOSBot.Bot
             return collection.BuildServiceProvider();
         }
 
-        public static Task Main(string[] args) => new IosBot().MainAsync(args);
+        public static Task Main(string[] args) => new IosBot().MainAsync();
 
-        private async Task MainAsync(string[] args)
+        private async Task MainAsync()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             
-
-            if (args.Length == 0) { throw new Exception("Provide Token"); }
-
             Client = _serviceProvider.GetRequiredService<DiscordSocketClient>();
             RestClient = Client.Rest;
-
-            await Client.LoginAsync(TokenType.Bot, args[0]);
-
+            string token;
 #if DEBUG
             Status = "in testing mode";
+            token = Environment.GetEnvironmentVariable("BetaBotBotDevToken", EnvironmentVariableTarget.Machine);
             _logger.Info("Environment: Dev");
 #else
             Status = "for new releases";
+            token = Environment.GetEnvironmentVariable("BetaBotBotToken");
             _logger.Info("Environment: Prod");
 #endif
+            
+            
+            await Client.LoginAsync(TokenType.Bot, token);
             await Client.SetGameAsync(Status, type: ActivityType.Watching);
 
             await Client.StartAsync();
@@ -74,7 +76,7 @@ namespace iOSBot.Bot
             Client.Log += _client_Log;
             Client.Ready += _client_Ready;
             Client.SlashCommandExecuted += _client_SlashCommandExecuted;
-            //Client.MessageReceived += _client_MessageReceived;
+            Client.MessageReceived += _client_MessageReceived;
 
             _apiFeed.Bot = RestClient;
             _apiFeed.Start();
@@ -85,10 +87,10 @@ namespace iOSBot.Bot
         // disabled for release because it isnt working
         private Task _client_MessageReceived(SocketMessage arg)
         {
-            if (arg.Author.Id == 191051620430249984)
-            {
-                _logger.Trace(arg.Author.Username);
-            }
+            if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id) return Task.CompletedTask;
+            
+            _apiFeed.PostError($"DM Received:\n{arg.Content}\n-@{arg.Author}");
+            arg.Channel.SendMessageAsync("Sending this message along. thank you.");
 
             return Task.CompletedTask;
         }

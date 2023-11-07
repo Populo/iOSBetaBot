@@ -1,9 +1,12 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Rest;
 using iOSBot.Data;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.ComTypes;
+using System.Threading.Tasks;
 using iOSBot.Service;
 using Timer = System.Timers.Timer;
 
