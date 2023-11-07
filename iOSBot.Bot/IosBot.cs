@@ -59,7 +59,7 @@ namespace iOSBot.Bot
             string token;
 #if DEBUG
             Status = "in testing mode";
-            token = Environment.GetEnvironmentVariable("BetaBotBotDevToken", EnvironmentVariableTarget.Machine);
+            token = Environment.GetEnvironmentVariable("BetaBotBotDevToken");
             _logger.Info("Environment: Dev");
 #else
             Status = "for new releases";
