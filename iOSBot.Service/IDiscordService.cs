@@ -14,8 +14,15 @@ public class DiscordService : IDiscordService
 
     public DiscordService()
     {
+        string token;
+#if DEBUG
+        token = Environment.GetEnvironmentVariable("BetaBotBotDevToken");
+#else
+        token = Environment.GetEnvironmentVariable("BetaBotBotToken");
+#endif
+        
         _bot = new DiscordRestClient();
-        _bot.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("BetaBotBotToken"));
+        _bot.LoginAsync(TokenType.Bot, token);
     }
 
 
