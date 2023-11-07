@@ -48,27 +48,26 @@ namespace iOSBot.Bot
             return collection.BuildServiceProvider();
         }
 
-        public static Task Main(string[] args) => new IosBot().MainAsync();
+        public static Task Main(string[] args) => new IosBot().MainAsync(args);
 
-        private async Task MainAsync()
+        private async Task MainAsync(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             
             Client = _serviceProvider.GetRequiredService<DiscordSocketClient>();
             RestClient = Client.Rest;
-            string token;
+
+            if (args.Length == 0) throw new Exception("Include token in args");
+            
 #if DEBUG
             Status = "in testing mode";
-            token = Environment.GetEnvironmentVariable("BetaBotBotDevToken");
             _logger.Info("Environment: Dev");
 #else
             Status = "for new releases";
-            token = Environment.GetEnvironmentVariable("BetaBotBotToken");
             _logger.Info("Environment: Prod");
 #endif
             
-            
-            await Client.LoginAsync(TokenType.Bot, token);
+            await Client.LoginAsync(TokenType.Bot, args[0]);
             await Client.SetGameAsync(Status, type: ActivityType.Watching);
 
             await Client.StartAsync();

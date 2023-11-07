@@ -30,7 +30,7 @@ public class BotService : IBotService
       public DiscordServer GetServer(ulong id)
       {
           var server = _bot.GetGuildAsync(id).Result;
-          return new DiscordServer()
+          return new DiscordServer
           {
               Id = id,
               Name = server.Name
