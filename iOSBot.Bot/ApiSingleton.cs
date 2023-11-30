@@ -1,12 +1,7 @@
-﻿using System;
-using Discord;
-using Discord.Rest;
+﻿using Discord;
 using iOSBot.Data;
 using System.Collections.Concurrent;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading.Tasks;
+using Discord.WebSocket;
 using iOSBot.Service;
 using Timer = System.Timers.Timer;
 
@@ -16,7 +11,7 @@ namespace iOSBot.Bot
     {
         private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public DiscordRestClient? Bot { get; set; }
+        public DiscordSocketClient? Bot { get; set; }
 
         private Timer _timer;
 
@@ -62,7 +57,7 @@ namespace iOSBot.Bot
                 }
                 catch (Exception ex)
                 {
-                    PostError($"Error checking update for {device.FriendlyName}:\n{ex.Message}");
+                    Commands.PostError(Bot, AppleService, $"Error checking update for {device.FriendlyName}:\n{ex.Message}");
                 }
             });
 
@@ -87,11 +82,17 @@ namespace iOSBot.Bot
                 {
                     var error = $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
                     Logger.Info(error);
-                    PostError(error);
+                    Commands.PostError(Bot, AppleService, error);
                 }
                 
                 AppleService.SaveUpdate(update);
             }
+            
+            // update server count
+            ulong channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
+            string env = db.Configs.First(c => c.Name == "Environment").Value;
+            ((SocketVoiceChannel)Bot.GetChannel(channelId))
+                .ModifyAsync(c => c.Name = $"{env} Bot Server Count: {Bot.Guilds.Count}");
 
             _timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
 
@@ -100,7 +101,7 @@ namespace iOSBot.Bot
 
         private async Task SendAlert(Service.Update update, Server server)
         {
-            var channel = (await Bot!.GetChannelAsync(server.ChannelId)) as RestTextChannel;
+            var channel = (await Bot.GetChannelAsync(server.ChannelId)) as SocketTextChannel;
             if (null == channel)
             {
                 Logger.Warn($"Channel with id {server.ChannelId} doesnt exist. Removing");
@@ -108,7 +109,7 @@ namespace iOSBot.Bot
 
                 return;
             }
-            var role = server.TagId != "" ? Bot.GetGuildAsync(server.ServerId).Result.GetRole(ulong.Parse(server.TagId)).Mention : "";
+            var role = server.TagId != "" ? Bot.GetGuild(server.ServerId).GetRole(ulong.Parse(server.TagId)).Mention : "";
 
             var embed = new EmbedBuilder
             {
@@ -132,34 +133,6 @@ namespace iOSBot.Bot
         public void Start()
         {
             _timer.Start();
-        }
-
-        public async void PostError(string message)
-        {
-            try
-            {
-                await using var db = new BetaContext();
-
-                foreach (var s in db.ErrorServers)
-                {
-                    var server = (RestTextChannel)Bot.GetChannelAsync(s.ChannelId).Result;
-                    if (null == server)
-                    {
-                        AppleService.DeleteErrorServer(s, db);
-                        continue;
-                    }
-                    if (!message.EndsWith("Server requested a reconnect") &&
-                        !message.EndsWith("WebSocket connection was closed"))
-                    {
-                        await server.SendMessageAsync(message);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-                Environment.Exit(1);
-            }
         }
     }
 }
