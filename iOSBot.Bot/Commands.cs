@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Net.Sockets;
+using Discord;
 using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -532,7 +533,7 @@ namespace iOSBot.Bot
 
                 foreach (var s in db.ErrorServers)
                 {
-                    var server = (SocketTextChannel)bot.GetChannelAsync(s.ChannelId).Result;
+                    IChannel server = bot.GetChannelAsync(s.ChannelId).Result;
                     if (null == server)
                     {
                         appleService.DeleteErrorServer(s, db);
@@ -542,7 +543,7 @@ namespace iOSBot.Bot
                         !message.EndsWith("WebSocket connection was closed"))
                     {
                         
-                        server.SendMessageAsync(message);
+                        ((ITextChannel)server).SendMessageAsync(message);
                     }
                 }
             }
