@@ -10,6 +10,7 @@ namespace iOSBot.Data
         public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
+        public DbSet<Release> Releases { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder = null)
         {
@@ -86,5 +87,15 @@ namespace iOSBot.Data
         public Guid Id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
+    }
+
+    public class Release
+    {
+        public Guid Id { get; set; }
+        public string Major { get; set; }
+        public string Minor { get; set; }
+        public string Beta { get; set; }
+        public DateTime Date { get; set; }
+        public int WaitTime { get; set; }
     }
 }

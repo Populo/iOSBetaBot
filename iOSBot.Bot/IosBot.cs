@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +10,7 @@ namespace iOSBot.Bot
 {
     public class IosBot
     {
-        // https://discord.com/api/oauth2/authorize?client_id=1133469416458301510&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
+        // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
@@ -76,19 +74,25 @@ namespace iOSBot.Bot
             Client.Ready += _client_Ready;
             Client.SlashCommandExecuted += _client_SlashCommandExecuted;
             Client.MessageReceived += _client_MessageReceived;
+            Client.JoinedGuild += ClientOnJoinedGuild;
 
-            _apiFeed.Bot = RestClient;
+            _apiFeed.Bot = Client;
             _apiFeed.Start();
 
             await Task.Delay(-1);
         }
 
-        // disabled for release because it isnt working
+        private Task ClientOnJoinedGuild(SocketGuild arg)
+        {
+            Commands.PostError(Client, new AppleService(), $"Joined Server {arg.Name}.");
+            return Task.CompletedTask;
+        }
+
         private Task _client_MessageReceived(SocketMessage arg)
         {
             if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id) return Task.CompletedTask;
             
-            _apiFeed.PostError($"DM Received:\n{arg.Content}\n-@{arg.Author}");
+            Commands.PostError(Client, new AppleService(), $"DM Received:\n{arg.Content}\n-@{arg.Author}");
             arg.Channel.SendMessageAsync("Sending this message along. thank you.");
 
             return Task.CompletedTask;
@@ -97,7 +101,7 @@ namespace iOSBot.Bot
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             _logger.Error(e);
-            _apiFeed.PostError($"Unhandled Exception:\n{e.ToString()}");
+            Commands.PostError(Client, new AppleService(), $"Unhandled Exception:\n{e}");
         }
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
@@ -141,6 +145,9 @@ namespace iOSBot.Bot
                 case "info":
                     Commands.DeviceInfo(arg);
                     break;
+                case "when":
+                    Commands.When(arg);
+                    break;
                 default:
                     break;
             }
@@ -158,7 +165,7 @@ namespace iOSBot.Bot
             _logger.Info(arg.Message);
             if (null != arg.Exception)
             {
-                _apiFeed.PostError($"Bot error:\n{arg.Exception.Message}");
+                Commands.PostError(Client, new AppleService(), $"Bot error:\n{arg.Exception.Message}");
                 _logger.Error(arg.Exception);
                 _logger.Error(arg.Exception.InnerException.StackTrace);
             }

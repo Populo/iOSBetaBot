@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Discord;
+﻿using Discord;
 using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
+using iOSBot.Service;
 using Newtonsoft.Json;
 using NLog;
 
@@ -151,6 +149,15 @@ namespace iOSBot.Bot
                 }
             }
         };
+        
+        private static SlashCommandBuilder whenBuilder = new()
+        {
+            Name = "when",
+            Description = "When is the next release scheduled? Answer could be helpful, maybe not, who knows.",
+            DefaultMemberPermissions = GuildPermission.SendMessages,
+            Options = new List<SlashCommandOptionBuilder>()
+            { }
+        };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()
         {
@@ -163,7 +170,8 @@ namespace iOSBot.Bot
             blessBuilder,
             goodBotBuilder,
             badBotBuilder,
-            infoBuilder
+            infoBuilder,
+            // whenBuilder
         };
 
         #endregion
@@ -418,6 +426,40 @@ namespace iOSBot.Bot
             arg.FollowupAsync(embed: embed.Build());
         }
         
+        public static void When(SocketSlashCommand arg)
+        {
+            arg.DeferAsync(ephemeral: true);
+
+            var responses = new string[]
+            {
+                "Son (tm)",
+                "useful",
+                "Release time was just pushed back 5 more minutes",
+                "Tim Apple said maybe next week",
+                "useful",
+                "There isn't one, the next beta is the friends we made along the way",
+                "useful",
+                "useful",
+                "Many moons from now",
+                "Eventually",
+                "useful",
+                "I think Tim hit the snooze button on his alarm",
+                "I heard that Tim’s dog ate the Beta",
+                "useful",
+                "Once AirPower is released",
+                "useful"
+            };
+
+            string resp = responses[new Random().Next(responses.Length)];
+
+            if (resp == "useful")
+            {
+                resp = GetUsefulResponse();
+            }
+
+            arg.FollowupAsync(resp, ephemeral: true);
+        }
+
         #endregion
         #region helpers
 
@@ -456,6 +498,61 @@ namespace iOSBot.Bot
 
             return db.Devices.ToList();
         }
+
+        private static string GetUsefulResponse()
+        {
+            using var db = new BetaContext();
+
+            var current = db.Releases.OrderByDescending(r => r.Date).First();
+
+            var allMinorWithBeta = db.Releases.Where(r => r.Beta == current.Beta && r.Minor == current.Minor);
+            
+            int daysSinceRelease = new TimeSpan(DateTime.Today.Millisecond - current.Date.Millisecond).Days;
+            int averageWait;
+            
+            if (allMinorWithBeta.Any())
+            {
+                averageWait = (int)Math.Round(allMinorWithBeta.Average(r => r.WaitTime));
+            }
+            else
+            {
+                averageWait = (int)Math.Round(db.Releases
+                                                .Where(r => r.Major == current.Major && r.Minor == current.Minor)
+                                                .Average(r => r.WaitTime));
+            }
+
+            return $"Based on previous releases, the next release is expected in {averageWait} days.";
+        }
+
+        public static void PostError(DiscordSocketClient bot, IAppleService appleService, string message)
+        {
+            try
+            {
+                using var db = new BetaContext();
+
+                foreach (var s in db.ErrorServers)
+                {
+                    var server = (SocketTextChannel)bot.GetChannelAsync(s.ChannelId).Result;
+                    if (null == server)
+                    {
+                        appleService.DeleteErrorServer(s, db);
+                        continue;
+                    }
+                    if (!message.EndsWith("Server requested a reconnect") &&
+                        !message.EndsWith("WebSocket connection was closed"))
+                    {
+                        
+                        server.SendMessageAsync(message);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                Environment.Exit(1);
+            }
+        }
+        
         #endregion
     }
 }

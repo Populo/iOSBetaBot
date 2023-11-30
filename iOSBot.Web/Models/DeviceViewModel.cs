@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Reflection.Emit;
 
 namespace iOSBot.Web.Models
 {

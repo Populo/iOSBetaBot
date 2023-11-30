@@ -1,5 +1,4 @@
-﻿using iOSBot.Service;
-using iOSBot.Web.Models;
+﻿using iOSBot.Web.Models;
 using iOSBot.Web.Service;
 using Microsoft.AspNetCore.Mvc;
 
