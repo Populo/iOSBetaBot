@@ -11,7 +11,7 @@ namespace iOSBot.Bot
     {
         private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public DiscordSocketClient? Bot { get; set; }
+        public DiscordSocketClient Bot { get; set; }
 
         private Timer _timer;
 
@@ -40,7 +40,6 @@ namespace iOSBot.Bot
             var updates = new ConcurrentBag<Service.Update>();
             await using var db = new BetaContext();
             var dbUpdates = db.Updates.ToList();
-            var dbDevices = db.Devices.ToList();
 
             // check all devices for /info 
             Parallel.ForEach(db.Devices, device =>
@@ -91,8 +90,8 @@ namespace iOSBot.Bot
             // update server count
             ulong channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
             string env = db.Configs.First(c => c.Name == "Environment").Value;
-            ((SocketVoiceChannel)Bot.GetChannel(channelId))
-                .ModifyAsync(c => c.Name = $"{env} Bot Server Count: {Bot.Guilds.Count}");
+            IChannel channel = Bot.GetChannelAsync(channelId).Result;
+            await ((IVoiceChannel)channel).ModifyAsync(c => c.Name = $"{env} Bot Server Count: {Bot.Guilds.Count}");
 
             _timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
 
