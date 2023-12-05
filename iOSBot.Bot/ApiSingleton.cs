@@ -108,7 +108,8 @@ namespace iOSBot.Bot
 
                 return;
             }
-            var role = server.TagId != "" ? Bot.GetGuild(server.ServerId).GetRole(ulong.Parse(server.TagId)).Mention : "";
+
+            var mention = server.TagId != "" ? $"<@&{server.TagId}>" : "";
 
             var embed = new EmbedBuilder
             {
@@ -126,7 +127,7 @@ namespace iOSBot.Bot
             }
 
             Logger.Info($"Posting {update.VersionReadable} to {channel.Name}");
-            await channel.SendMessageAsync(text: role, embed: embed.Build());
+            await channel.SendMessageAsync(text: mention, embed: embed.Build());
         }
 
         public void Start()
