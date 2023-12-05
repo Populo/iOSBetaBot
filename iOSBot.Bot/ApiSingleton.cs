@@ -100,7 +100,7 @@ namespace iOSBot.Bot
 
         private async Task SendAlert(Service.Update update, Server server)
         {
-            var channel = (await Bot.GetChannelAsync(server.ChannelId)) as SocketTextChannel;
+            var channel = (ITextChannel) Bot.GetChannelAsync(server.ChannelId).Result;
             if (null == channel)
             {
                 Logger.Warn($"Channel with id {server.ChannelId} doesnt exist. Removing");
