@@ -56,14 +56,17 @@ namespace iOSBot.Bot
             RestClient = Client.Rest;
 
             if (args.Length == 0) throw new Exception("Include token in args");
-            
-#if DEBUG
-            Status = "in testing mode";
-            _logger.Info("Environment: Dev");
-#else
-            Status = "for new releases";
-            _logger.Info("Environment: Prod");
-#endif
+            switch (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+            {
+                case "Release":
+                    _logger.Info("Environment: Prod");
+                    Status = "for new releases";
+                    break;
+                case "Develop":
+                    _logger.Info("Environment: Dev");
+                    Status = "in testing mode";
+                    break;
+            }
             
             await Client.LoginAsync(TokenType.Bot, args[0]);
             await Client.SetGameAsync(Status, type: ActivityType.Watching);

@@ -17,12 +17,16 @@ namespace iOSBot.Data
             if (!optionsBuilder.IsConfigured) {
                 var connection = new MySqlConnectionStringBuilder();
                 connection.Server = "pinas";
-
-#if DEBUG
-                connection.Database = "iOSBetaDev";
-#else
-                connection.Database = "iOSBeta";
-#endif
+                
+                switch (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+                {
+                    case "Release":
+                        connection.Database = "iOSBeta";
+                        break;
+                    case "Develop":
+                        connection.Database = "iOSBetaDev";
+                        break;
+                }
 
                 connection.UserID = "BetaBot";
                 connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
