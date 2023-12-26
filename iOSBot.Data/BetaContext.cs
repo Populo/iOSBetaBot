@@ -31,7 +31,7 @@ namespace iOSBot.Data
                 connection.UserID = "BetaBot";
                 connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
 
-                connection.ForceSynchronous = true;
+                //connection.ForceSynchronous = true;
 
                 optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString),
                     options =>

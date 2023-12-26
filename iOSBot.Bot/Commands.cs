@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using System.Text;
 using Discord;
 using Discord.Net;
 using Discord.Rest;
@@ -159,6 +160,14 @@ namespace iOSBot.Bot
             Options = new List<SlashCommandOptionBuilder>()
             { }
         };
+        
+        private static SlashCommandBuilder serverBuilder = new()
+        {
+            Name = "servers",
+            Description = "See servers that this bot is in",
+            DefaultMemberPermissions = GuildPermission.Administrator,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()
         {
@@ -172,6 +181,7 @@ namespace iOSBot.Bot
             goodBotBuilder,
             badBotBuilder,
             infoBuilder,
+            serverBuilder,
             // whenBuilder
         };
 
@@ -459,6 +469,26 @@ namespace iOSBot.Bot
             }
 
             arg.FollowupAsync(resp, ephemeral: true);
+        }
+        
+        public static void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
+        {
+            if (!IsAllowed(arg.User.Id))
+            {
+                arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            }
+            
+            arg.DeferAsync(ephemeral: true);
+            var servers = bot.GetGuildsAsync().Result.ToArray();
+            StringBuilder response = new StringBuilder();
+            response.AppendLine("Servers:");
+            
+            for (int i = 0; i < servers.Length; ++i)
+            {
+                response.AppendLine($"{i + 1}: {servers[i].Name}");
+            }
+            
+            arg.FollowupAsync(response.ToString());
         }
 
         #endregion
