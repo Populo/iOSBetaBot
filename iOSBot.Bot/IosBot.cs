@@ -151,6 +151,9 @@ namespace iOSBot.Bot
                 case "when":
                     Commands.When(arg);
                     break;
+                case "servers":
+                    Commands.GetServers(arg, RestClient);
+                    break;
                 default:
                     break;
             }
