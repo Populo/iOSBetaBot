@@ -103,8 +103,6 @@ namespace iOSBot.Service
 
                 // case 1 || 3, short circuit to prevent any kind of npe
                 // first update of this version (17.0 beta 8, 17.0 GM, etc)
-                // or 
-                // TODO: Fix duplicate posting when revision is released
                 if (!dbUpdates.Any() || 
                     dbUpdates.Any(u => u.Build == update.Build && 
                                        update.ReleaseDate == u.ReleaseDate)) return update;
