@@ -48,8 +48,7 @@ namespace iOSBot.Bot
                 {
                     Service.Update u = AppleService.GetUpdate(device).Result;
                     
-                    if (!dbUpdates.Any(up => up.Version == u.VersionReadable && 
-                                             up.Build == u.Build &&
+                    if (!dbUpdates.Any(up => up.Build == u.Build &&
                                              up.ReleaseDate == u.ReleaseDate &&
                                              up.Category == u.Group)) updates.Add(u);
                     else Logger.Info("No new update found for " + device.FriendlyName);

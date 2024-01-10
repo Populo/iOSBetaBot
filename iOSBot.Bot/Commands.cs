@@ -257,6 +257,11 @@ namespace iOSBot.Bot
 
         internal static void ForceCommand(SocketSlashCommand command)
         {
+            if (!IsAllowed(command.User.Id))
+            { 
+                command.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            }
+            
             using var db = new BetaContext();
             command.DeferAsync(ephemeral: true);
 
@@ -485,7 +490,7 @@ namespace iOSBot.Bot
             
             for (int i = 0; i < servers.Length; ++i)
             {
-                response.AppendLine($"{i + 1}: {servers[i].Name}");
+                response.AppendLine($"{i + 1}: {servers[i].Name} (@{servers[i].GetOwnerAsync().Result})");
             }
             
             arg.FollowupAsync(response.ToString());
