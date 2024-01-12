@@ -90,7 +90,7 @@ namespace iOSBot.Bot
             ulong channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
             string env = db.Configs.First(c => c.Name == "Environment").Value;
             IChannel channel = Bot.GetChannelAsync(channelId).Result;
-            await ((IVoiceChannel)channel).ModifyAsync(c => c.Name = $"{env} Bot Servers: {Bot.Guilds.Count}");
+            await ((IVoiceChannel)channel).ModifyAsync(c => c.Name = $"{env} Bot Servers: {Bot.Rest.GetGuildsAsync().Result.Count}");
 
             _timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
 
