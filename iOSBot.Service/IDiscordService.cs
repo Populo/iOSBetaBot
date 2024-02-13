@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Rest;
+using iOSBot.Data;
 
 namespace iOSBot.Service;
 
@@ -28,6 +29,22 @@ public class DiscordService : IDiscordService
 
     public DiscordServer GetServerAndChannels(ulong serverId)
     {
-        throw new NotImplementedException();
+        using var db = new BetaContext();
+        var server = _bot.GetGuildAsync(serverId).Result;
+
+        return new DiscordServer()
+        {
+            Name = server.Name,
+            Id = server.Id,
+            Channels = db.Servers.Where(s => s.ServerId == serverId)
+                .AsEnumerable()
+                .Select(s => new DiscordChannel()
+                {
+                    Id = s.ChannelId,
+                    Name = server.GetChannelAsync(s.ChannelId).Result.Name,
+                    Category = s.Category
+                }).ToList()
+
+        };
     }
 }

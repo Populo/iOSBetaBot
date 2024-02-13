@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using iOSBot.Bot.Singletons;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using iOSBot.Service;

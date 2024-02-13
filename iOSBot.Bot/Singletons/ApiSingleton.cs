@@ -1,11 +1,11 @@
-﻿using Discord;
-using iOSBot.Data;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using Discord;
 using Discord.WebSocket;
+using iOSBot.Data;
 using iOSBot.Service;
 using Timer = System.Timers.Timer;
 
-namespace iOSBot.Bot
+namespace iOSBot.Bot.Singletons
 {
     public class ApiSingleton
     {
@@ -126,7 +126,15 @@ namespace iOSBot.Bot
             }
 
             Logger.Info($"Posting {update.VersionReadable} to {channel.Name}");
-            await channel.SendMessageAsync(text: mention, embed: embed.Build());
+            try
+            {
+                await channel.SendMessageAsync(text: mention, embed: embed.Build());
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                Commands.PostError(Bot, AppleService, $"Error posting to {channel.Name}. {e.Message}");
+            }
         }
 
         public void Start()
