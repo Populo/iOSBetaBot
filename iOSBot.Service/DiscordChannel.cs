@@ -4,5 +4,5 @@ public class DiscordChannel
 {
     public ulong Id { get; set; }
     public string Name { get; set; }
-    public DiscordServer Server { get; set; }
+    public string Category { get; set; }
 }

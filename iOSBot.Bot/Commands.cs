@@ -4,6 +4,7 @@ using Discord;
 using Discord.Net;
 using Discord.Rest;
 using Discord.WebSocket;
+using iOSBot.Bot.Singletons;
 using iOSBot.Data;
 using iOSBot.Service;
 using Newtonsoft.Json;
@@ -167,6 +168,23 @@ namespace iOSBot.Bot
             Description = "See servers that this bot is in",
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>() { }
+        };
+
+        private static SlashCommandBuilder gambaBuilder = new()
+        {
+            Name = "gamba",
+            Description = "Start a gamba",
+            DefaultMemberPermissions = GuildPermission.Administrator,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new SlashCommandOptionBuilder()
+                {
+                    Name = "Prompt",
+                    Description = "Prediction Prompt",
+                    Type = ApplicationCommandOptionType.String,
+                    IsRequired = true
+                }
+            }
         };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()

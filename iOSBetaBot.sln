@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iOSBot.Service", "iOSBot.Se
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iOSBot.Tests", "iOSBot.Tests\iOSBot.Tests.csproj", "{3A695898-D34B-4708-AC53-D52C6930D5D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iOSBeta.Blazor", "iOSBeta.Blazor\iOSBeta.Blazor.csproj", "{39F017FB-37E0-4A97-B44A-188058B8E004}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A695898-D34B-4708-AC53-D52C6930D5D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39F017FB-37E0-4A97-B44A-188058B8E004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39F017FB-37E0-4A97-B44A-188058B8E004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39F017FB-37E0-4A97-B44A-188058B8E004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39F017FB-37E0-4A97-B44A-188058B8E004}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
