@@ -2,10 +2,10 @@
 using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Singletons;
-using Microsoft.Extensions.DependencyInjection;
-using NLog;
 using iOSBot.Service;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace iOSBot.Bot
 {
@@ -154,6 +154,15 @@ namespace iOSBot.Bot
                     break;
                 case "servers":
                     Commands.GetServers(arg, RestClient);
+                    break;
+                case "status":
+                    Commands.BotStatus(arg, StatusCommand.STATUS);
+                    break;
+                case "start":
+                    Commands.BotStatus(arg, StatusCommand.START);
+                    break;
+                case "stop":
+                    Commands.BotStatus(arg, StatusCommand.STOP);
                     break;
                 default:
                     break;
