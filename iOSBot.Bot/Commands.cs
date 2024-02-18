@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using System.Text;
+﻿using System.Text;
 using Discord;
 using Discord.Net;
 using Discord.Rest;
@@ -186,6 +185,30 @@ namespace iOSBot.Bot
                 }
             }
         };
+        
+        private static SlashCommandBuilder stopBuilder = new()
+        {
+            Name = "stop",
+            Description = "Stop update checks",
+            DefaultMemberPermissions = GuildPermission.Administrator,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
+        
+        private static SlashCommandBuilder startBuilder = new()
+        {
+            Name = "start",
+            Description = "start update checks",
+            DefaultMemberPermissions = GuildPermission.Administrator,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
+        
+        private static SlashCommandBuilder statusBuilder = new()
+        {
+            Name = "status",
+            Description = "update check timer status",
+            DefaultMemberPermissions = GuildPermission.Administrator,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()
         {
@@ -200,7 +223,11 @@ namespace iOSBot.Bot
             badBotBuilder,
             infoBuilder,
             serverBuilder,
-            // whenBuilder
+            // whenBuilder,
+            // gambaBuilder,
+            statusBuilder,
+            startBuilder,
+            stopBuilder
         };
 
         #endregion
@@ -276,7 +303,7 @@ namespace iOSBot.Bot
         internal static void ForceCommand(SocketSlashCommand command)
         {
             if (!IsAllowed(command.User.Id))
-            { 
+            {
                 command.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
             }
             
@@ -514,9 +541,38 @@ namespace iOSBot.Bot
             arg.FollowupAsync(response.ToString());
         }
 
+        public static void BotStatus(SocketSlashCommand arg, StatusCommand command)
+        {
+            if (command != StatusCommand.STATUS)
+            {
+                if (!IsAllowed(arg.User.Id))
+                {
+                    arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                }
+            }
+
+            arg.DeferAsync(ephemeral: true);
+
+            switch (command)
+            {
+                case StatusCommand.STATUS:
+                    string response = ApiSingleton.Instance.IsRunning ? "Running" : "Not Running";
+                    arg.FollowupAsync(ephemeral: true, text: $"Bot is currently: {response}");
+                    break;
+                case StatusCommand.START:
+                    ApiSingleton.Instance.StartTimer();
+                    arg.FollowupAsync(ephemeral: true, text: $"Bot is running");
+                    break;
+                case StatusCommand.STOP:
+                    ApiSingleton.Instance.StopTimer();
+                    arg.FollowupAsync(ephemeral: true, text: $"Bot is stopped");
+                    break;
+            }
+        }
+        
         #endregion
         #region helpers
-
+        
         private static List<ApplicationCommandOptionChoiceProperties> GetDeviceCategories()
         {
             var devices = GetDevices();
@@ -606,7 +662,14 @@ namespace iOSBot.Bot
                 Environment.Exit(1);
             }
         }
-        
-        #endregion
     }
+
+    public enum StatusCommand
+    {
+        START,
+        STOP,
+        STATUS
+    }
+    
+    #endregion
 }

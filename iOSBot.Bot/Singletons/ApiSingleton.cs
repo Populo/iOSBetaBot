@@ -15,6 +15,10 @@ namespace iOSBot.Bot.Singletons
 
         private Timer _timer;
 
+        public bool IsRunning => _timer.Enabled;
+        public void StopTimer() => _timer.Stop();
+        public void StartTimer() => _timer.Start();
+
         // probably very wrong. but yolo
         private static readonly Lazy<ApiSingleton> Single = new(() => new ApiSingleton(new AppleService()));
 
