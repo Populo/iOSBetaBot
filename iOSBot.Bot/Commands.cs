@@ -307,11 +307,15 @@ namespace iOSBot.Bot
                 command.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
             }
             
-            using var db = new BetaContext();
+            // try to prevent what looks like some race conditions
+            ApiSingleton.Instance.StopTimer();
+            
             command.DeferAsync(ephemeral: true);
 
             ApiSingleton.Instance.Timer_Elapsed(null, null!);
-
+            
+            ApiSingleton.Instance.StartTimer();
+            
             Logger.Info($"Update forced by {command.User.GlobalName}");
             command.FollowupAsync("Updates checked.");
         }

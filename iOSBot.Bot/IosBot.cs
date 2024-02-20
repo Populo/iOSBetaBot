@@ -104,8 +104,8 @@ namespace iOSBot.Bot
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            _logger.Error(e);
-            Commands.PostError(Client, new AppleService(), $"Unhandled Exception:\n{e}");
+            _logger.Error($"{e}\n{e.ExceptionObject}");
+            Commands.PostError(Client, new AppleService(), $"Unhandled Exception:\n{e}\n{e.ExceptionObject}");
         }
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
