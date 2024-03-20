@@ -209,6 +209,42 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>() { }
         };
+        
+        private static SlashCommandBuilder newThreadBuilder = new()
+        {
+            Name = "yesthreads",
+            Description = "Create a release thread in this channel when an update is released",
+            DefaultMemberPermissions = GuildPermission.ManageGuild,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new ()
+                {
+                    Name = "category",
+                    Description = "Which OS updates",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                    Choices = GetDeviceCategories()
+                }
+            }
+        };
+        
+        private static SlashCommandBuilder deleteThreadBuilder = new()
+        {
+            Name = "nothreads",
+            Description = "Discontinue release thread auto creation in this channel when an update is released",
+            DefaultMemberPermissions = GuildPermission.ManageGuild,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new ()
+                {
+                    Name = "category",
+                    Description = "Which OS updates",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                    Choices = GetDeviceCategories()
+                }
+            }
+        };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()
         {
@@ -227,7 +263,9 @@ namespace iOSBot.Bot
             // gambaBuilder,
             statusBuilder,
             startBuilder,
-            stopBuilder
+            stopBuilder,
+            newThreadBuilder,
+            deleteThreadBuilder
         };
 
         #endregion
@@ -307,11 +345,15 @@ namespace iOSBot.Bot
                 command.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
             }
             
-            using var db = new BetaContext();
+            // try to prevent what looks like some race conditions
+            ApiSingleton.Instance.StopTimer();
+            
             command.DeferAsync(ephemeral: true);
 
             ApiSingleton.Instance.Timer_Elapsed(null, null!);
-
+            
+            ApiSingleton.Instance.StartTimer();
+            
             Logger.Info($"Update forced by {command.User.GlobalName}");
             command.FollowupAsync("Updates checked.");
         }
@@ -568,6 +610,48 @@ namespace iOSBot.Bot
                     arg.FollowupAsync(ephemeral: true, text: $"Bot is stopped");
                     break;
             }
+        }
+
+        public static void NewThreadChannel(SocketSlashCommand arg)
+        {
+            arg.DeferAsync(ephemeral: true);
+            
+            using var db = new BetaContext();
+            var category = (string)arg.Data.Options.First().Value;
+            
+            db.Threads.Add(new Data.Thread()
+            {
+                Category = category,
+                ChannelId = arg.ChannelId.Value,
+                ServerId = arg.GuildId.Value,
+                id = Guid.NewGuid()
+            });
+
+            db.SaveChanges();
+
+            arg.FollowupAsync(text: "A release thread will be posted here.", ephemeral: true);
+        }
+
+        public static void DeleteThreadChannel(SocketSlashCommand arg)
+        {
+            arg.DeferAsync(ephemeral: true);
+            var category = (string)arg.Data.Options.First().Value;
+            
+            using var db = new BetaContext();
+
+            var thread = db.Threads.FirstOrDefault(t => t.ChannelId == arg.ChannelId && t.Category == category);
+
+            if (thread is null)
+            {
+                arg.FollowupAsync(text: "Release threads were not set to be posted here", ephemeral: true);
+                return;
+            }
+            
+            db.Threads.Remove(thread);
+
+            db.SaveChanges();
+        
+            arg.FollowupAsync(text: "Release threads will no longer be posted here.", ephemeral: true);
         }
         
         #endregion

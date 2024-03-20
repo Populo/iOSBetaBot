@@ -5,8 +5,29 @@ namespace iOSBot.Data
 {
     public class BetaContext : DbContext
     {
+        public BetaContext(string dbtier = null)
+        {
+            if (null == dbtier)
+            {
+                dbtier = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            }
+            
+            switch (dbtier)
+            {
+                case "Release":
+                    DbName = "iOSBeta";
+                    break;
+                case "Develop":
+                    DbName = "iOSBetaDev";
+                    break;
+            }
+        }
+
+        private string DbName { get; set; }
+        
         public DbSet<Update> Updates { get; set; }
         public DbSet<Server> Servers { get; set; }
+        public DbSet<Thread> Threads { get; set; }
         public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
@@ -17,16 +38,8 @@ namespace iOSBot.Data
             if (!optionsBuilder.IsConfigured) {
                 var connection = new MySqlConnectionStringBuilder();
                 connection.Server = "pinas";
-                
-                switch (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
-                {
-                    case "Release":
-                        connection.Database = "iOSBeta";
-                        break;
-                    case "Develop":
-                        connection.Database = "iOSBetaDev";
-                        break;
-                }
+
+                connection.Database = DbName;
 
                 connection.UserID = "BetaBot";
                 connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
@@ -59,6 +72,14 @@ namespace iOSBot.Data
         public ulong ChannelId { get; set; }
         public string Category { get; set; }
         public string TagId { get; set; }
+    }
+
+    public class Thread
+    {
+        public Guid id { get; set; }
+        public ulong ServerId { get; set; }
+        public ulong ChannelId { get; set; }
+        public string Category { get; set; }
     }
 
     [PrimaryKey("AudienceId")]

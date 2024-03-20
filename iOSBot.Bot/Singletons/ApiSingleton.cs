@@ -3,6 +3,7 @@ using Discord;
 using Discord.WebSocket;
 using iOSBot.Data;
 using iOSBot.Service;
+using Thread = iOSBot.Data.Thread;
 using Timer = System.Timers.Timer;
 
 namespace iOSBot.Bot.Singletons
@@ -67,6 +68,7 @@ namespace iOSBot.Bot.Singletons
             {
                 var category = update.Device.Category;
                 var servers = db.Servers.Where(s => s.Category == category);
+                var threads = db.Threads.Where(t => t.Category == category);
 
                 Logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
 
@@ -78,6 +80,11 @@ namespace iOSBot.Bot.Singletons
                     foreach (var server in servers)
                     {
                         await SendAlert(update, server);
+                    }
+
+                    foreach (var thread in threads)
+                    {
+                        await CreateThread(thread, update);
                     }
                 } 
                 else
@@ -101,6 +108,15 @@ namespace iOSBot.Bot.Singletons
             await db.SaveChangesAsync();
         }
 
+        private async Task CreateThread(Thread thread, Service.Update update)
+        {
+            var channel = (ITextChannel)Bot.GetChannelAsync(thread.ChannelId).Result;
+            Logger.Info($"Creating thread in {channel} for {update.VersionReadable}");
+
+            await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
+            Logger.Info("Thread Created.");
+        }
+        
         private async Task SendAlert(Service.Update update, Server server)
         {
             var channel = (ITextChannel) Bot.GetChannelAsync(server.ChannelId).Result;
