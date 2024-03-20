@@ -164,6 +164,12 @@ namespace iOSBot.Bot
                 case "stop":
                     Commands.BotStatus(arg, StatusCommand.STOP);
                     break;
+                case "yesthreads":
+                    Commands.NewThreadChannel(arg);
+                    break;
+                case "nothreads":
+                    Commands.DeleteThreadChannel(arg);
+                    break;
                 default:
                     break;
             }

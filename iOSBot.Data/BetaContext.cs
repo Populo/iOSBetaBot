@@ -10,7 +10,6 @@ namespace iOSBot.Data
             if (null == dbtier)
             {
                 dbtier = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-                
             }
             
             switch (dbtier)
@@ -28,6 +27,7 @@ namespace iOSBot.Data
         
         public DbSet<Update> Updates { get; set; }
         public DbSet<Server> Servers { get; set; }
+        public DbSet<Thread> Threads { get; set; }
         public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
@@ -72,6 +72,14 @@ namespace iOSBot.Data
         public ulong ChannelId { get; set; }
         public string Category { get; set; }
         public string TagId { get; set; }
+    }
+
+    public class Thread
+    {
+        public Guid id { get; set; }
+        public ulong ServerId { get; set; }
+        public ulong ChannelId { get; set; }
+        public string Category { get; set; }
     }
 
     [PrimaryKey("AudienceId")]
