@@ -245,6 +245,46 @@ namespace iOSBot.Bot
                 }
             }
         };
+        
+        private static SlashCommandBuilder fakePostBuilder = new()
+        {
+            Name = "fake",
+            Description = "Send a fake notification",
+            DefaultMemberPermissions = GuildPermission.Administrator,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new ()
+                {
+                    Name = "category",
+                    Description = "Which OS updates",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                    Choices = GetDeviceCategories()
+                },
+                new ()
+                {
+                    Name = "build",
+                    Description = "Build ID of the update",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                },
+                new ()
+                {
+                    Name = "version",
+                    Description = "Build version of the update",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                },
+                new ()
+                {
+                    Name = "docid",
+                    Description = "documentationid for update. 18Beta0, 173Long, 1934Beta2, etc",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                },
+
+            }
+        };
 
         private static List<SlashCommandBuilder> CommandBuilders = new()
         {
@@ -265,7 +305,8 @@ namespace iOSBot.Bot
             startBuilder,
             stopBuilder,
             newThreadBuilder,
-            deleteThreadBuilder
+            deleteThreadBuilder,
+            fakePostBuilder
         };
 
         #endregion
@@ -652,6 +693,46 @@ namespace iOSBot.Bot
             db.SaveChanges();
         
             arg.FollowupAsync(text: "Release threads will no longer be posted here.", ephemeral: true);
+        }
+
+        public static void FakeUpdate(SocketSlashCommand arg)
+        {
+            if (!IsAllowed(arg.User.Id))
+            {
+                arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            }
+
+            arg.DeferAsync();
+            
+            var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
+            var fakeBuild = (string)arg.Data.Options.First(o => o.Name == "build").Value;
+            var fakeVersion = (string)arg.Data.Options.First(o => o.Name == "version").Value;
+            var fakeDocId = (string)arg.Data.Options.First(o => o.Name == "docid").Value;;
+
+            var db = new BetaContext();
+
+            var device = db.Devices.FirstOrDefault(d => d.Category == category);
+            var servers = db.Servers.Where(s => s.Category == category);
+
+            var fakeUpdate = new Service.Update()
+            {
+                Build = fakeBuild,
+                Device = device,
+                Version = fakeVersion,
+                SizeBytes = 69420000000,
+                ReleaseDate = DateTime.Today,
+                ReleaseType = device.Type,
+                VersionDocId = fakeDocId,
+                Group = device.Category
+                
+            };
+
+            foreach (var s in servers)
+            {
+                ApiSingleton.Instance.SendAlert(fakeUpdate, s);
+            }
+
+            arg.FollowupAsync("Posted update", ephemeral: true);
         }
         
         #endregion
