@@ -170,6 +170,9 @@ namespace iOSBot.Bot
                 case "nothreads":
                     Commands.DeleteThreadChannel(arg);
                     break;
+                case "fake":
+                    Commands.FakeUpdate(arg);
+                    break;
                 default:
                     break;
             }

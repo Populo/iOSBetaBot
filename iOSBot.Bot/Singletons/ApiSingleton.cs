@@ -117,7 +117,7 @@ namespace iOSBot.Bot.Singletons
             Logger.Info("Thread Created.");
         }
         
-        private async Task SendAlert(Service.Update update, Server server)
+        public async Task SendAlert(Service.Update update, Server server)
         {
             var channel = (ITextChannel) Bot.GetChannelAsync(server.ChannelId).Result;
             if (null == channel)
