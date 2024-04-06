@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.ExceptionServices;
 using iOSBot.Data;
+using iOSBot.Service.JsonObjects;
 using Newtonsoft.Json;
 using NLog;
 using RestSharp;
