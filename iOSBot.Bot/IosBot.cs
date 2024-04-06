@@ -229,6 +229,10 @@ namespace iOSBot.Bot
             _logger.Info(arg.Message);
             if (null != arg.Exception)
             {
+                // dont care about logging these
+                if (arg.Exception.Message.EndsWith("Server requested a reconnect") ||
+                    arg.Exception.Message.EndsWith("WebSocket connection was closed")) return;
+                
                 using var db = new BetaContext();
                 Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId), $"Bot error:\n{arg.Exception.Message}");
                 _logger.Error(arg.Exception);
