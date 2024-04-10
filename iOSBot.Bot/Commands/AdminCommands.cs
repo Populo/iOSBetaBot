@@ -11,24 +11,28 @@ public static class AdminCommands
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     
-    public static async void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
+    public static async void GetServers(SocketSlashCommand arg, DiscordSocketClient bot)
     {
         if (!IsAllowed(arg.User.Id))
         {
-            arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
         }
 
-        arg.DeferAsync(ephemeral: true);
-        var servers = bot.GetGuildsAsync().Result.ToArray();
+        await arg.DeferAsync(ephemeral: true);
+        var servers = await bot.Rest.GetGuildsAsync();
         StringBuilder response = new StringBuilder();
         response.AppendLine("Servers:");
 
-        for (int i = 0; i < servers.Length; ++i)
+        int i = 0;
+        foreach (var s in servers)
         {
-            response.AppendLine($"{i + 1}: {servers[i].Name} (@{await servers[i].GetOwnerAsync()}) - {await servers[i].GetUsersAsync().CountAsync()} members");
+            var server = bot.GetGuild(s.Id);
+            var owner = await s.GetOwnerAsync();
+            response.AppendLine($"{i + 1}: {server.Name} (@{owner}) - {server.MemberCount} members");
+            ++i;
         }
 
-        arg.FollowupAsync(response.ToString());
+        await arg.FollowupAsync(response.ToString());
     }
 
     
@@ -49,7 +53,7 @@ public static class AdminCommands
 
         var db = new BetaContext();
 
-        var device = db.Devices.FirstOrDefault(d => d.Category == category);
+        var device = db.Devices.FirstOrDefault(d => d.Category == category) ?? throw new Exception("Cannot find device");
         var servers = db.Servers.Where(s => s.Category == category);
 
         var fakeUpdate = new Service.Update()
@@ -160,11 +164,4 @@ public static class AdminCommands
         // only me
         return userId == 191051620430249984;
     }
-}
-
-public enum StatusCommand
-{
-    START,
-    STOP,
-    STATUS
 }

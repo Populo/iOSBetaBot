@@ -153,7 +153,7 @@ namespace iOSBot.Bot
                     }
 
                     Timer.Stop();
-                    TimerOnElapsed(null, null);
+                    TimerOnElapsed(null, null!);
                     Timer.Start();
                     arg.RespondAsync("Updates Checked", ephemeral: true);
                     break;
@@ -179,7 +179,7 @@ namespace iOSBot.Bot
                     AppleCommands.DeviceInfo(arg);
                     break;
                 case "servers":
-                    AdminCommands.GetServers(arg, RestClient);
+                    AdminCommands.GetServers(arg, Client);
                     break;
                 case "status":
                     string response = Timer.Enabled ? "Running" : "Not Running";
