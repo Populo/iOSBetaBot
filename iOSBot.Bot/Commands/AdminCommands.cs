@@ -11,7 +11,7 @@ public static class AdminCommands
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     
-    public static void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
+    public static async void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
     {
         if (!IsAllowed(arg.User.Id))
         {
@@ -25,7 +25,7 @@ public static class AdminCommands
 
         for (int i = 0; i < servers.Length; ++i)
         {
-            response.AppendLine($"{i + 1}: {servers[i].Name} (@{servers[i].GetOwnerAsync().Result})");
+            response.AppendLine($"{i + 1}: {servers[i].Name} (@{await servers[i].GetOwnerAsync()}) - {await servers[i].GetUsersAsync().CountAsync()} members");
         }
 
         arg.FollowupAsync(response.ToString());
