@@ -33,10 +33,10 @@ namespace iOSBot.Bot
 
         public IosBot()
         {
-            _serviceProvider = CreateProvider();
+            _serviceProvider = CreateProvider() ?? throw new Exception("cannot create service provider");
 
-            Discord = _serviceProvider.GetService<IDiscordService>();
-            Apple = _serviceProvider.GetService<IAppleService>();
+            Discord = _serviceProvider.GetService<IDiscordService>() ?? throw new Exception("Cannot create Discord service");
+            Apple = _serviceProvider.GetService<IAppleService>() ?? throw new Exception("Cannot create Apple service");;
             
             Timer = new Timer
             {
@@ -51,7 +51,7 @@ namespace iOSBot.Bot
         {
             var config = new DiscordSocketConfig()
             {
-                GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.DirectMessages,
+                GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.DirectMessages | GatewayIntents.GuildMembers,
                 MessageCacheSize = 15
             };
 
