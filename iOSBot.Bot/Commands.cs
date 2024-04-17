@@ -404,6 +404,7 @@ namespace iOSBot.Bot
             if (!IsAllowed(arg.User.Id))
             { 
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                return;
             }
 
             using var db = new BetaContext();
@@ -433,6 +434,7 @@ namespace iOSBot.Bot
             if (!IsAllowed(arg.User.Id))
             {
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                return;
             }
 
             using var db = new BetaContext();
@@ -458,6 +460,7 @@ namespace iOSBot.Bot
             if (!IsAllowed(arg.User.Id))
             {
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                return;
             }
 
             // watch + unwatch
@@ -609,6 +612,7 @@ namespace iOSBot.Bot
             if (!IsAllowed(arg.User.Id))
             {
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                return;
             }
             
             arg.DeferAsync(ephemeral: true);
@@ -631,6 +635,7 @@ namespace iOSBot.Bot
                 if (!IsAllowed(arg.User.Id))
                 {
                     arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                    return;
                 }
             }
 
@@ -700,6 +705,7 @@ namespace iOSBot.Bot
             if (!IsAllowed(arg.User.Id))
             {
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                return;
             }
 
             arg.DeferAsync();
