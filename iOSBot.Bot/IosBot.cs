@@ -26,23 +26,26 @@ namespace iOSBot.Bot
 
         private IDiscordService Discord { get; set; }
         private IAppleService Apple { get; set; }
-        
+
         public Timer Timer { get; set; }
 
         private string? Status { get; set; }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public IosBot()
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             _serviceProvider = CreateProvider() ?? throw new Exception("cannot create service provider");
 
-            Discord = _serviceProvider.GetService<IDiscordService>() ?? throw new Exception("Cannot create Discord service");
-            Apple = _serviceProvider.GetService<IAppleService>() ?? throw new Exception("Cannot create Apple service");;
-            
+            Discord = _serviceProvider.GetService<IDiscordService>() ??
+                      throw new Exception("Cannot create Discord service");
+            Apple = _serviceProvider.GetService<IAppleService>() ?? throw new Exception("Cannot create Apple service");
+
             Timer = new Timer
             {
                 Interval = 90 * 1000 // 90 seconds
             };
-            
+
             Timer.Elapsed += TimerOnElapsed;
             Timer.Start();
         }
@@ -51,7 +54,8 @@ namespace iOSBot.Bot
         {
             var config = new DiscordSocketConfig()
             {
-                GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.DirectMessages | GatewayIntents.GuildMembers,
+                GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.DirectMessages |
+                                 GatewayIntents.GuildMembers,
                 MessageCacheSize = 15
             };
 
@@ -71,7 +75,7 @@ namespace iOSBot.Bot
         private async Task MainAsync(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            
+
             Client = _serviceProvider.GetRequiredService<DiscordSocketClient>();
             RestClient = Client.Rest;
 
@@ -87,7 +91,7 @@ namespace iOSBot.Bot
                     Status = "in testing mode";
                     break;
             }
-            
+
             await Client.LoginAsync(TokenType.Bot, args[0]);
             await Client.SetGameAsync(Status, type: ActivityType.Watching);
 
@@ -112,10 +116,12 @@ namespace iOSBot.Bot
 
         private Task _client_MessageReceived(SocketMessage arg)
         {
-            if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id) return Task.CompletedTask;
+            if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id)
+                return Task.CompletedTask;
             using var db = new BetaContext();
-            
-            Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ServerId), $"DM Received:\n{arg.Content}\n-@{arg.Author}");
+
+            Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ServerId),
+                $"DM Received:\n{arg.Content}\n-@{arg.Author}");
             arg.Channel.SendMessageAsync("Sending this message along. thank you.");
 
             return Task.CompletedTask;
@@ -126,7 +132,8 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
 
             _logger.Error($"{e}\n{e.ExceptionObject}");
-            Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ServerId), $"Unhandled Exception:\n{e}\n{e.ExceptionObject}");
+            Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ServerId),
+                $"Unhandled Exception:\n{e}\n{e.ExceptionObject}");
         }
 
         private Task _client_SlashCommandExecuted(SocketSlashCommand arg)
@@ -136,7 +143,9 @@ namespace iOSBot.Bot
             {
                 jsonArgs.Add(new JProperty(o.Name, o.Value.ToString()));
             }
-            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
+
+            _logger.Info(
+                $"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
 
             switch (arg.CommandName)
             {
@@ -157,7 +166,7 @@ namespace iOSBot.Bot
                     Timer.Start();
                     arg.RespondAsync("Updates Checked", ephemeral: true);
                     break;
-                case "error":
+                case "yeserror":
                     AdminCommands.YesErrors(arg, RestClient);
                     break;
                 case "noerror":
@@ -179,7 +188,7 @@ namespace iOSBot.Bot
                     AppleCommands.DeviceInfo(arg);
                     break;
                 case "servers":
-                    AdminCommands.GetServers(arg, Client);
+                    AdminCommands.GetServers(arg, RestClient);
                     break;
                 case "status":
                     string response = Timer.Enabled ? "Running" : "Not Running";
@@ -212,100 +221,109 @@ namespace iOSBot.Bot
                 case "fake":
                     AdminCommands.FakeUpdate(arg, Discord);
                     break;
-                default:
-                    break;
             }
 
             return Task.CompletedTask;
         }
 
-        private async Task _client_Ready()
+        private Task _client_Ready()
         {
             CommandInitializer.UpdateCommands(Client);
+            return Task.CompletedTask;
         }
 
-        private async Task _client_Log(LogMessage arg)
+        private Task _client_Log(LogMessage arg)
         {
             _logger.Info(arg.Message);
             if (null != arg.Exception)
             {
                 // dont care about logging these
                 if (arg.Exception.Message.EndsWith("Server requested a reconnect") ||
-                    arg.Exception.Message.EndsWith("WebSocket connection was closed")) return;
-                
+                    arg.Exception.Message.EndsWith("WebSocket connection was closed")) return Task.CompletedTask;
+
                 using var db = new BetaContext();
-                Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId), $"Bot error:\n{arg.Exception.Message}");
+                Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId),
+                    $"Bot error:\n{arg.Exception.Message}");
                 _logger.Error(arg.Exception);
-                _logger.Error(arg.Exception.InnerException.StackTrace);
+                _logger.Error(arg.Exception.InnerException?.StackTrace);
             }
+
+            return Task.CompletedTask;
         }
-        
+
         private async void TimerOnElapsed(object? sender, ElapsedEventArgs e)
         {
             var updates = new ConcurrentBag<Service.Update>();
-            using var db = new BetaContext();
-            var dbUpdates = db.Updates.ToList();
-
-            // check all devices for /info 
-            Parallel.ForEach(db.Devices, device =>
+            using (var db = new BetaContext())
             {
-                try
-                {
-                    Service.Update u = Apple.GetUpdate(device).Result;
-                    
-                    if (!dbUpdates.Any(up => up.Build == u.Build &&
-                                             up.ReleaseDate == u.ReleaseDate &&
-                                             up.Category == u.Group)) updates.Add(u);
-                    else _logger.Info("No new update found for " + device.FriendlyName);
-                }
-                catch (Exception ex)
-                {
-                    Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId), $"Error checking update for {device.FriendlyName}:\n{ex.Message}");
-                }
-            });
-            
-            foreach (var update in updates)
-            {
-                var category = update.Device.Category;
-                var servers = db.Servers.Where(s => s.Category == category);
-                var threads = db.Threads.Where(t => t.Category == category);
+                var dbUpdates = db.Updates.ToList();
 
-                _logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
-
-                // dont post if older than 12 hours, still add to db tho
-                var postOld = Convert.ToBoolean(Convert.ToInt16(db.Configs.First(c => c.Name == "PostOld").Value));
-                
-                if (postOld || update.ReleaseDate.DayOfYear == DateTime.Today.DayOfYear)
-                {    
-                    foreach (var server in servers)
+                // check all devices for /info
+                Parallel.ForEach(db.Devices, device =>
+                {
+                    try
                     {
-                        Discord.PostUpdate(update, server);
+                        var u = Apple.GetUpdate(device).Result;
+
+                        if (!dbUpdates.Any(up => up.Build == u.Build &&
+                                                 up.ReleaseDate == u.ReleaseDate &&
+                                                 up.Category == u.Group)) updates.Add(u);
+                        else _logger.Info("No new update found for " + device.FriendlyName);
+                    }
+                    catch (Exception ex)
+                    {
+                        // ReSharper disable once AccessToDisposedClosure
+                        Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId),
+                            $"Error checking update for {device.FriendlyName}:\n{ex.Message}");
+                    }
+                });
+
+                foreach (var update in updates)
+                {
+                    var category = update.Device.Category;
+                    var servers = db.Servers.Where(s => s.Category == category);
+                    var threads = db.Threads.Where(t => t.Category == category);
+
+                    _logger.Info(
+                        $"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
+
+                    // dont post if older than 12 hours, still add to db tho
+                    var postOld = Convert.ToBoolean(Convert.ToInt16(db.Configs.First(c => c.Name == "PostOld").Value));
+
+                    if (postOld || update.ReleaseDate.DayOfYear == DateTime.Today.DayOfYear)
+                    {
+                        foreach (var server in servers)
+                        {
+                            Discord.PostUpdate(update, server);
+                        }
+
+                        foreach (var thread in threads)
+                        {
+                            Discord.PostThread(update, thread);
+                        }
+                    }
+                    else
+                    {
+                        var error =
+                            $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
+                        _logger.Info(error);
+                        Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId), error);
                     }
 
-                    foreach (var thread in threads)
-                    {
-                        Discord.PostThread(update, thread);
-                    }
+                    Apple.SaveUpdate(update);
                 }
-                else
-                {
-                    var error = $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
-                    _logger.Info(error);
-                    Discord.PostToServers(Client, db.ErrorServers.Select(s => s.ChannelId), error);
-                }
-                
-                Apple.SaveUpdate(update);
+
+                // update server count
+                ulong channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
+                string env = db.Configs.First(c => c.Name == "Environment").Value;
+                IChannel channel = Client.GetChannelAsync(channelId).Result;
+                await ((IVoiceChannel)channel).ModifyAsync(c =>
+                    c.Name = $"{env} Bot Servers: {RestClient.GetGuildsAsync().Result.Count}");
+
+                Timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
+
+                await db.SaveChangesAsync();
             }
-            
-            // update server count
-            ulong channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
-            string env = db.Configs.First(c => c.Name == "Environment").Value;
-            IChannel channel = Client.GetChannelAsync(channelId).Result;
-            await ((IVoiceChannel)channel).ModifyAsync(c => c.Name = $"{env} Bot Servers: {RestClient.GetGuildsAsync().Result.Count}");
-
-            Timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
-
-            await db.SaveChangesAsync();
         }
     }
 }

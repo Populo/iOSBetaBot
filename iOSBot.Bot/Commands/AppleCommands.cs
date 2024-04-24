@@ -9,11 +9,11 @@ namespace iOSBot.Bot.Commands;
 public static class AppleCommands {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     
-    public static void YesWatch(SocketSlashCommand command, DiscordRestClient client)
+    public static async void YesWatch(SocketSlashCommand command, DiscordRestClient client)
     {
         using var db = new BetaContext();
 
-        command.DeferAsync(ephemeral: true);
+        await command.DeferAsync(ephemeral: true);
 
         var device = db.Devices.FirstOrDefault(d => d.Category == (string)command.Data.Options.First().Value);
 
@@ -45,18 +45,18 @@ public static class AppleCommands {
             db.SaveChanges();
 
             Logger.Info($"Signed up for {device.FriendlyName} updates in {guild.Name}:{channel!.Name}");
-            command.FollowupAsync($"You will now receive {device.FriendlyName} updates in this channel.", ephemeral: true);
+            await command.FollowupAsync($"You will now receive {device.FriendlyName} updates in this channel.", ephemeral: true);
         }
         else
         {
-            command.FollowupAsync($"You already receive {device!.FriendlyName} updates in this channel.", ephemeral: true);
+            await command.FollowupAsync($"You already receive {device!.FriendlyName} updates in this channel.", ephemeral: true);
         }
     }
 
-    internal static void NoWatch(SocketSlashCommand command, DiscordRestClient? client)
+    internal static async void NoWatch(SocketSlashCommand command, DiscordRestClient client)
     {
         using var db = new BetaContext();
-        command.DeferAsync(ephemeral: true);
+        await command.DeferAsync(ephemeral: true);
 
         var device = db.Devices.FirstOrDefault(d => d.Category == (string)command.Data.Options.First().Value);
         var server = db.Servers.FirstOrDefault(s => s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device!.Category);
@@ -65,7 +65,7 @@ public static class AppleCommands {
 
         if (null == server)
         {
-            command.FollowupAsync($"You were not receiving {device!.FriendlyName} updates in this channel", ephemeral: true);
+            await command.FollowupAsync($"You were not receiving {device!.FriendlyName} updates in this channel", ephemeral: true);
         }
         else
         {
@@ -73,33 +73,40 @@ public static class AppleCommands {
             db.SaveChanges();
 
             Logger.Info($"Removed notifications for {device!.FriendlyName} updates in {guild.Name}:{channel!.Name}");
-            command.FollowupAsync($"You will no longer receive {device.FriendlyName} updates in this channel", ephemeral: true);
+            await command.FollowupAsync($"You will no longer receive {device.FriendlyName} updates in this channel", ephemeral: true);
         }
     }
     
-    public static void NewThreadChannel(SocketSlashCommand arg)
+    public static async void NewThreadChannel(SocketSlashCommand arg)
     {
-        arg.DeferAsync(ephemeral: true);
+        await arg.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
         var category = (string)arg.Data.Options.First().Value;
 
-        db.Threads.Add(new Data.Thread()
+        if (null != arg.ChannelId && null != arg.GuildId)
         {
-            Category = category,
-            ChannelId = arg.ChannelId.Value,
-            ServerId = arg.GuildId.Value,
-            id = Guid.NewGuid()
-        });
+            db.Threads.Add(new Data.Thread()
+            {
+                Category = category,
+                ChannelId = arg.ChannelId.Value,
+                ServerId = arg.GuildId.Value,
+                id = Guid.NewGuid()
+            });
+        }
+        else
+        {
+            throw new Exception("cannot create thread");
+        }
 
         db.SaveChanges();
 
-        arg.FollowupAsync(text: "A release thread will be posted here.", ephemeral: true);
+        await arg.FollowupAsync(text: "A release thread will be posted here.", ephemeral: true);
     }
 
-    public static void DeleteThreadChannel(SocketSlashCommand arg)
+    public static async void DeleteThreadChannel(SocketSlashCommand arg)
     {
-        arg.DeferAsync(ephemeral: true);
+        await arg.DeferAsync(ephemeral: true);
         var category = (string)arg.Data.Options.First().Value;
 
         using var db = new BetaContext();
@@ -108,7 +115,7 @@ public static class AppleCommands {
 
         if (thread is null)
         {
-            arg.FollowupAsync(text: "Release threads were not set to be posted here", ephemeral: true);
+            await arg.FollowupAsync(text: "Release threads were not set to be posted here", ephemeral: true);
             return;
         }
 
@@ -116,19 +123,20 @@ public static class AppleCommands {
 
         db.SaveChanges();
 
-        arg.FollowupAsync(text: "Release threads will no longer be posted here.", ephemeral: true);
+        await arg.FollowupAsync(text: "Release threads will no longer be posted here.", ephemeral: true);
     }
     
-    public static void DeviceInfo(SocketSlashCommand arg)
+    public static async void DeviceInfo(SocketSlashCommand arg)
     {
-        arg.DeferAsync(ephemeral: true);
+        await arg.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
-        var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value);
+        var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value) ?? throw new Exception("Cannot find device");
         var update = db.Updates
             .Where(u => u.Category == device.Category)
             .OrderByDescending(u => u.ReleaseDate)
-            .FirstOrDefault();
+            .FirstOrDefault() ??
+                     throw new Exception("Cannot find most recent update");
         
         var embed = new EmbedBuilder
         {
@@ -140,6 +148,6 @@ public static class AppleCommands {
             .AddField(name: "Device Version", value: $"{device.Version} ({device.BuildId})")
             .AddField(name: "Newest Version", value: $"{update.Version} ({update.Build})");
         
-        arg.FollowupAsync(embed: embed.Build());
+        await arg.FollowupAsync(embed: embed.Build());
     }
 }

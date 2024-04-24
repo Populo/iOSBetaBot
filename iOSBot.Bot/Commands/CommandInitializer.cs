@@ -56,10 +56,10 @@ public static class CommandInitializer
 
     private static SlashCommandBuilder errorBuilder = new()
     {
-        Name = "error",
+        Name = "yeserror",
         Description = "Post bot errors to this channel",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder noerrorBuilder = new()
@@ -67,7 +67,7 @@ public static class CommandInitializer
         Name = "noerror",
         Description = "Dont post bot errors to this channel",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder updateBuilder = new()
@@ -75,7 +75,7 @@ public static class CommandInitializer
         Name = "update",
         Description = "Update trackable categories",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder forceBuilder = new()
@@ -83,7 +83,7 @@ public static class CommandInitializer
         Name = "force",
         Description = "Force bot to check for updates",
         DefaultMemberPermissions = GuildPermission.ManageGuild,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder blessBuilder = new()
@@ -91,7 +91,7 @@ public static class CommandInitializer
         Name = "manifest",
         Description = "Manifest a beta release",
         DefaultMemberPermissions = GuildPermission.SendMessages,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder goodBotBuilder = new()
@@ -151,9 +151,10 @@ public static class CommandInitializer
         Name = "servers",
         Description = "See servers that this bot is in",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
+/*
     private static SlashCommandBuilder gambaBuilder = new()
     {
         Name = "gamba",
@@ -170,13 +171,14 @@ public static class CommandInitializer
             }
         }
     };
+*/
 
     private static SlashCommandBuilder stopBuilder = new()
     {
         Name = "stop",
         Description = "Stop update checks",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder startBuilder = new()
@@ -184,7 +186,7 @@ public static class CommandInitializer
         Name = "start",
         Description = "start update checks",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder statusBuilder = new()
@@ -192,7 +194,7 @@ public static class CommandInitializer
         Name = "status",
         Description = "update check timer status",
         DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
+        Options = new List<SlashCommandOptionBuilder>()
     };
 
     private static SlashCommandBuilder newThreadBuilder = new()
@@ -270,8 +272,8 @@ public static class CommandInitializer
         }
     };
 
-    public static List<SlashCommandBuilder> CommandBuilders = new()
-    {
+    public static readonly List<SlashCommandBuilder> CommandBuilders =
+    [
         watchBuilder,
         unwatchBuilder,
         errorBuilder,
@@ -290,7 +292,7 @@ public static class CommandInitializer
         newThreadBuilder,
         deleteThreadBuilder,
         fakePostBuilder
-    };
+    ];
     
     public static List<ApplicationCommandOptionChoiceProperties> GetDeviceCategories()
     {
@@ -306,14 +308,15 @@ public static class CommandInitializer
         return db.Devices.ToList();
     }
     
-    public static void UpdateCommands(DiscordSocketClient client)
+    public static async void UpdateCommands(DiscordSocketClient client)
     {
         try
         {
             Logger.Info($"Updating commands");
             Logger.Trace(string.Join(" | ", CommandBuilders.Select(c => c.Name)));
-            client.BulkOverwriteGlobalApplicationCommandsAsync(
-                CommandBuilders.Select(b => b.Build()).ToArray());
+            var commands = CommandBuilders.Select(b => b.Build() as ApplicationCommandProperties).ToArray() ??
+                           throw new Exception("Cannot init commands");
+            await client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
         }
         catch (HttpException e)
         {

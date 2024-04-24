@@ -2,31 +2,33 @@ using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
-using NLog;
 
 namespace iOSBot.Bot.Commands;
 
 public class MemeCommands
 {
+/*
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+*/
 
-    internal static void Manifest(SocketSlashCommand arg)
+    internal static async void Manifest(SocketSlashCommand arg)
     {
         using var db = new BetaContext();
         var gifLocation = db.Configs.First(c => c.Name == "ManifestGif").Value;
-        arg.RespondAsync(gifLocation);
+        await arg.RespondAsync(gifLocation);
     }
 
-    internal static void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
+    internal static async void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
     {
-        arg.DeferAsync(ephemeral: true);
+        await arg.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
 
-        var reason = "";
+        string reason;
         if (arg.Data.Options.Any())
         {
-            reason = arg.Data.Options.First().Value.ToString();
+            // cant be null
+            reason = arg.Data.Options.First().Value.ToString()!;
 
             var embed = new EmbedBuilder
             {
@@ -42,16 +44,16 @@ public class MemeCommands
             foreach (var s in db.ErrorServers)
             {
                 var channel = bot.GetChannelAsync(s.ChannelId).Result as RestTextChannel;
-                channel.SendMessageAsync(embed: embed.Build());
+                await channel.SendMessageAsync(embed: embed.Build());
             }
         }
 
-        arg.FollowupAsync($"Thank you :)", ephemeral: true);
+        await arg.FollowupAsync($"Thank you :)", ephemeral: true);
     }
 
-    internal static void BadBot(SocketSlashCommand arg, DiscordRestClient bot)
+    internal static async void BadBot(SocketSlashCommand arg, DiscordRestClient bot)
     {
-        arg.DeferAsync(ephemeral: true);
+        await arg.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
         var reason = arg.Data.Options.First().Value.ToString();
@@ -68,11 +70,11 @@ public class MemeCommands
 
         foreach (var s in db.ErrorServers)
         {
-            var channel = bot.GetChannelAsync(s.ChannelId).Result as RestTextChannel;
-            channel.SendMessageAsync(embed: embed.Build());
+            var channel = bot.GetChannelAsync(s.ChannelId).Result as RestTextChannel ?? throw new Exception("Cant find channel");
+            await channel.SendMessageAsync(embed: embed.Build());
         }
 
-        arg.FollowupAsync($"Thank you for your feedback. A developer has been notified and may reach out.",
+        await arg.FollowupAsync($"Thank you for your feedback. A developer has been notified and may reach out.",
             ephemeral: true);
     }
 }
