@@ -11,7 +11,7 @@ public static class AdminCommands
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     
-    public static async void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
+    public static async void GetServers(SocketSlashCommand arg, DiscordSocketClient bot)
     {
         if (!IsAllowed(arg.User.Id))
         {
@@ -19,14 +19,16 @@ public static class AdminCommands
         }
 
         await arg.DeferAsync(ephemeral: true);
-        var servers = await bot.GetGuildsAsync();
+        var servers = await bot.Rest.GetGuildsAsync();
         StringBuilder response = new StringBuilder();
         response.AppendLine("Servers:");
 
-        var i = 0;
+        int i = 0;
         foreach (var s in servers)
         {
-            response.AppendLine($"{i + 1}: {s.Name} (@{await s.GetOwnerAsync()})");
+            var server = bot.GetGuild(s.Id);
+            var owner = await s.GetOwnerAsync();
+            response.AppendLine($"{i + 1}: {server.Name} (@{owner}) - {server.MemberCount} members");
             ++i;
         }
 
@@ -35,14 +37,14 @@ public static class AdminCommands
 
     
 
-    public static async void FakeUpdate(SocketSlashCommand arg, IDiscordService discordService)
+    public static void FakeUpdate(SocketSlashCommand arg, IDiscordService discordService)
     {
         if (!IsAllowed(arg.User.Id))
         {
-            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
         }
 
-        await arg.DeferAsync();
+        arg.DeferAsync();
 
         var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
         var fakeBuild = (string)arg.Data.Options.First(o => o.Name == "build").Value;
@@ -71,14 +73,14 @@ public static class AdminCommands
             discordService.PostUpdate(fakeUpdate, s);
         }
 
-        await arg.FollowupAsync("Posted update", ephemeral: true);
+        arg.FollowupAsync("Posted update", ephemeral: true);
     }
     
-    internal static async void YesErrors(SocketSlashCommand arg, DiscordRestClient? restClient)
+    internal static void YesErrors(SocketSlashCommand arg, DiscordRestClient? restClient)
     {
         if (!IsAllowed(arg.User.Id))
         { 
-            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
         }
 
         using var db = new BetaContext();
@@ -93,21 +95,21 @@ public static class AdminCommands
                 Id = Guid.NewGuid()
             });
 
-            await arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral: true);
+            arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral: true);
 
             db.SaveChanges();
         }
         else
         {
-            await arg.RespondAsync("Errors are already set to be posted here.", ephemeral:true);
+            arg.RespondAsync("Errors are already set to be posted here.", ephemeral:true);
         }
     }
 
-    internal static async void NoErrors(SocketSlashCommand arg)
+    internal static void NoErrors(SocketSlashCommand arg)
     {
         if (!IsAllowed(arg.User.Id))
         {
-            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
         }
 
         using var db = new BetaContext();
@@ -116,23 +118,23 @@ public static class AdminCommands
 
         if (null == errorServer)
         {
-            await arg.RespondAsync("bot errors were not set to go here", ephemeral: true);
+            arg.RespondAsync("bot errors were not set to go here", ephemeral: true);
         }
         else
         {
             db.ErrorServers.Remove(errorServer);
 
-            await arg.RespondAsync("errors will not post here anymore", ephemeral: true);
+            arg.RespondAsync("errors will not post here anymore", ephemeral: true);
 
             db.SaveChanges();
         }
     }
 
-    internal static async void UpdateOptions(SocketSlashCommand arg, DiscordSocketClient bot)
+    internal static void UpdateOptions(SocketSlashCommand arg, DiscordSocketClient bot)
     {
         if (!IsAllowed(arg.User.Id))
         {
-            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
         }
 
         // watch + unwatch
@@ -150,11 +152,11 @@ public static class AdminCommands
 
 
         Logger.Trace($"Devices to watch: {string.Join(" | ", devices)}");
-        await arg.DeferAsync(ephemeral: true);
+        arg.DeferAsync(ephemeral: true);
         
         CommandInitializer.UpdateCommands(bot);
         
-        await arg.FollowupAsync("Reloaded commands.", ephemeral: true);
+        arg.FollowupAsync("Reloaded commands.", ephemeral: true);
     }
     
     public static bool IsAllowed(ulong userId)
