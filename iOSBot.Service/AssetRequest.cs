@@ -1,4 +1,4 @@
-﻿namespace iOSBot.Service.JsonObjects
+﻿namespace iOSBot.Service
 {
     public class AssetRequest
     {
