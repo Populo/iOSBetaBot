@@ -1,4 +1,4 @@
-﻿namespace iOSBot.Service;
+﻿namespace iOSBot.Service.Models;
 
 public class DiscordServer
 {
