@@ -514,8 +514,8 @@ namespace iOSBot.Bot
         internal static void WhyCraig(SocketSlashCommand arg)
         {
             using var db = new BetaContext();
-            var imgLocation = db.Configs.First(c => c.Name == "WhyCraig").Value;
-            arg.RespondAsync(imgLocation);
+            var img = db.Configs.First(c => c.Name == "WhyCraig").Value;
+            arg.RespondAsync(img);
         }
 
         internal static void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
