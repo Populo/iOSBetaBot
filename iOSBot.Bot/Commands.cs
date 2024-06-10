@@ -14,7 +14,7 @@ namespace iOSBot.Bot
     public class Commands
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        
+
         #region command objects
 
         private static SlashCommandBuilder watchBuilder = new()
@@ -24,7 +24,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.ManageGuild,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "category",
                     Description = "Which OS updates",
@@ -32,7 +32,7 @@ namespace iOSBot.Bot
                     Type = ApplicationCommandOptionType.String,
                     Choices = GetDeviceCategories()
                 },
-                new ()
+                new()
                 {
                     Name = "role",
                     Description = "Role to ping",
@@ -49,7 +49,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.ManageGuild,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "category",
                     Description = "Which OS updates",
@@ -82,8 +82,8 @@ namespace iOSBot.Bot
             Description = "Update trackable categories",
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>() { }
-        }; 
-        
+        };
+
         private static SlashCommandBuilder forceBuilder = new()
         {
             Name = "force",
@@ -99,7 +99,15 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.SendMessages,
             Options = new List<SlashCommandOptionBuilder>() { }
         };
-        
+
+        private static SlashCommandBuilder whyCraigBuilder = new()
+        {
+            Name = "whycraig",
+            Description = "???",
+            DefaultMemberPermissions = GuildPermission.SendMessages,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
+
         private static SlashCommandBuilder goodBotBuilder = new()
         {
             Name = "goodbot",
@@ -107,7 +115,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.SendMessages,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "reason",
                     Description = "Something specific? Let me know!",
@@ -116,7 +124,7 @@ namespace iOSBot.Bot
                 }
             }
         };
-        
+
         private static SlashCommandBuilder badBotBuilder = new()
         {
             Name = "badbot",
@@ -124,7 +132,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.SendMessages,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "reason",
                     Description = "Describe your issue, developer will be notified.",
@@ -133,7 +141,7 @@ namespace iOSBot.Bot
                 }
             }
         };
-        
+
         private static SlashCommandBuilder infoBuilder = new()
         {
             Name = "info",
@@ -141,7 +149,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.SendMessages,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "category",
                     Description = "Which OS updates",
@@ -151,16 +159,16 @@ namespace iOSBot.Bot
                 }
             }
         };
-        
+
         private static SlashCommandBuilder whenBuilder = new()
         {
             Name = "when",
             Description = "When is the next release scheduled? Answer could be helpful, maybe not, who knows.",
             DefaultMemberPermissions = GuildPermission.SendMessages,
             Options = new List<SlashCommandOptionBuilder>()
-            { }
+                { }
         };
-        
+
         private static SlashCommandBuilder serverBuilder = new()
         {
             Name = "servers",
@@ -185,7 +193,7 @@ namespace iOSBot.Bot
                 }
             }
         };
-        
+
         private static SlashCommandBuilder stopBuilder = new()
         {
             Name = "stop",
@@ -193,7 +201,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>() { }
         };
-        
+
         private static SlashCommandBuilder startBuilder = new()
         {
             Name = "start",
@@ -201,7 +209,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>() { }
         };
-        
+
         private static SlashCommandBuilder statusBuilder = new()
         {
             Name = "status",
@@ -209,7 +217,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>() { }
         };
-        
+
         private static SlashCommandBuilder newThreadBuilder = new()
         {
             Name = "yesthreads",
@@ -217,7 +225,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.ManageGuild,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "category",
                     Description = "Which OS updates",
@@ -227,7 +235,7 @@ namespace iOSBot.Bot
                 }
             }
         };
-        
+
         private static SlashCommandBuilder deleteThreadBuilder = new()
         {
             Name = "nothreads",
@@ -235,7 +243,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.ManageGuild,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "category",
                     Description = "Which OS updates",
@@ -245,7 +253,7 @@ namespace iOSBot.Bot
                 }
             }
         };
-        
+
         private static SlashCommandBuilder fakePostBuilder = new()
         {
             Name = "fake",
@@ -253,7 +261,7 @@ namespace iOSBot.Bot
             DefaultMemberPermissions = GuildPermission.Administrator,
             Options = new List<SlashCommandOptionBuilder>()
             {
-                new ()
+                new()
                 {
                     Name = "category",
                     Description = "Which OS updates",
@@ -261,28 +269,27 @@ namespace iOSBot.Bot
                     Type = ApplicationCommandOptionType.String,
                     Choices = GetDeviceCategories()
                 },
-                new ()
+                new()
                 {
                     Name = "build",
                     Description = "Build ID of the update",
                     IsRequired = true,
                     Type = ApplicationCommandOptionType.String,
                 },
-                new ()
+                new()
                 {
                     Name = "version",
                     Description = "Build version of the update",
                     IsRequired = true,
                     Type = ApplicationCommandOptionType.String,
                 },
-                new ()
+                new()
                 {
                     Name = "docid",
                     Description = "documentationid for update. 18Beta0, 173Long, 1934Beta2, etc",
                     IsRequired = true,
                     Type = ApplicationCommandOptionType.String,
                 },
-
             }
         };
 
@@ -306,11 +313,14 @@ namespace iOSBot.Bot
             stopBuilder,
             newThreadBuilder,
             deleteThreadBuilder,
-            fakePostBuilder
+            fakePostBuilder,
+            whyCraigBuilder
         };
 
         #endregion
+
         #region commands
+
         public static void InitCommand(SocketSlashCommand command, DiscordRestClient? client)
         {
             using var db = new BetaContext();
@@ -329,7 +339,8 @@ namespace iOSBot.Bot
             var channel = client.GetChannelAsync(command.ChannelId!.Value).Result as RestTextChannel;
             var guild = client.GetGuildAsync(command.GuildId!.Value).Result;
 
-            var server = db.Servers.FirstOrDefault(s => s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device!.Category);
+            var server = db.Servers.FirstOrDefault(s =>
+                s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device!.Category);
 
             if (null == server)
             {
@@ -347,11 +358,13 @@ namespace iOSBot.Bot
                 db.SaveChanges();
 
                 Logger.Info($"Signed up for {device.FriendlyName} updates in {guild.Name}:{channel!.Name}");
-                command.FollowupAsync($"You will now receive {device.FriendlyName} updates in this channel.", ephemeral: true);
+                command.FollowupAsync($"You will now receive {device.FriendlyName} updates in this channel.",
+                    ephemeral: true);
             }
             else
             {
-                command.FollowupAsync($"You already receive {device!.FriendlyName} updates in this channel.", ephemeral: true);
+                command.FollowupAsync($"You already receive {device!.FriendlyName} updates in this channel.",
+                    ephemeral: true);
             }
         }
 
@@ -361,21 +374,25 @@ namespace iOSBot.Bot
             command.DeferAsync(ephemeral: true);
 
             var device = db.Devices.FirstOrDefault(d => d.Category == (string)command.Data.Options.First().Value);
-            var server = db.Servers.FirstOrDefault(s => s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device!.Category);
+            var server = db.Servers.FirstOrDefault(s =>
+                s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device!.Category);
             var channel = client.GetChannelAsync(command.ChannelId!.Value).Result as RestTextChannel;
             var guild = client.GetGuildAsync(command.GuildId!.Value).Result;
 
             if (null == server)
             {
-                command.FollowupAsync($"You were not receiving {device!.FriendlyName} updates in this channel", ephemeral: true);
+                command.FollowupAsync($"You were not receiving {device!.FriendlyName} updates in this channel",
+                    ephemeral: true);
             }
             else
             {
                 db.Servers.Remove(server);
                 db.SaveChanges();
 
-                Logger.Info($"Removed notifications for {device!.FriendlyName} updates in {guild.Name}:{channel!.Name}");
-                command.FollowupAsync($"You will no longer receive {device.FriendlyName} updates in this channel", ephemeral: true);
+                Logger.Info(
+                    $"Removed notifications for {device!.FriendlyName} updates in {guild.Name}:{channel!.Name}");
+                command.FollowupAsync($"You will no longer receive {device.FriendlyName} updates in this channel",
+                    ephemeral: true);
             }
         }
 
@@ -385,16 +402,16 @@ namespace iOSBot.Bot
             {
                 command.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
             }
-            
+
             // try to prevent what looks like some race conditions
             ApiSingleton.Instance.StopTimer();
-            
+
             command.DeferAsync(ephemeral: true);
 
             ApiSingleton.Instance.Timer_Elapsed(null, null!);
-            
+
             ApiSingleton.Instance.StartTimer();
-            
+
             Logger.Info($"Update forced by {command.User.GlobalName}");
             command.FollowupAsync("Updates checked.");
         }
@@ -402,14 +419,15 @@ namespace iOSBot.Bot
         internal static void ErrorCommand(SocketSlashCommand arg, DiscordRestClient? restClient)
         {
             if (!IsAllowed(arg.User.Id))
-            { 
+            {
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
                 return;
             }
 
             using var db = new BetaContext();
 
-            var errorServer = db.ErrorServers.FirstOrDefault(s => s.ServerId == arg.GuildId!.Value && s.ChannelId == arg.ChannelId!.Value);
+            var errorServer = db.ErrorServers.FirstOrDefault(s =>
+                s.ServerId == arg.GuildId!.Value && s.ChannelId == arg.ChannelId!.Value);
             if (null == errorServer)
             {
                 db.ErrorServers.Add(new ErrorServer
@@ -425,7 +443,7 @@ namespace iOSBot.Bot
             }
             else
             {
-                arg.RespondAsync("Errors are already set to be posted here.", ephemeral:true);
+                arg.RespondAsync("Errors are already set to be posted here.", ephemeral: true);
             }
         }
 
@@ -439,7 +457,8 @@ namespace iOSBot.Bot
 
             using var db = new BetaContext();
 
-            var errorServer = db.ErrorServers.FirstOrDefault(s => s.ServerId == arg.GuildId!.Value && s.ChannelId == arg.ChannelId!.Value);
+            var errorServer = db.ErrorServers.FirstOrDefault(s =>
+                s.ServerId == arg.GuildId!.Value && s.ChannelId == arg.ChannelId!.Value);
 
             if (null == errorServer)
             {
@@ -475,7 +494,7 @@ namespace iOSBot.Bot
                 .First(c => c.Name == "watch").Options
                 .First(c => c.Name == "category").Choices
                 .Select(c => c.Name);
-            
+
 
             Logger.Trace($"Devices to watch: {string.Join(" | ", devices)}");
             arg.DeferAsync(ephemeral: true);
@@ -492,26 +511,34 @@ namespace iOSBot.Bot
             arg.RespondAsync(gifLocation);
         }
 
+        internal static void WhyCraig(SocketSlashCommand arg)
+        {
+            using var db = new BetaContext();
+            var imgLocation = db.Configs.First(c => c.Name == "WhyCraig").Value;
+            arg.RespondAsync(imgLocation);
+        }
+
         internal static void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
         {
             arg.DeferAsync(ephemeral: true);
-            
+
             using var db = new BetaContext();
-            
+
             var reason = "";
             if (arg.Data.Options.Any())
             {
                 reason = arg.Data.Options.First().Value.ToString();
-                
+
                 var embed = new EmbedBuilder
                 {
-                    Color = new Color(0,255,255),
+                    Color = new Color(0, 255, 255),
                     Title = "Good Bot",
                     Description = $"User: {arg.User.Username}"
                 };
                 embed.AddField(name: "Reason", value: reason)
                     .AddField(name: "Server", value: bot.GetGuildAsync(arg.GuildId.Value).Result.Name)
-                    .AddField(name: "Channel", value: ((RestTextChannel)bot.GetChannelAsync(arg.ChannelId.Value).Result).Name);
+                    .AddField(name: "Channel",
+                        value: ((RestTextChannel)bot.GetChannelAsync(arg.ChannelId.Value).Result).Name);
 
                 foreach (var s in db.ErrorServers)
                 {
@@ -526,40 +553,42 @@ namespace iOSBot.Bot
         internal static void BadBot(SocketSlashCommand arg, DiscordRestClient bot)
         {
             arg.DeferAsync(ephemeral: true);
-            
+
             using var db = new BetaContext();
             var reason = arg.Data.Options.First().Value.ToString();
-            
+
             var embed = new EmbedBuilder
             {
-                Color = new Color(255,0,0),
+                Color = new Color(255, 0, 0),
                 Title = "Bad Bot",
                 Description = $"User: {arg.User.Username}"
             };
             embed.AddField(name: "Reason", value: reason)
                 .AddField(name: "Server", value: bot.GetGuildAsync(arg.GuildId.Value).Result.Name)
-                .AddField(name: "Channel", value: ((RestTextChannel)bot.GetChannelAsync(arg.ChannelId.Value).Result).Name);
+                .AddField(name: "Channel",
+                    value: ((RestTextChannel)bot.GetChannelAsync(arg.ChannelId.Value).Result).Name);
 
             foreach (var s in db.ErrorServers)
             {
                 var channel = bot.GetChannelAsync(s.ChannelId).Result as RestTextChannel;
                 channel.SendMessageAsync(embed: embed.Build());
             }
-            
-            arg.FollowupAsync($"Thank you for your feedback. A developer has been notified and may reach out.", ephemeral: true);
+
+            arg.FollowupAsync($"Thank you for your feedback. A developer has been notified and may reach out.",
+                ephemeral: true);
         }
 
         public static void DeviceInfo(SocketSlashCommand arg)
         {
             arg.DeferAsync(ephemeral: true);
-            
+
             using var db = new BetaContext();
             var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value);
             var update = db.Updates
                 .Where(u => u.Category == device.Category)
                 .OrderByDescending(u => u.ReleaseDate)
                 .FirstOrDefault();
-            
+
             var embed = new EmbedBuilder
             {
                 Color = new Color(device.Color),
@@ -569,10 +598,10 @@ namespace iOSBot.Bot
             embed.AddField(name: "Device", value: device.Name)
                 .AddField(name: "Device Version", value: $"{device.Version} ({device.BuildId})")
                 .AddField(name: "Newest Version", value: $"{update.Version} ({update.Build})");
-            
+
             arg.FollowupAsync(embed: embed.Build());
         }
-        
+
         public static void When(SocketSlashCommand arg)
         {
             arg.DeferAsync(ephemeral: true);
@@ -606,7 +635,7 @@ namespace iOSBot.Bot
 
             arg.FollowupAsync(resp, ephemeral: true);
         }
-        
+
         public static void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
         {
             if (!IsAllowed(arg.User.Id))
@@ -614,17 +643,17 @@ namespace iOSBot.Bot
                 arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
                 return;
             }
-            
+
             arg.DeferAsync(ephemeral: true);
             var servers = bot.GetGuildsAsync().Result.ToArray();
             StringBuilder response = new StringBuilder();
             response.AppendLine("Servers:");
-            
+
             for (int i = 0; i < servers.Length; ++i)
             {
                 response.AppendLine($"{i + 1}: {servers[i].Name} (@{servers[i].GetOwnerAsync().Result})");
             }
-            
+
             arg.FollowupAsync(response.ToString());
         }
 
@@ -661,10 +690,10 @@ namespace iOSBot.Bot
         public static void NewThreadChannel(SocketSlashCommand arg)
         {
             arg.DeferAsync(ephemeral: true);
-            
+
             using var db = new BetaContext();
             var category = (string)arg.Data.Options.First().Value;
-            
+
             db.Threads.Add(new Data.Thread()
             {
                 Category = category,
@@ -682,7 +711,7 @@ namespace iOSBot.Bot
         {
             arg.DeferAsync(ephemeral: true);
             var category = (string)arg.Data.Options.First().Value;
-            
+
             using var db = new BetaContext();
 
             var thread = db.Threads.FirstOrDefault(t => t.ChannelId == arg.ChannelId && t.Category == category);
@@ -692,11 +721,11 @@ namespace iOSBot.Bot
                 arg.FollowupAsync(text: "Release threads were not set to be posted here", ephemeral: true);
                 return;
             }
-            
+
             db.Threads.Remove(thread);
 
             db.SaveChanges();
-        
+
             arg.FollowupAsync(text: "Release threads will no longer be posted here.", ephemeral: true);
         }
 
@@ -709,11 +738,12 @@ namespace iOSBot.Bot
             }
 
             arg.DeferAsync();
-            
+
             var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
             var fakeBuild = (string)arg.Data.Options.First(o => o.Name == "build").Value;
             var fakeVersion = (string)arg.Data.Options.First(o => o.Name == "version").Value;
-            var fakeDocId = (string)arg.Data.Options.First(o => o.Name == "docid").Value;;
+            var fakeDocId = (string)arg.Data.Options.First(o => o.Name == "docid").Value;
+            ;
 
             var db = new BetaContext();
 
@@ -730,7 +760,6 @@ namespace iOSBot.Bot
                 ReleaseType = device.Type,
                 VersionDocId = fakeDocId,
                 Group = device.Category
-                
             };
 
             foreach (var s in servers)
@@ -740,15 +769,17 @@ namespace iOSBot.Bot
 
             arg.FollowupAsync("Posted update", ephemeral: true);
         }
-        
+
         #endregion
+
         #region helpers
-        
+
         private static List<ApplicationCommandOptionChoiceProperties> GetDeviceCategories()
         {
             var devices = GetDevices();
 
-            return devices.Select(c => new ApplicationCommandOptionChoiceProperties { Name = c.FriendlyName, Value = c.Category }).ToList();
+            return devices.Select(c => new ApplicationCommandOptionChoiceProperties
+                { Name = c.FriendlyName, Value = c.Category }).ToList();
         }
 
         public static void UpdateCommands(DiscordSocketClient client)
@@ -787,10 +818,10 @@ namespace iOSBot.Bot
             var current = db.Releases.OrderByDescending(r => r.Date).First();
 
             var allMinorWithBeta = db.Releases.Where(r => r.Beta == current.Beta && r.Minor == current.Minor);
-            
+
             int daysSinceRelease = new TimeSpan(DateTime.Today.Millisecond - current.Date.Millisecond).Days;
             int averageWait;
-            
+
             if (allMinorWithBeta.Any())
             {
                 averageWait = (int)Math.Round(allMinorWithBeta.Average(r => r.WaitTime));
@@ -798,8 +829,8 @@ namespace iOSBot.Bot
             else
             {
                 averageWait = (int)Math.Round(db.Releases
-                                                .Where(r => r.Major == current.Major && r.Minor == current.Minor)
-                                                .Average(r => r.WaitTime));
+                    .Where(r => r.Major == current.Major && r.Minor == current.Minor)
+                    .Average(r => r.WaitTime));
             }
 
             return $"Based on previous releases, the next release is expected in {averageWait} days.";
@@ -819,10 +850,10 @@ namespace iOSBot.Bot
                         appleService.DeleteErrorServer(s, db);
                         continue;
                     }
+
                     if (!message.EndsWith("Server requested a reconnect") &&
                         !message.EndsWith("WebSocket connection was closed"))
                     {
-                        
                         ((ITextChannel)server).SendMessageAsync(message);
                     }
                 }
@@ -841,6 +872,6 @@ namespace iOSBot.Bot
         STOP,
         STATUS
     }
-    
+
     #endregion
 }

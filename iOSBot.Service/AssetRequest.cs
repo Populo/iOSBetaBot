@@ -1,6 +1,5 @@
 ﻿namespace iOSBot.Service
 {
-
     public class AssetRequest
     {
         public string AssetAudience { get; set; }
@@ -11,5 +10,4 @@
         public string ProductType { get; set; }
         public string ProductVersion { get; set; }
     }
-
 }

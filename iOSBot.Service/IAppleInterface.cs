@@ -66,10 +66,11 @@ namespace iOSBot.Service
                 {
                     throw new Exception($"No firmware is being signed for {device.FriendlyName}");
                 }
+
                 var claim = jwt.Claims
                     .FirstOrDefault(j => j.Type == "Assets")
                     .Value;
-                
+
                 var json = JsonConvert.DeserializeObject<AssetResponse>(claim);
 
                 var update = new Update
@@ -97,16 +98,16 @@ namespace iOSBot.Service
 
                 using var db = new BetaContext();
                 var dbUpdates = db.Updates
-                                .Where(u => u.Version.Contains(update.VersionReadable) &&
-                                            u.Category == update.Group)
-                                .OrderByDescending(u => u.ReleaseDate);
+                    .Where(u => u.Version.Contains(update.VersionReadable) &&
+                                u.Category == update.Group)
+                    .OrderByDescending(u => u.ReleaseDate);
 
                 // case 1 || 3, short circuit to prevent any kind of npe
                 // first update of this version (17.0 beta 8, 17.0 GM, etc)
-                if (!dbUpdates.Any() || 
-                    dbUpdates.Any(u => u.Build == update.Build && 
+                if (!dbUpdates.Any() ||
+                    dbUpdates.Any(u => u.Build == update.Build &&
                                        update.ReleaseDate == u.ReleaseDate)) return update;
-                
+
                 // case 2
                 // attempt to prevent double counting releases in the situation where it detects
                 // update but then immediately after detects the old version because of apple server stuff 
@@ -116,7 +117,6 @@ namespace iOSBot.Service
                 }
 
                 return update;
-
             }
             catch (Exception e)
             {
@@ -238,7 +238,7 @@ namespace iOSBot.Service
             db.SaveChanges();
         }
 
-        public Dictionary<string,string> GetConfigItems()
+        public Dictionary<string, string> GetConfigItems()
         {
             using var db = new BetaContext();
             var configs = db.Configs;

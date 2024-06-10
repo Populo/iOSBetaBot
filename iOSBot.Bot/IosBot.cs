@@ -52,7 +52,7 @@ namespace iOSBot.Bot
         private async Task MainAsync(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            
+
             Client = _serviceProvider.GetRequiredService<DiscordSocketClient>();
             RestClient = Client.Rest;
 
@@ -68,7 +68,7 @@ namespace iOSBot.Bot
                     Status = "in testing mode";
                     break;
             }
-            
+
             await Client.LoginAsync(TokenType.Bot, args[0]);
             await Client.SetGameAsync(Status, type: ActivityType.Watching);
 
@@ -94,8 +94,9 @@ namespace iOSBot.Bot
 
         private Task _client_MessageReceived(SocketMessage arg)
         {
-            if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id) return Task.CompletedTask;
-            
+            if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id)
+                return Task.CompletedTask;
+
             Commands.PostError(Client, new AppleService(), $"DM Received:\n{arg.Content}\n-@{arg.Author}");
             arg.Channel.SendMessageAsync("Sending this message along. thank you.");
 
@@ -115,7 +116,9 @@ namespace iOSBot.Bot
             {
                 jsonArgs.Add(new JProperty(o.Name, o.Value.ToString()));
             }
-            _logger.Info($"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
+
+            _logger.Info(
+                $"Command received: {arg.CommandName} in {RestClient.GetChannelAsync(arg.ChannelId!.Value).Result} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
 
             switch (arg.CommandName)
             {

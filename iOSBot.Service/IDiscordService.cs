@@ -21,7 +21,7 @@ public class DiscordService : IDiscordService
 #else
         token = Environment.GetEnvironmentVariable("BetaBotBotToken");
 #endif
-        
+
         _bot = new DiscordRestClient();
         _bot.LoginAsync(TokenType.Bot, token);
     }
@@ -44,7 +44,6 @@ public class DiscordService : IDiscordService
                     Name = server.GetChannelAsync(s.ChannelId).Result.Name,
                     Category = s.Category
                 }).ToList()
-
         };
     }
 }

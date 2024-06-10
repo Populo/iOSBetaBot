@@ -52,7 +52,7 @@ namespace iOSBot.Bot.Singletons
                 try
                 {
                     Service.Update u = AppleService.GetUpdate(device).Result;
-                    
+
                     if (!dbUpdates.Any(up => up.Build == u.Build &&
                                              up.ReleaseDate == u.ReleaseDate &&
                                              up.Category == u.Group)) updates.Add(u);
@@ -60,7 +60,8 @@ namespace iOSBot.Bot.Singletons
                 }
                 catch (Exception ex)
                 {
-                    Commands.PostError(Bot, AppleService, $"Error checking update for {device.FriendlyName}:\n{ex.Message}");
+                    Commands.PostError(Bot, AppleService,
+                        $"Error checking update for {device.FriendlyName}:\n{ex.Message}");
                 }
             });
 
@@ -70,13 +71,14 @@ namespace iOSBot.Bot.Singletons
                 var servers = db.Servers.Where(s => s.Category == category);
                 var threads = db.Threads.Where(t => t.Category == category);
 
-                Logger.Info($"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
+                Logger.Info(
+                    $"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
 
                 // dont post if older than 12 hours, still add to db tho
                 var postOld = Convert.ToBoolean(Convert.ToInt16(db.Configs.First(c => c.Name == "PostOld").Value));
-                
+
                 if (postOld || update.ReleaseDate.DayOfYear == DateTime.Today.DayOfYear)
-                {    
+                {
                     foreach (var server in servers)
                     {
                         await SendAlert(update, server);
@@ -86,22 +88,24 @@ namespace iOSBot.Bot.Singletons
                     {
                         await CreateThread(thread, update);
                     }
-                } 
+                }
                 else
                 {
-                    var error = $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
+                    var error =
+                        $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
                     Logger.Info(error);
                     Commands.PostError(Bot, AppleService, error);
                 }
-                
+
                 AppleService.SaveUpdate(update);
             }
-            
+
             // update server count
             ulong channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
             string env = db.Configs.First(c => c.Name == "Environment").Value;
             IChannel channel = Bot.GetChannelAsync(channelId).Result;
-            await ((IVoiceChannel)channel).ModifyAsync(c => c.Name = $"{env} Bot Servers: {Bot.Rest.GetGuildsAsync().Result.Count}");
+            await ((IVoiceChannel)channel).ModifyAsync(c =>
+                c.Name = $"{env} Bot Servers: {Bot.Rest.GetGuildsAsync().Result.Count}");
 
             _timer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
 
@@ -116,10 +120,10 @@ namespace iOSBot.Bot.Singletons
             await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
             Logger.Info("Thread Created.");
         }
-        
+
         public async Task SendAlert(Service.Update update, Server server)
         {
-            var channel = (ITextChannel) Bot.GetChannelAsync(server.ChannelId).Result;
+            var channel = (ITextChannel)Bot.GetChannelAsync(server.ChannelId).Result;
             if (null == channel)
             {
                 Logger.Warn($"Channel with id {server.ChannelId} doesnt exist. Removing");
