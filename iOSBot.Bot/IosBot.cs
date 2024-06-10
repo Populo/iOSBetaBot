@@ -143,6 +143,9 @@ namespace iOSBot.Bot
                 case "manifest":
                     Commands.Manifest(arg);
                     break;
+                case "whycraig":
+                    Commands.WhyCraig(arg);
+                    break;
                 case "goodbot":
                     Commands.GoodBot(arg, RestClient);
                     break;
