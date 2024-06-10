@@ -100,6 +100,14 @@ namespace iOSBot.Bot
             Options = new List<SlashCommandOptionBuilder>() { }
         };
 
+        private static SlashCommandBuilder whyCraigBuilder = new()
+        {
+            Name = "whycraig",
+            Description = "???",
+            DefaultMemberPermissions = GuildPermission.SendMessages,
+            Options = new List<SlashCommandOptionBuilder>() { }
+        };
+
         private static SlashCommandBuilder goodBotBuilder = new()
         {
             Name = "goodbot",
@@ -305,7 +313,8 @@ namespace iOSBot.Bot
             stopBuilder,
             newThreadBuilder,
             deleteThreadBuilder,
-            fakePostBuilder
+            fakePostBuilder,
+            whyCraigBuilder
         };
 
         #endregion
@@ -500,6 +509,13 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
             var gifLocation = db.Configs.First(c => c.Name == "ManifestGif").Value;
             arg.RespondAsync(gifLocation);
+        }
+
+        internal static void WhyCraig(SocketSlashCommand arg)
+        {
+            using var db = new BetaContext();
+            var imgLocation = db.Configs.First(c => c.Name == "WhyCraig").Value;
+            arg.RespondAsync(imgLocation);
         }
 
         internal static void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
