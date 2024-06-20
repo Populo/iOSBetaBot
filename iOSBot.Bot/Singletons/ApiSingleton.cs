@@ -1,16 +1,19 @@
 ﻿using System.Collections.Concurrent;
+using System.Timers;
 using Discord;
 using Discord.WebSocket;
 using iOSBot.Data;
 using iOSBot.Service;
+using NLog;
 using Thread = iOSBot.Data.Thread;
 using Timer = System.Timers.Timer;
+using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot.Singletons
 {
     public class ApiSingleton
     {
-        private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private static Logger Logger = LogManager.GetCurrentClassLogger();
 
         public DiscordSocketClient Bot { get; set; }
 
@@ -39,10 +42,10 @@ namespace iOSBot.Bot.Singletons
             _timer.Elapsed += Timer_Elapsed;
         }
 
-        public async void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        public async void Timer_Elapsed(object? sender, ElapsedEventArgs e)
         {
             Logger.Info("Tick");
-            var updates = new ConcurrentBag<Service.Update>();
+            var updates = new ConcurrentBag<Update>();
             await using var db = new BetaContext();
             var dbUpdates = db.Updates.ToList();
 
@@ -51,7 +54,7 @@ namespace iOSBot.Bot.Singletons
             {
                 try
                 {
-                    Service.Update u = AppleService.GetUpdate(device).Result;
+                    Update u = AppleService.GetUpdate(device).Result;
 
                     if (!dbUpdates.Any(up => up.Build == u.Build &&
                                              up.ReleaseDate == u.ReleaseDate &&
@@ -112,7 +115,7 @@ namespace iOSBot.Bot.Singletons
             await db.SaveChangesAsync();
         }
 
-        private async Task CreateThread(Thread thread, Service.Update update)
+        private async Task CreateThread(Thread thread, Update update)
         {
             var channel = (ITextChannel)Bot.GetChannelAsync(thread.ChannelId).Result;
             Logger.Info($"Creating thread in {channel} for {update.VersionReadable}");
@@ -121,7 +124,7 @@ namespace iOSBot.Bot.Singletons
             Logger.Info("Thread Created.");
         }
 
-        public async Task SendAlert(Service.Update update, Server server)
+        public async Task SendAlert(Update update, Server server)
         {
             var channel = (ITextChannel)Bot.GetChannelAsync(server.ChannelId).Result;
             if (null == channel)
@@ -142,7 +145,7 @@ namespace iOSBot.Bot.Singletons
             };
             embed.AddField(name: "Version", value: update.VersionReadable)
                 .AddField(name: "Build", value: update.Build)
-                .AddField(name: "Size", value: update.Size);
+                .AddField(name: "Source", value: update.Source);
 
             if (!string.IsNullOrEmpty(update.Device.Changelog))
             {

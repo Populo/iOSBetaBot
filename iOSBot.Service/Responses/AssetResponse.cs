@@ -1,4 +1,4 @@
-﻿namespace iOSBot.Service
+﻿namespace iOSBot.Service.Responses
 {
     public class AssetResponse
     {

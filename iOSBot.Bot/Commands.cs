@@ -757,7 +757,6 @@ namespace iOSBot.Bot
                 Build = fakeBuild,
                 Device = device,
                 Version = fakeVersion,
-                SizeBytes = 69420000000,
                 ReleaseDate = DateTime.Today,
                 ReleaseType = device.Type,
                 VersionDocId = fakeDocId,

@@ -10,27 +10,62 @@ namespace iOSBot.Service
         public string Version { get; set; }
         public string VersionDocId { get; set; }
         public string Build { get; set; }
-        public long SizeBytes { get; set; }
         public Device Device { get; set; }
         public string ReleaseType { get; set; }
-        public int Revision { get; set; }
+        public int Revision => GetRevision();
+        public string Source { get; set; }
         public string VersionReadable => GetReadableVersion();
-        public string Size => GetReadableSize();
         public JObject JsonRequest => GetJsonRequest();
+
+        private int GetRevision()
+        {
+            /*
+             * 3 cases:
+             *
+             * 1. completely new version
+             *  - proceed as normal, no revision
+             * 2. new build of existing version
+             *  - revision + 1
+             * 3. same build of same version
+             *  - do nothing
+             */
+
+            using var db = new BetaContext();
+            var dbUpdates = db.Updates
+                .Where(u => u.Version.Contains(this.VersionReadable) &&
+                            u.Category == this.Group)
+                .OrderByDescending(u => u.ReleaseDate);
+
+            // case 1 || 3, short circuit to prevent any kind of npe
+            // first update of this version (17.0 beta 8, 17.0 GM, etc)
+            if (!dbUpdates.Any() ||
+                dbUpdates.Any(u => u.Build == this.Build &&
+                                   this.ReleaseDate == u.ReleaseDate)) return 0;
+
+            // case 2
+            // attempt to prevent double counting releases in the situation where it detects
+            // update but then immediately after detects the old version because of apple server stuff 
+            if (dbUpdates.Any(u => u.ReleaseDate.Date != DateTime.Today.Date))
+            {
+                return dbUpdates.Count();
+            }
+
+            return 0;
+        }
 
         private string GetReadableVersion()
         {
             string majorVersion = Version.Replace("9.9.", "");
-            bool isBeta = VersionDocId.Contains("beta", StringComparison.CurrentCultureIgnoreCase);
+            bool isBeta = ReleaseType == "beta";
             string betaNumber = VersionDocId.Split("Beta").Last();
             if (ReleaseType != "Release")
             {
-                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase) 
+                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase)
                     || VersionDocId.Contains("rc", StringComparison.CurrentCultureIgnoreCase))
                 {
                     majorVersion += " Release Candidate";
                 }
-                else if (VersionDocId.Contains("long", StringComparison.CurrentCultureIgnoreCase) 
+                else if (VersionDocId.Contains("long", StringComparison.CurrentCultureIgnoreCase)
                          || VersionDocId.Contains("gm", StringComparison.CurrentCultureIgnoreCase))
                 {
                     majorVersion += " Golden Master";
@@ -44,22 +79,6 @@ namespace iOSBot.Service
             }
 
             return (!isBeta ? majorVersion : $"{majorVersion} {ReleaseType} Beta {betaNumber}") + revisionAppend;
-        }
-
-        private string GetReadableSize()
-        {
-            string[] units = { "B", "KB", "MB", "GB", "TB" }; // should never be bigger than gb but you know
-
-            int i = 0;
-            decimal size = SizeBytes;
-
-            while(size > 1000)
-            {
-                ++i;
-                size /= 1000;
-            }
-
-            return $"{Math.Round(size, 2)} {units[i]}";
         }
 
         private JObject GetJsonRequest()

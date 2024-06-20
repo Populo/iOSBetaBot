@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.ExceptionServices;
 using iOSBot.Data;
+using iOSBot.Service.Responses;
 using Newtonsoft.Json;
 using NLog;
 using RestSharp;
@@ -76,7 +77,7 @@ namespace iOSBot.Service
                 var update = new Update
                 {
                     Build = json.Build,
-                    SizeBytes = json._DownloadSize,
+                    Source = "OTA",
                     ReleaseDate = DateTime.Parse(jwt.Claims.First(j => j.Type == "PostingDate").Value),
                     VersionDocId = json.SUDocumentationID,
                     Version = json.OSVersion.Replace("9.9.", ""),
@@ -84,37 +85,6 @@ namespace iOSBot.Service
                     Group = device.Category,
                     Device = device
                 };
-
-                /*
-                 * 3 cases:
-                 *
-                 * 1. completely new version
-                 *  - proceed as normal, no revision
-                 * 2. new build of existing version
-                 *  - revision + 1
-                 * 3. same build of same version
-                 *  - do nothing
-                 */
-
-                using var db = new BetaContext();
-                var dbUpdates = db.Updates
-                    .Where(u => u.Version.Contains(update.VersionReadable) &&
-                                u.Category == update.Group)
-                    .OrderByDescending(u => u.ReleaseDate);
-
-                // case 1 || 3, short circuit to prevent any kind of npe
-                // first update of this version (17.0 beta 8, 17.0 GM, etc)
-                if (!dbUpdates.Any() ||
-                    dbUpdates.Any(u => u.Build == update.Build &&
-                                       update.ReleaseDate == u.ReleaseDate)) return update;
-
-                // case 2
-                // attempt to prevent double counting releases in the situation where it detects
-                // update but then immediately after detects the old version because of apple server stuff 
-                if (dbUpdates.Any(u => u.ReleaseDate.Date != DateTime.Today.Date))
-                {
-                    update.Revision = dbUpdates.Count();
-                }
 
                 return update;
             }
