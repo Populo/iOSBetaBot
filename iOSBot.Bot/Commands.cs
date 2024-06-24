@@ -606,7 +606,9 @@ namespace iOSBot.Bot
 
         public static void When(SocketSlashCommand arg)
         {
-            arg.DeferAsync(ephemeral: true);
+            arg.DeferAsync();
+
+            var rand = new Random();
 
             var responses = new string[]
             {
@@ -628,11 +630,32 @@ namespace iOSBot.Bot
                 "useful"
             };
 
-            string resp = responses[new Random().Next(responses.Length)];
+            var resp = responses[rand.Next(responses.Length)];
 
             if (resp == "useful")
             {
-                resp = "https://www.thinkybits.com/blog/iOS-versions/";
+                if (rand.NextDouble() > 0.5) resp = "https://www.thinkybits.com/blog/iOS-versions/";
+                else
+                {
+                    // lmfao
+                    var now = DateTime.Now;
+                    var today1pm = DateTime.Today.AddHours(13);
+                    var today4pm = DateTime.Today.AddHours(16);
+                    if (now > today1pm && now < today4pm)
+                    {
+                        resp = "Could be any minute now";
+                    }
+                    else
+                    {
+                        if (now > today4pm) today1pm = today1pm.AddDays(1);
+                        var offset = DateTimeOffset.Parse(today1pm.ToLongDateString()).AddHours(13);
+
+                        if (offset.DayOfWeek == DayOfWeek.Saturday) offset = offset.AddDays(2);
+                        else if (offset.DayOfWeek == DayOfWeek.Sunday) offset = offset.AddDays(1);
+
+                        resp = $"*Possibly* in <t:{offset.ToUnixTimeSeconds()}:R>";
+                    }
+                }
             }
 
             arg.FollowupAsync(resp);
