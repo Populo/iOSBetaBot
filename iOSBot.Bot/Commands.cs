@@ -612,21 +612,21 @@ namespace iOSBot.Bot
 
             var responses = new string[]
             {
-                //"Son (tm)",
+                "Son (tm)",
                 "useful",
-                // "Release time was just pushed back 5 more minutes",
-                // "Tim Apple said maybe next week",
+                "Release time was just pushed back 5 more minutes",
+                "Tim Apple said maybe next week",
                 "useful",
-                // "There isn't one, the next beta is the friends we made along the way",
+                "There isn't one, the next beta is the friends we made along the way",
                 "useful",
                 "useful",
-                //  "Many moons from now",
-                //  "Eventually",
+                "Many moons from now",
+                "Eventually",
                 "useful",
-                //  "I think Tim hit the snooze button on his alarm",
-                //  "I heard that Tim’s dog ate the Beta",
+                "I think Tim hit the snooze button on his alarm",
+                "I heard that Tim’s dog ate the Beta",
                 "useful",
-                //   "Once AirPower is released",
+                "Once AirPower is released",
                 "useful"
             };
 
