@@ -606,33 +606,53 @@ namespace iOSBot.Bot
 
         public static void When(SocketSlashCommand arg)
         {
-            arg.DeferAsync(ephemeral: true);
+            arg.DeferAsync();
+
+            var rand = new Random();
 
             var responses = new string[]
             {
-                "Son (tm)",
+                //"Son (tm)",
                 "useful",
-                "Release time was just pushed back 5 more minutes",
-                "Tim Apple said maybe next week",
+                // "Release time was just pushed back 5 more minutes",
+                // "Tim Apple said maybe next week",
                 "useful",
-                "There isn't one, the next beta is the friends we made along the way",
+                // "There isn't one, the next beta is the friends we made along the way",
                 "useful",
                 "useful",
-                "Many moons from now",
-                "Eventually",
+                //  "Many moons from now",
+                //  "Eventually",
                 "useful",
-                "I think Tim hit the snooze button on his alarm",
-                "I heard that Tim’s dog ate the Beta",
+                //  "I think Tim hit the snooze button on his alarm",
+                //  "I heard that Tim’s dog ate the Beta",
                 "useful",
-                "Once AirPower is released",
+                //   "Once AirPower is released",
                 "useful"
             };
 
-            string resp = responses[new Random().Next(responses.Length)];
+            var resp = responses[rand.Next(responses.Length)];
 
             if (resp == "useful")
             {
-                resp = "https://www.thinkybits.com/blog/iOS-versions/";
+                if (rand.NextDouble() > 0.5) resp = "https://www.thinkybits.com/blog/iOS-versions/";
+                else
+                {
+                    // lmfao
+                    var now = DateTime.Now;
+                    var today1pm = DateTime.Today.AddHours(13);
+                    var today4pm = DateTime.Today.AddHours(16);
+                    if (now > today1pm && now < today4pm)
+                    {
+                        resp = "Could be any minute now";
+                    }
+                    else
+                    {
+                        if (now > today4pm) today1pm = today1pm.AddDays(1);
+                        var offset = DateTimeOffset.Parse(today1pm.ToLongDateString()).AddHours(13);
+
+                        resp = $"<t:{offset.ToUnixTimeSeconds()}:R>";
+                    }
+                }
             }
 
             arg.FollowupAsync(resp);
