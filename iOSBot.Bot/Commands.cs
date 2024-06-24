@@ -8,6 +8,8 @@ using iOSBot.Data;
 using iOSBot.Service;
 using Newtonsoft.Json;
 using NLog;
+using Thread = iOSBot.Data.Thread;
+using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot
 {
@@ -306,7 +308,7 @@ namespace iOSBot.Bot
             badBotBuilder,
             infoBuilder,
             serverBuilder,
-            // whenBuilder,
+            whenBuilder,
             // gambaBuilder,
             statusBuilder,
             startBuilder,
@@ -514,8 +516,8 @@ namespace iOSBot.Bot
         internal static void WhyCraig(SocketSlashCommand arg)
         {
             using var db = new BetaContext();
-            var imgLocation = db.Configs.First(c => c.Name == "WhyCraig").Value;
-            arg.RespondAsync(imgLocation);
+            var imgSrc = db.Configs.First(c => c.Name == "WhyCraig").Value;
+            arg.RespondAsync(imgSrc);
         }
 
         internal static void GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
@@ -630,7 +632,7 @@ namespace iOSBot.Bot
 
             if (resp == "useful")
             {
-                resp = GetUsefulResponse();
+                resp = "https://www.thinkybits.com/blog/iOS-versions/";
             }
 
             arg.FollowupAsync(resp, ephemeral: true);
@@ -694,7 +696,7 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
             var category = (string)arg.Data.Options.First().Value;
 
-            db.Threads.Add(new Data.Thread()
+            db.Threads.Add(new Thread()
             {
                 Category = category,
                 ChannelId = arg.ChannelId.Value,
@@ -750,7 +752,7 @@ namespace iOSBot.Bot
             var device = db.Devices.FirstOrDefault(d => d.Category == category);
             var servers = db.Servers.Where(s => s.Category == category);
 
-            var fakeUpdate = new Service.Update()
+            var fakeUpdate = new Update()
             {
                 Build = fakeBuild,
                 Device = device,
@@ -809,31 +811,6 @@ namespace iOSBot.Bot
             using var db = new BetaContext();
 
             return db.Devices.ToList();
-        }
-
-        private static string GetUsefulResponse()
-        {
-            using var db = new BetaContext();
-
-            var current = db.Releases.OrderByDescending(r => r.Date).First();
-
-            var allMinorWithBeta = db.Releases.Where(r => r.Beta == current.Beta && r.Minor == current.Minor);
-
-            int daysSinceRelease = new TimeSpan(DateTime.Today.Millisecond - current.Date.Millisecond).Days;
-            int averageWait;
-
-            if (allMinorWithBeta.Any())
-            {
-                averageWait = (int)Math.Round(allMinorWithBeta.Average(r => r.WaitTime));
-            }
-            else
-            {
-                averageWait = (int)Math.Round(db.Releases
-                    .Where(r => r.Major == current.Major && r.Minor == current.Minor)
-                    .Average(r => r.WaitTime));
-            }
-
-            return $"Based on previous releases, the next release is expected in {averageWait} days.";
         }
 
         public static void PostError(DiscordSocketClient bot, IAppleService appleService, string message)
