@@ -635,7 +635,7 @@ namespace iOSBot.Bot
                 resp = "https://www.thinkybits.com/blog/iOS-versions/";
             }
 
-            arg.FollowupAsync(resp, ephemeral: false);
+            arg.FollowupAsync(resp);
         }
 
         public static void GetServers(SocketSlashCommand arg, DiscordRestClient bot)
