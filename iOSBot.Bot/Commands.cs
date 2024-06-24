@@ -650,7 +650,10 @@ namespace iOSBot.Bot
                         if (now > today4pm) today1pm = today1pm.AddDays(1);
                         var offset = DateTimeOffset.Parse(today1pm.ToLongDateString()).AddHours(13);
 
-                        resp = $"<t:{offset.ToUnixTimeSeconds()}:R>";
+                        if (offset.DayOfWeek == DayOfWeek.Saturday) offset = offset.AddDays(2);
+                        else if (offset.DayOfWeek == DayOfWeek.Sunday) offset = offset.AddDays(1);
+
+                        resp = $"*Possibly* in <t:{offset.ToUnixTimeSeconds()}:R>";
                     }
                 }
             }
