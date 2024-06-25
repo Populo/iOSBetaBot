@@ -114,7 +114,8 @@ namespace iOSBot.Bot
             JObject jsonArgs = new JObject();
             foreach (var o in arg.Data.Options)
             {
-                jsonArgs.Add(new JProperty(o.Name, o.Value.ToString()));
+                if (null != o.Value) jsonArgs.Add(new JProperty(o.Name, o.Value.ToString()));
+                else jsonArgs.Add(new JProperty(o.Name, "null"));
             }
 
             _logger.Info(
