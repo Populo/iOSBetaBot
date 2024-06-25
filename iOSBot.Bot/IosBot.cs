@@ -185,7 +185,7 @@ namespace iOSBot.Bot
 
         private async Task _client_Log(LogMessage arg)
         {
-            if (arg.Message.Contains("Unknown Channel (MESSAGE_CREATE")) return;
+            if (arg.Message.Contains("Unknown Channel")) return;
 
             _logger.Info(arg.Message);
             if (null != arg.Exception)
