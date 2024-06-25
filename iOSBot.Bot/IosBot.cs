@@ -78,7 +78,6 @@ namespace iOSBot.Bot
             Client.Ready += _client_Ready;
             Client.SlashCommandExecuted += _client_SlashCommandExecuted;
             Client.MessageReceived += _client_MessageReceived;
-            Client.JoinedGuild += ClientOnJoinedGuild;
 
             _apiFeed.Bot = Client;
             _apiFeed.Start();
@@ -86,21 +85,13 @@ namespace iOSBot.Bot
             await Task.Delay(-1);
         }
 
-        private Task ClientOnJoinedGuild(SocketGuild arg)
-        {
-            Commands.PostError(Client, new AppleService(), $"Joined Server {arg.Name}.");
-            return Task.CompletedTask;
-        }
-
-        private Task _client_MessageReceived(SocketMessage arg)
+        private async Task _client_MessageReceived(SocketMessage arg)
         {
             if (arg.Channel is not IDMChannel || arg.Author.Id == Client.GetApplicationInfoAsync().Result.Id)
-                return Task.CompletedTask;
+                return;
 
             Commands.PostError(Client, new AppleService(), $"DM Received:\n{arg.Content}\n-@{arg.Author}");
-            arg.Channel.SendMessageAsync("Sending this message along. thank you.");
-
-            return Task.CompletedTask;
+            await arg.Channel.SendMessageAsync("Sending this message along. thank you.");
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -194,6 +185,8 @@ namespace iOSBot.Bot
 
         private async Task _client_Log(LogMessage arg)
         {
+            if (arg.Message.Contains("Unknown Channel (MESSAGE_CREATE")) return;
+
             _logger.Info(arg.Message);
             if (null != arg.Exception)
             {
