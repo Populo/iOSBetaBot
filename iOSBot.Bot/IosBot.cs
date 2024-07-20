@@ -168,6 +168,12 @@ namespace iOSBot.Bot
                 case "nothreads":
                     Commands.DeleteThreadChannel(arg);
                     break;
+                case "yesforum":
+                    Commands.AddForumPost(arg, RestClient);
+                    break;
+                case "noforum":
+                    Commands.RemoveForumPost(arg, RestClient);
+                    break;
                 case "fake":
                     Commands.FakeUpdate(arg);
                     break;

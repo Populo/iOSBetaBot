@@ -1,16 +1,19 @@
 ﻿using System.Collections.Concurrent;
+using System.Timers;
 using Discord;
 using Discord.WebSocket;
 using iOSBot.Data;
 using iOSBot.Service;
+using NLog;
 using Thread = iOSBot.Data.Thread;
 using Timer = System.Timers.Timer;
+using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot.Singletons
 {
     public class ApiSingleton
     {
-        private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private static Logger Logger = LogManager.GetCurrentClassLogger();
 
         public DiscordSocketClient Bot { get; set; }
 
@@ -39,10 +42,10 @@ namespace iOSBot.Bot.Singletons
             _timer.Elapsed += Timer_Elapsed;
         }
 
-        public async void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        public async void Timer_Elapsed(object? sender, ElapsedEventArgs e)
         {
             Logger.Info("Tick");
-            var updates = new ConcurrentBag<Service.Update>();
+            var updates = new ConcurrentBag<Update>();
             await using var db = new BetaContext();
             var dbUpdates = db.Updates.ToList();
 
@@ -51,7 +54,7 @@ namespace iOSBot.Bot.Singletons
             {
                 try
                 {
-                    Service.Update u = AppleService.GetUpdate(device).Result;
+                    Update u = AppleService.GetUpdate(device).Result;
 
                     if (!dbUpdates.Any(up => up.Build == u.Build &&
                                              up.ReleaseDate == u.ReleaseDate &&
@@ -70,6 +73,7 @@ namespace iOSBot.Bot.Singletons
                 var category = update.Device.Category;
                 var servers = db.Servers.Where(s => s.Category == category);
                 var threads = db.Threads.Where(t => t.Category == category);
+                var forums = db.Forums.Where(f => f.Category == category);
 
                 Logger.Info(
                     $"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
@@ -87,6 +91,11 @@ namespace iOSBot.Bot.Singletons
                     foreach (var thread in threads)
                     {
                         await CreateThread(thread, update);
+                    }
+
+                    foreach (var forum in forums)
+                    {
+                        await CreateForum(forum, update);
                     }
                 }
                 else
@@ -112,7 +121,18 @@ namespace iOSBot.Bot.Singletons
             await db.SaveChangesAsync();
         }
 
-        private async Task CreateThread(Thread thread, Service.Update update)
+        private async Task CreateForum(Forum forum, Update update)
+        {
+            var dForum = (await Bot.GetChannelAsync(forum.ChannelId)) as IForumChannel;
+            Logger.Info($"Creating post in {dForum.Name} for {update.VersionReadable}");
+
+            await dForum.CreatePostAsync(title: $"{update.VersionReadable} Discussion",
+                text: $"Discuss the release of {update.VersionReadable} here.",
+                archiveDuration: ThreadArchiveDuration.ThreeDays);
+            Logger.Info("Forum post created");
+        }
+
+        private async Task CreateThread(Thread thread, Update update)
         {
             var channel = (ITextChannel)Bot.GetChannelAsync(thread.ChannelId).Result;
             Logger.Info($"Creating thread in {channel} for {update.VersionReadable}");
@@ -121,7 +141,7 @@ namespace iOSBot.Bot.Singletons
             Logger.Info("Thread Created.");
         }
 
-        public async Task SendAlert(Service.Update update, Server server)
+        public async Task SendAlert(Update update, Server server)
         {
             var channel = (ITextChannel)Bot.GetChannelAsync(server.ChannelId).Result;
             if (null == channel)
@@ -132,6 +152,18 @@ namespace iOSBot.Bot.Singletons
                 return;
             }
 
+            /*var imagePath = "";
+            if (update.Device.Category.Contains("ios", StringComparison.CurrentCultureIgnoreCase))
+                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/iphone.png";
+            else if (update.Device.Category.Contains("mac", StringComparison.CurrentCultureIgnoreCase))
+                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/mac.png";
+            else if (update.Device.Category.Contains("tv", StringComparison.CurrentCultureIgnoreCase))
+                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/tv.png";
+            else if (update.Device.Category.Contains("watch", StringComparison.CurrentCultureIgnoreCase))
+                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/watch.png";
+            else if (update.Device.Category.Contains("vision", StringComparison.CurrentCultureIgnoreCase))
+                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/vision.png";
+            */
             var mention = server.TagId != "" ? $"<@&{server.TagId}>" : "";
 
             var embed = new EmbedBuilder
@@ -143,6 +175,11 @@ namespace iOSBot.Bot.Singletons
             embed.AddField(name: "Version", value: update.VersionReadable)
                 .AddField(name: "Build", value: update.Build)
                 .AddField(name: "Size", value: update.Size);
+
+            /*if (!string.IsNullOrEmpty(imagePath))
+            {
+                embed.ImageUrl = imagePath;
+            }*/
 
             if (!string.IsNullOrEmpty(update.Device.Changelog))
             {

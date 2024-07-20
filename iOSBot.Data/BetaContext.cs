@@ -11,7 +11,7 @@ namespace iOSBot.Data
             {
                 dbtier = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             }
-            
+
             switch (dbtier)
             {
                 case "Release":
@@ -24,10 +24,11 @@ namespace iOSBot.Data
         }
 
         private string DbName { get; set; }
-        
+
         public DbSet<Update> Updates { get; set; }
         public DbSet<Server> Servers { get; set; }
         public DbSet<Thread> Threads { get; set; }
+        public DbSet<Forum> Forums { get; set; }
         public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
@@ -35,7 +36,8 @@ namespace iOSBot.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder = null)
         {
-            if (!optionsBuilder.IsConfigured) {
+            if (!optionsBuilder.IsConfigured)
+            {
                 var connection = new MySqlConnectionStringBuilder();
                 connection.Server = "pinas";
 
@@ -46,11 +48,9 @@ namespace iOSBot.Data
 
                 //connection.ForceSynchronous = true;
 
-                optionsBuilder.UseMySql(connection.ConnectionString, ServerVersion.AutoDetect(connection.ConnectionString),
-                    options =>
-                    {
-                        options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
-                    });
+                optionsBuilder.UseMySql(connection.ConnectionString,
+                    ServerVersion.AutoDetect(connection.ConnectionString),
+                    options => { options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>()); });
             }
         }
     }
@@ -74,6 +74,14 @@ namespace iOSBot.Data
         public string TagId { get; set; }
     }
 
+    public class Forum
+    {
+        public Guid id { get; set; }
+        public ulong ServerId { get; set; }
+        public ulong ChannelId { get; set; }
+        public string Category { get; set; }
+    }
+
     public class Thread
     {
         public Guid id { get; set; }
@@ -93,7 +101,9 @@ namespace iOSBot.Data
         public string Product { get; set; }
         public string BoardId { get; set; }
         public string Category { get; set; }
+
         public string Changelog { get; set; }
+
         // Developer, Public, Release
         public string Type { get; set; }
         public uint Color { get; set; }
