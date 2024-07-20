@@ -256,6 +256,56 @@ namespace iOSBot.Bot
             }
         };
 
+        private static SlashCommandBuilder yesForumBuilder = new()
+        {
+            Name = "yesforum",
+            Description = "Create a forum thread in specified channel",
+            DefaultMemberPermissions = GuildPermission.ManageGuild,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new()
+                {
+                    Name = "category",
+                    Description = "Which OS updates",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                    Choices = GetDeviceCategories()
+                },
+                new()
+                {
+                    Name = "channel",
+                    Description = "Id of the forum channel to post in",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.Channel
+                }
+            }
+        };
+
+        private static SlashCommandBuilder noForumBuilder = new()
+        {
+            Name = "noforum",
+            Description = "Do not create a forum thread in specified channel",
+            DefaultMemberPermissions = GuildPermission.ManageGuild,
+            Options = new List<SlashCommandOptionBuilder>()
+            {
+                new()
+                {
+                    Name = "category",
+                    Description = "Which OS updates",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.String,
+                    Choices = GetDeviceCategories()
+                },
+                new()
+                {
+                    Name = "channel",
+                    Description = "Id of the forum channel to post in",
+                    IsRequired = true,
+                    Type = ApplicationCommandOptionType.Channel
+                }
+            }
+        };
+
         private static SlashCommandBuilder fakePostBuilder = new()
         {
             Name = "fake",
@@ -315,6 +365,8 @@ namespace iOSBot.Bot
             stopBuilder,
             newThreadBuilder,
             deleteThreadBuilder,
+            yesForumBuilder,
+            noForumBuilder,
             fakePostBuilder,
             whyCraigBuilder
         };
@@ -768,7 +820,6 @@ namespace iOSBot.Bot
             var fakeBuild = (string)arg.Data.Options.First(o => o.Name == "build").Value;
             var fakeVersion = (string)arg.Data.Options.First(o => o.Name == "version").Value;
             var fakeDocId = (string)arg.Data.Options.First(o => o.Name == "docid").Value;
-            ;
 
             var db = new BetaContext();
 
@@ -793,6 +844,69 @@ namespace iOSBot.Bot
             }
 
             arg.FollowupAsync("Posted update", ephemeral: true);
+        }
+
+        public static void AddForumPost(SocketSlashCommand arg, DiscordRestClient bot)
+        {
+            arg.DeferAsync(ephemeral: true);
+
+            var channel = arg.Data.Options.First(o => o.Name == "channel").Value;
+            var category = arg.Data.Options.First(o => o.Name == "category").Value.ToString();
+
+            if (null == channel || channel.GetType() != typeof(SocketForumChannel))
+            {
+                arg.FollowupAsync("Please select a forum channel I can write to", ephemeral: true);
+                return;
+            }
+
+            var forum = channel as SocketForumChannel ?? throw new Exception("Channel is not a forum channel");
+
+            using var db = new BetaContext();
+            var dbF = db.Forums.FirstOrDefault(f => f.Category == category && f.ChannelId == forum.Id);
+            if (null != dbF)
+            {
+                arg.FollowupAsync($"Forum posts will already happen for {category} in {forum.Name}", ephemeral: true);
+                return;
+            }
+
+            db.Forums.Add(new Forum()
+            {
+                ChannelId = forum.Id,
+                Category = category,
+                ServerId = forum.Guild.Id,
+                id = Guid.NewGuid()
+            });
+
+            db.SaveChangesAsync();
+            arg.FollowupAsync("Forum posts will happen here", ephemeral: true);
+        }
+
+        public static void RemoveForumPost(SocketSlashCommand arg, DiscordRestClient bot)
+        {
+            arg.DeferAsync(ephemeral: true);
+
+            var channel = arg.Data.Options.First(o => o.Name == "channel").Value;
+            var category = arg.Data.Options.First(o => o.Name == "category").Value.ToString();
+
+            if (null == channel || channel.GetType() != typeof(SocketForumChannel))
+            {
+                arg.FollowupAsync("Please select a forum channel I can write to", ephemeral: true);
+                return;
+            }
+
+            var forum = channel as SocketForumChannel ?? throw new Exception("Channel is not a forum channel");
+
+            using var db = new BetaContext();
+            var dbF = db.Forums.FirstOrDefault(f => f.Category == category && f.ChannelId == forum.Id);
+            if (null == dbF)
+            {
+                arg.FollowupAsync($"Forum posts are not set to happen for {category} in {forum.Name}", ephemeral: true);
+                return;
+            }
+
+            db.Forums.Remove(dbF);
+            db.SaveChanges();
+            arg.FollowupAsync($"Forum posts for {category} will no longer happen in ${forum.Name}", ephemeral: true);
         }
 
         #endregion
@@ -864,6 +978,8 @@ namespace iOSBot.Bot
                 Environment.Exit(1);
             }
         }
+
+        #endregion
     }
 
     public enum StatusCommand
@@ -872,6 +988,4 @@ namespace iOSBot.Bot
         STOP,
         STATUS
     }
-
-    #endregion
 }
