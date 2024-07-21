@@ -125,10 +125,26 @@ namespace iOSBot.Bot.Singletons
         {
             var dForum = (await Bot.GetChannelAsync(forum.ChannelId)) as IForumChannel;
             Logger.Info($"Creating post in {dForum.Name} for {update.VersionReadable}");
+            var embed = new EmbedBuilder()
+            {
+                Color = update.Device.Color,
+                Title = update.VersionReadable,
+            };
+            embed.AddField(name: "Build", value: update.Build)
+                .AddField(name: "Size", value: update.Size)
+                .AddField(name: "Release Date", value: update.ReleaseDate.ToShortDateString())
+                .AddField(name: "Changelog", value: update.Device.Changelog);
+
+            var imagePath = GetImagePath(update.Device.Category);
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                embed.ThumbnailUrl = imagePath;
+            }
 
             await dForum.CreatePostAsync(title: $"{update.VersionReadable} Discussion",
                 text: $"Discuss the release of {update.VersionReadable} here.",
-                archiveDuration: ThreadArchiveDuration.ThreeDays);
+                embed: embed.Build(),
+                archiveDuration: ThreadArchiveDuration.OneWeek);
             Logger.Info("Forum post created");
         }
 
@@ -152,18 +168,6 @@ namespace iOSBot.Bot.Singletons
                 return;
             }
 
-            /*var imagePath = "";
-            if (update.Device.Category.Contains("ios", StringComparison.CurrentCultureIgnoreCase))
-                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/iphone.png";
-            else if (update.Device.Category.Contains("mac", StringComparison.CurrentCultureIgnoreCase))
-                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/mac.png";
-            else if (update.Device.Category.Contains("tv", StringComparison.CurrentCultureIgnoreCase))
-                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/tv.png";
-            else if (update.Device.Category.Contains("watch", StringComparison.CurrentCultureIgnoreCase))
-                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/watch.png";
-            else if (update.Device.Category.Contains("vision", StringComparison.CurrentCultureIgnoreCase))
-                imagePath = "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/vision.png";
-            */
             var mention = server.TagId != "" ? $"<@&{server.TagId}>" : "";
 
             var embed = new EmbedBuilder
@@ -176,10 +180,11 @@ namespace iOSBot.Bot.Singletons
                 .AddField(name: "Build", value: update.Build)
                 .AddField(name: "Size", value: update.Size);
 
-            /*if (!string.IsNullOrEmpty(imagePath))
+            var imagePath = GetImagePath(update.Device.Category);
+            if (!string.IsNullOrEmpty(imagePath))
             {
-                embed.ImageUrl = imagePath;
-            }*/
+                embed.ThumbnailUrl = imagePath;
+            }
 
             if (!string.IsNullOrEmpty(update.Device.Changelog))
             {
@@ -196,6 +201,27 @@ namespace iOSBot.Bot.Singletons
                 Logger.Error(e);
                 Commands.PostError(Bot, AppleService, $"Error posting to {channel.Name}. {e.Message}");
             }
+        }
+
+        private string GetImagePath(string category)
+        {
+            if (category.Contains("ios", StringComparison.CurrentCultureIgnoreCase))
+                return
+                    "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/iphone.png";
+            else if (category.Contains("mac", StringComparison.CurrentCultureIgnoreCase))
+                return
+                    "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/mac.png";
+            else if (category.Contains("tv", StringComparison.CurrentCultureIgnoreCase))
+                return
+                    "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/tv.png";
+            else if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase))
+                return
+                    "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/watch.png";
+            else if (category.Contains("vision", StringComparison.CurrentCultureIgnoreCase))
+                return
+                    "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/vision.png";
+
+            return string.Empty;
         }
 
         public void Start()
