@@ -1,0 +1,8 @@
+This bot collects a little bit of information. it collects:
+1) servers it is a member of
+2) who owns said servers
+3) Possibly user counts of servers in the future
+4) channel and server ids to know where to post
+5) when a command is executed the user who did it is logged along with the parameters they passed. These logs are stored locally and deleted after 7 days. This is for debugging purposes only.
+
+No data is collected for the purpose of tracking, stalking, or harassing users. This data will also never be sold.
