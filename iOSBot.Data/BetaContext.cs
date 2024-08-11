@@ -108,6 +108,8 @@ namespace iOSBot.Data
         public string Type { get; set; }
         public uint Color { get; set; }
         public string AssetType { get; set; }
+        public int Priority { get; set; }
+        public bool Enabled { get; set; }
     }
 
     [PrimaryKey("Name")]

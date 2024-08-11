@@ -1,7 +1,5 @@
-﻿
-namespace iOSBot.Bot
+﻿namespace iOSBot.Bot
 {
-
     public class AssetResponse
     {
         public string _EventRecordingServiceURL { get; set; }
@@ -66,5 +64,4 @@ namespace iOSBot.Bot
         public string CryptexTag { get; set; }
         public int CryptexSize { get; set; }
     }
-
 }
