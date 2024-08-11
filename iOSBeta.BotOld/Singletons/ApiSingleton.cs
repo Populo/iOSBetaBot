@@ -121,7 +121,7 @@ namespace iOSBot.Bot.Singletons
             await db.SaveChangesAsync();
         }
 
-        private async Task CreateForum(Forum forum, Update update)
+        private async Task<IThreadChannel> CreateForum(Forum forum, Update update)
         {
             var dForum = (await Bot.GetChannelAsync(forum.ChannelId)) as IForumChannel;
             Logger.Info($"Creating post in {dForum.Name} for {update.VersionReadable}");
@@ -141,23 +141,24 @@ namespace iOSBot.Bot.Singletons
                 embed.ThumbnailUrl = imagePath;
             }
 
-            await dForum.CreatePostAsync(title: $"{update.VersionReadable} Discussion",
+            return await dForum.CreatePostAsync(title: $"{update.VersionReadable} Discussion",
                 text: $"Discuss the release of {update.VersionReadable} here.",
                 embed: embed.Build(),
                 archiveDuration: ThreadArchiveDuration.OneWeek);
             Logger.Info("Forum post created");
         }
 
-        private async Task CreateThread(Thread thread, Update update)
+        private async Task<IThreadChannel> CreateThread(Thread thread, Update update)
         {
             var channel = (ITextChannel)Bot.GetChannelAsync(thread.ChannelId).Result;
             Logger.Info($"Creating thread in {channel} for {update.VersionReadable}");
 
-            await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
+            return await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
             Logger.Info("Thread Created.");
         }
 
-        public async Task SendAlert(Update update, Server server)
+        public async Task SendAlert(Update update, Server server, IThreadChannel forum = null,
+            IThreadChannel thread = null)
         {
             var channel = (ITextChannel)Bot.GetChannelAsync(server.ChannelId).Result;
             if (null == channel)

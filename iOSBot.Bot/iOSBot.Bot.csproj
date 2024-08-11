@@ -1,38 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <UserSecretsId>bd94d603-b40e-44a3-ab30-535d7dc08e87</UserSecretsId>
-    <LangVersion>12</LangVersion>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="NLog.config" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Discord.Net" Version="3.15.3"/>
+        <PackageReference Include="NLog" Version="5.3.2"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-      <PackageReference Include="Discord.Net" Version="3.15.2"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
-      <PackageReference Include="NLog" Version="5.3.2"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\iOSBot.Service\iOSBot.Service.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Images\bless-hands.gif">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\iOSBot.Service\iOSBot.Service.csproj"/>
+    </ItemGroup>
 
 </Project>
