@@ -103,7 +103,23 @@ public class Craig
                 await AdminCommands.NoErrors(arg);
                 break;
             case "force":
-                await AdminCommands.ForceCommand(arg);
+                if (!AdminCommands.IsAllowed(arg.User.Id))
+                {
+                    await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                    return;
+                }
+
+                // try to prevent what looks like some race conditions
+                PollTimer.Stop();
+
+                await arg.DeferAsync(ephemeral: true);
+
+                PollTimerOnElapsed(null, null!);
+
+                PollTimer.Start();
+
+                _logger.Info($"Update forced by {arg.User.GlobalName}");
+                await arg.FollowupAsync("Updates checked.");
                 break;
             case "update":
                 await AdminCommands.UpdateCommands(Client, arg);

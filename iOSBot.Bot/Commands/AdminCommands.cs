@@ -11,27 +11,6 @@ public class AdminCommands
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public static async Task ForceCommand(SocketSlashCommand command)
-    {
-        if (!IsAllowed(command.User.Id))
-        {
-            await command.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
-            return;
-        }
-
-        // try to prevent what looks like some race conditions
-        //  ApiSingleton.Instance.StopTimer();
-
-        await command.DeferAsync(ephemeral: true);
-
-        //ApiSingleton.Instance.Timer_Elapsed(null, null!);
-
-        // ApiSingleton.Instance.StartTimer();
-
-        Logger.Info($"Update forced by {command.User.GlobalName}");
-        await command.FollowupAsync("Updates checked.");
-    }
-
     public static async Task YesErrors(SocketSlashCommand arg)
     {
         if (!IsAllowed(arg.User.Id))
