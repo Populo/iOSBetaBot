@@ -40,7 +40,7 @@ public class Craig
         {
             AutoReset = true,
             Enabled = false,
-            Interval = TimeSpan.FromMinutes(5).Milliseconds
+            Interval = 1000 * 60 * 5 // 5 minutes
         };
         PollTimer.Elapsed += PollTimerOnElapsed;
     }
