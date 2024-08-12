@@ -167,7 +167,7 @@ namespace iOSBot.Service
             };
             db.Updates.Add(newUpdate);
 
-            db.SaveChangesAsync();
+            db.SaveChangesAsync().Wait();
         }
 
         public void DeleteServer(Server server, BetaContext? db)
