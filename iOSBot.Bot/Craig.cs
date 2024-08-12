@@ -253,7 +253,17 @@ public class Craig
                 var ups = await AppleService.GetUpdate(device);
                 foreach (var u in ups)
                 {
-                    if (!dbUpdates.Any(up => up.Hash == u.Hash)) updates.Add(u);
+                    // hash == hash -> same update
+                    // build, release date, category -> might be different but prevent double posting essentially the same thing
+                    // check db + already found updates
+                    if (!dbUpdates.Any(up => up.Hash == u.Hash ||
+                                             (up.Build == u.Build &&
+                                              up.ReleaseDate == u.ReleaseDate &&
+                                              up.Category == u.Group)) &&
+                        !updates.Any(up => up.Hash == u.Hash ||
+                                           (up.Build == u.Build &&
+                                            up.ReleaseDate == u.ReleaseDate &&
+                                            up.Group == u.Group))) updates.Add(u);
                     else _logger.Info("No new update found for " + device.FriendlyName);
                 }
             }
