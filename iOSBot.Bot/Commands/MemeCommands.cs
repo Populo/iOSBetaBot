@@ -21,7 +21,7 @@ public class MemeCommands
         await arg.RespondAsync(imgSrc);
     }
 
-    public static async Task GoodBot(SocketSlashCommand arg, DiscordSocketClient bot)
+    public static async Task GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
     {
         await arg.DeferAsync(ephemeral: true);
 
@@ -32,8 +32,9 @@ public class MemeCommands
         {
             reason = arg.Data.Options.First().Value as string
                      ?? throw new Exception("Cannot get reason");
-            var channel = await arg.GetChannelAsync() as SocketTextChannel
+            var channel = await arg.GetChannelAsync() as RestTextChannel
                           ?? throw new Exception("Cannot get channel");
+            var guild = await bot.GetGuildAsync(channel.GuildId);
 
             var embed = new EmbedBuilder
             {
@@ -42,7 +43,7 @@ public class MemeCommands
                 Description = $"User: {arg.User.Username}"
             };
             embed.AddField(name: "Reason", value: reason)
-                .AddField(name: "Server", value: channel.Guild.Name)
+                .AddField(name: "Server", value: guild.Name)
                 .AddField(name: "Channel", channel.Name);
 
             foreach (var s in db.ErrorServers)
@@ -56,15 +57,16 @@ public class MemeCommands
         await arg.FollowupAsync($"Thank you :)", ephemeral: true);
     }
 
-    public static async Task BadBot(SocketSlashCommand arg, DiscordSocketClient bot)
+    public static async Task BadBot(SocketSlashCommand arg, DiscordRestClient bot)
     {
         await arg.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
         var reason = arg.Data.Options.First().Value.ToString();
 
-        var channel = await arg.GetChannelAsync() as SocketTextChannel
+        var channel = await arg.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Cannot get channel");
+        var guild = await bot.GetGuildAsync(channel.GuildId);
 
         var embed = new EmbedBuilder
         {
@@ -73,7 +75,7 @@ public class MemeCommands
             Description = $"User: {arg.User.Username}"
         };
         embed.AddField(name: "Reason", value: reason)
-            .AddField(name: "Server", value: channel.Guild.Name)
+            .AddField(name: "Server", value: guild.Name)
             .AddField(name: "Channel", channel.Name);
 
         foreach (var s in db.ErrorServers)

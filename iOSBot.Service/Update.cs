@@ -14,6 +14,7 @@ namespace iOSBot.Service
         public Device Device { get; set; }
         public string ReleaseType { get; set; }
         public int Revision { get; set; }
+        public string Hash { get; set; }
         public string VersionReadable => GetReadableVersion();
         public string Size => GetReadableSize();
         public JObject JsonRequest => GetJsonRequest();
@@ -25,12 +26,12 @@ namespace iOSBot.Service
             string betaNumber = VersionDocId.Split("Beta").Last();
             if (ReleaseType != "Release")
             {
-                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase) 
+                if (VersionDocId.Contains("short", StringComparison.CurrentCultureIgnoreCase)
                     || VersionDocId.Contains("rc", StringComparison.CurrentCultureIgnoreCase))
                 {
                     majorVersion += " Release Candidate";
                 }
-                else if (VersionDocId.Contains("long", StringComparison.CurrentCultureIgnoreCase) 
+                else if (VersionDocId.Contains("long", StringComparison.CurrentCultureIgnoreCase)
                          || VersionDocId.Contains("gm", StringComparison.CurrentCultureIgnoreCase))
                 {
                     majorVersion += " Golden Master";
@@ -53,7 +54,7 @@ namespace iOSBot.Service
             int i = 0;
             decimal size = SizeBytes;
 
-            while(size > 1000)
+            while (size > 1000)
             {
                 ++i;
                 size /= 1000;

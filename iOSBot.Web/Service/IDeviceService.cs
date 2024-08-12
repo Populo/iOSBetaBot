@@ -13,7 +13,10 @@ namespace iOSBot.Web.Service
         public bool CreateDevice(DeviceViewModel device);
         public List<DeviceViewModel> GetAllDevices();
         public DeviceViewModel GetDeviceByAudience(string audienceId);
-        public Task<Update> TestDevice(string audienceId, string product, string boardId, string fwVersion, string fwBuild, string assetType, string feed);
+
+        public Task<List<Update>> TestDevice(string audienceId, string product, string boardId, string fwVersion,
+            string fwBuild, string assetType, string feed);
+
         public ConfigViewModel GetConfigItems();
         public void SaveConfigItems(ConfigViewModel items);
     }
@@ -68,9 +71,10 @@ namespace iOSBot.Web.Service
             return device.Adapt(new DeviceViewModel());
         }
 
-        public async Task<Update> TestDevice(string audienceId, string product, string boardId, string fwVersion, string fwBuild, string assetType, string feed)
+        public async Task<List<Update>> TestDevice(string audienceId, string product, string boardId, string fwVersion,
+            string fwBuild, string assetType, string feed)
         {
-            Update u;
+            List<Update> u;
             try
             {
                 u = await _appleService.GetUpdate(new Device()
@@ -87,14 +91,17 @@ namespace iOSBot.Web.Service
             }
             catch (Exception ex)
             {
-                u = new Update()
+                u = new List<Update>()
                 {
-                    Version = "bad",
-                    Build = ex.StackTrace,
-                    Group = ex.Message
+                    new Update()
+                    {
+                        Version = "bad",
+                        Build = ex.StackTrace,
+                        Group = ex.Message
+                    }
                 };
             }
-            
+
             return u;
         }
 

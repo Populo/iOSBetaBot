@@ -19,7 +19,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new Version(2024, 08, 10);
+    private Version _version = new(2024, 08, 11);
     private DiscordSocketClient Client { get; set; }
     private IAppleService AppleService { get; set; }
     private string? Status { get; set; }
@@ -66,7 +66,7 @@ public class Craig
 
         Client.Ready += () =>
         {
-            _ = UpdatePoster.PostError("Good morning! Welcome to Apple Park");
+            _ = UpdatePoster.PostError("Good morning! Welcome to Apple Park.");
             return AdminCommands.UpdateCommands(Client, null, true);
         };
         Client.Log += ClientOnLog;
@@ -145,10 +145,10 @@ public class Craig
                 await MemeCommands.Manifest(arg);
                 break;
             case "goodbot":
-                await MemeCommands.GoodBot(arg, Client);
+                await MemeCommands.GoodBot(arg, Client.Rest);
                 break;
             case "badbot":
-                await MemeCommands.BadBot(arg, Client);
+                await MemeCommands.BadBot(arg, Client.Rest);
                 break;
             case "when":
                 await MemeCommands.When(arg);
@@ -216,7 +216,8 @@ public class Craig
         }
 
         PollTimer.Enabled = !pause;
-        await arg.RespondAsync("Bot is paused");
+        var s = PollTimer.Enabled ? "running" : "paused";
+        await arg.RespondAsync($"Craig is now {s}");
     }
 
     private async void PollTimerOnElapsed(object? sender, ElapsedEventArgs e)
@@ -224,7 +225,9 @@ public class Craig
         using var db = new BetaContext();
 
         // cycle status
-        await Client.SetCustomStatusAsync(GetStatus());
+        var newStatus = GetStatus();
+        _logger.Info($"New status: {newStatus}");
+        await Client.SetCustomStatusAsync(newStatus);
 
         // should we check for updates
         if (IsSleeping()) return;
@@ -247,11 +250,12 @@ public class Craig
         {
             try
             {
-                var u = await AppleService.GetUpdate(device);
-                if (!dbUpdates.Any(up => up.Build == u.Build &&
-                                         up.ReleaseDate == u.ReleaseDate &&
-                                         up.Category == u.Group)) updates.Add(u);
-                else _logger.Info("No new update found for " + device.FriendlyName);
+                var ups = await AppleService.GetUpdate(device);
+                foreach (var u in ups)
+                {
+                    if (!dbUpdates.Any(up => up.Hash == u.Hash)) updates.Add(u);
+                    else _logger.Info("No new update found for " + device.FriendlyName);
+                }
             }
             catch (Exception ex)
             {
@@ -318,9 +322,9 @@ public class Craig
         {
             "Sigma",
             "Now with 10% more AI",
-            $"{Client.Guilds.Count.ToString()} Servers",
+            $"Member of: {Client.Guilds.Count} Servers",
             "Traveling on Hair Force One",
-            $"Version: {_version}"
+            $"Craig version: {_version}"
         };
 
         return statuses[new Random().Next(statuses.Length)];
@@ -330,7 +334,7 @@ public class Craig
     {
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.DirectMessages,
+            GatewayIntents = GatewayIntents.DirectMessages,
             MessageCacheSize = 15
         };
 

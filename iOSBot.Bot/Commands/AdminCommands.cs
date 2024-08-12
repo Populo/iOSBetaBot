@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Helpers;
 using iOSBot.Data;
@@ -19,13 +20,13 @@ public class AdminCommands
             return;
         }
 
-        var channel = await arg.GetChannelAsync() as SocketTextChannel
+        var channel = await arg.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Cannot get channel");
 
         using var db = new BetaContext();
 
         if (db.ErrorServers.Any(s =>
-                s.ServerId == channel.Guild.Id && s.ChannelId == channel.Id))
+                s.ServerId == channel.GuildId && s.ChannelId == channel.Id))
         {
             await arg.RespondAsync("Errors are already set to be posted here.", ephemeral: true);
             return;
@@ -34,7 +35,7 @@ public class AdminCommands
         db.ErrorServers.Add(new ErrorServer
         {
             ChannelId = channel.Id,
-            ServerId = channel.Guild.Id,
+            ServerId = channel.GuildId,
             Id = Guid.NewGuid()
         });
 
@@ -52,10 +53,10 @@ public class AdminCommands
         }
 
         using var db = new BetaContext();
-        var channel = await arg.GetChannelAsync() as SocketTextChannel
+        var channel = await arg.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Cannot get channel");
         var errorServer = db.ErrorServers.FirstOrDefault(s =>
-            s.ServerId == channel.Guild.Id && s.ChannelId == channel.Id);
+            s.ServerId == channel.GuildId && s.ChannelId == channel.Id);
 
         if (null == errorServer)
         {

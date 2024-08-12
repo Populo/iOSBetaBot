@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Data;
 using NLog;
@@ -27,9 +28,9 @@ public class AppleCommands
             role = roleParam.Value as SocketRole;
         }
 
-        var channel = await command.GetChannelAsync() as SocketTextChannel
+        var channel = await command.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Could not get channel");
-        var guild = channel.Guild;
+        var guild = client.GetGuild(channel.GuildId);
 
         if (db.Servers.Any(s => s.ChannelId == command.ChannelId
                                 && s.ServerId == command.GuildId
@@ -68,9 +69,9 @@ public class AppleCommands
         var server = db.Servers.FirstOrDefault(s =>
             s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device.Category);
 
-        var channel = await command.GetChannelAsync() as SocketTextChannel
+        var channel = await command.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Could not get channel");
-        var guild = channel.Guild;
+        var guild = client.GetGuild(channel.GuildId);
 
         if (null == server)
         {
@@ -95,14 +96,14 @@ public class AppleCommands
 
         using var db = new BetaContext();
         var category = (string)arg.Data.Options.First().Value;
-        var channel = await arg.GetChannelAsync() as SocketTextChannel
+        var channel = await arg.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Could not get channel");
 
         db.Threads.Add(new Thread()
         {
             Category = category,
             ChannelId = channel.Id,
-            ServerId = channel.Guild.Id,
+            ServerId = channel.GuildId,
             id = Guid.NewGuid()
         });
 
@@ -128,7 +129,7 @@ public class AppleCommands
 
         db.Threads.Remove(thread);
 
-        db.SaveChanges();
+        await db.SaveChangesAsync();
 
         await arg.FollowupAsync(text: "Release threads will no longer be posted here.", ephemeral: true);
     }
@@ -195,7 +196,7 @@ public class AppleCommands
 
         db.Forums.Remove(dbF);
         await db.SaveChangesAsync();
-        await arg.FollowupAsync($"Forum posts for {category} will no longer happen in ${forum.Name}", ephemeral: true);
+        await arg.FollowupAsync($"Forum posts for {category} will no longer happen in {forum.Name}", ephemeral: true);
     }
 
     public static async Task DeviceInfo(SocketSlashCommand arg)
