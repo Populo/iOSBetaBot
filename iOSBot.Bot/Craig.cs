@@ -256,11 +256,13 @@ public class Craig
                     // hash == hash -> same update
                     // build, release date, category -> might be different but prevent double posting essentially the same thing
                     // check db + already found updates
-                    if (!dbUpdates.Any(up => up.Hash == u.Hash ||
+                    if (!dbUpdates.Any(up => (up.Hash == u.Hash &&
+                                              up.Category == u.Group) ||
                                              (up.Build == u.Build &&
                                               up.ReleaseDate == u.ReleaseDate &&
                                               up.Category == u.Group)) &&
-                        !updates.Any(up => up.Hash == u.Hash ||
+                        !updates.Any(up => (up.Hash == u.Hash &&
+                                            up.Group == u.Group) ||
                                            (up.Build == u.Build &&
                                             up.ReleaseDate == u.ReleaseDate &&
                                             up.Group == u.Group))) updates.Add(u);
