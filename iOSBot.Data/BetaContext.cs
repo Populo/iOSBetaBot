@@ -63,6 +63,7 @@ namespace iOSBot.Data
         public string Build { get; set; }
         public string Category { get; set; }
         public DateTime ReleaseDate { get; set; }
+        public string Hash { get; set; }
     }
 
     public class Server
@@ -108,6 +109,8 @@ namespace iOSBot.Data
         public string Type { get; set; }
         public uint Color { get; set; }
         public string AssetType { get; set; }
+        public int Priority { get; set; }
+        public bool Enabled { get; set; }
     }
 
     [PrimaryKey("Name")]

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using iOSBot.Data;
 
@@ -11,9 +12,11 @@ using iOSBot.Data;
 namespace iOSBot.Data.Migrations
 {
     [DbContext(typeof(BetaContext))]
-    partial class BetaContextModelSnapshot : ModelSnapshot
+    [Migration("20240811021907_enableddevices")]
+    partial class enableddevices
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,10 +222,6 @@ namespace iOSBot.Data.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("longtext");
 

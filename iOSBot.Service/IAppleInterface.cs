@@ -1,15 +1,17 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.ExceptionServices;
+using System.Text;
 using iOSBot.Data;
 using Newtonsoft.Json;
 using NLog;
+using Org.BouncyCastle.Crypto.Digests;
 using RestSharp;
 
 namespace iOSBot.Service
 {
     public interface IAppleService
     {
-        public Task<Update> GetUpdate(Device device);
+        public Task<List<Update>> GetUpdate(Device device);
         public void SaveUpdate(Update update);
         public void DeleteServer(Server server, BetaContext? db = null);
         public void DeleteErrorServer(ErrorServer server, BetaContext? db = null);
@@ -38,7 +40,7 @@ namespace iOSBot.Service
             RestClient = new RestClient(restOptions);
         }
 
-        public async Task<Update> GetUpdate(Device device)
+        public async Task<List<Update>> GetUpdate(Device device)
         {
             _logger.Info($"Getting updates for {device.FriendlyName}");
             var request = new RestRequest();
@@ -52,6 +54,8 @@ namespace iOSBot.Service
                 ProductVersion = device.Version,
                 AssetType = device.AssetType
             };
+
+            var updates = new List<Update>();
 
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
             RestResponse response = null;
@@ -67,56 +71,75 @@ namespace iOSBot.Service
                     throw new Exception($"No firmware is being signed for {device.FriendlyName}");
                 }
 
-                var claim = jwt.Claims
-                    .FirstOrDefault(j => j.Type == "Assets")
-                    .Value;
+                var assets = jwt.Claims
+                    .Where(j => j.Type == "Assets");
 
-                var json = JsonConvert.DeserializeObject<AssetResponse>(claim);
-
-                var update = new Update
+                foreach (var asset in assets)
                 {
-                    Build = json.Build,
-                    SizeBytes = json._DownloadSize,
-                    ReleaseDate = DateTime.Parse(jwt.Claims.First(j => j.Type == "PostingDate").Value),
-                    VersionDocId = json.SUDocumentationID,
-                    Version = json.OSVersion.Replace("9.9.", ""),
-                    ReleaseType = device.Type,
-                    Group = device.Category,
-                    Device = device
-                };
+                    var json = JsonConvert.DeserializeObject<AssetResponse>(asset.Value);
 
-                /*
-                 * 3 cases:
-                 *
-                 * 1. completely new version
-                 *  - proceed as normal, no revision
-                 * 2. new build of existing version
-                 *  - revision + 1
-                 * 3. same build of same version
-                 *  - do nothing
-                 */
+                    var hashAlgorithm = new Sha3Digest(512);
 
-                using var db = new BetaContext();
-                var dbUpdates = db.Updates
-                    .Where(u => u.Version.Contains(update.VersionReadable) &&
-                                u.Category == update.Group)
-                    .OrderByDescending(u => u.ReleaseDate);
+                    byte[] input = Encoding.ASCII.GetBytes(json._AssetReceipt.AssetSignature);
 
-                // case 1 || 3, short circuit to prevent any kind of npe
-                // first update of this version (17.0 beta 8, 17.0 GM, etc)
-                if (!dbUpdates.Any() ||
-                    dbUpdates.Any(u => u.Build == update.Build &&
-                                       update.ReleaseDate == u.ReleaseDate)) return update;
+                    hashAlgorithm.BlockUpdate(input, 0, input.Length);
 
-                // case 2
-                // attempt to prevent double counting releases in the situation where it detects
-                // update but then immediately after detects the old version because of apple server stuff 
-                if (dbUpdates.Any(u => u.ReleaseDate.Date != DateTime.Today.Date))
-                {
-                    update.Revision = dbUpdates.Count();
+                    byte[] result = new byte[64]; // 512 / 8 = 64
+                    hashAlgorithm.DoFinal(result, 0);
+
+                    string hashString = BitConverter.ToString(result);
+                    hashString = hashString.Replace("-", "").ToLowerInvariant();
+
+                    var update = new Update
+                    {
+                        Build = json.Build,
+                        SizeBytes = json._DownloadSize,
+                        ReleaseDate = DateTime.Parse(jwt.Claims.First(j => j.Type == "PostingDate").Value),
+                        VersionDocId = json.SUDocumentationID,
+                        Version = json.OSVersion.Replace("9.9.", ""),
+                        ReleaseType = device.Type,
+                        Group = device.Category,
+                        Device = device,
+                        Hash = hashString
+                    };
+
+                    /*
+                     * 3 cases:
+                     *
+                     * 1. completely new version
+                     *  - proceed as normal, no revision
+                     * 2. new build of existing version
+                     *  - revision + 1
+                     * 3. same build of same version
+                     *  - do nothing
+                     */
+
+                    using var db = new BetaContext();
+                    var dbUpdates = db.Updates
+                        .Where(u => u.Version.Contains(update.VersionReadable) &&
+                                    u.Category == update.Group)
+                        .OrderByDescending(u => u.ReleaseDate);
+
+                    // case 1 || 3, short circuit to prevent any kind of npe
+                    // first update of this version (17.0 beta 8, 17.0 GM, etc)
+                    if (!dbUpdates.Any() ||
+                        dbUpdates.Any(u => u.Build == update.Build &&
+                                           update.ReleaseDate == u.ReleaseDate))
+                    {
+                        updates.Add(update);
+                        continue;
+                    }
+
+                    // case 2
+                    // attempt to prevent double counting releases in the situation where it detects
+                    // update but then immediately after detects the old version because of apple server stuff 
+                    if (!dbUpdates.Any(u => u.Hash == update.Hash))
+                    {
+                        update.Revision = dbUpdates.Count();
+                    }
+
+                    updates.Add(update);
                 }
-
-                return update;
             }
             catch (Exception e)
             {
@@ -125,6 +148,8 @@ namespace iOSBot.Service
                 ExceptionDispatchInfo.Capture(e).Throw();
                 throw;
             }
+
+            return updates;
         }
 
         public void SaveUpdate(Update update)
@@ -137,7 +162,8 @@ namespace iOSBot.Service
                 Category = update.Device.Category,
                 Guid = Guid.NewGuid(),
                 Version = update.VersionReadable,
-                ReleaseDate = update.ReleaseDate
+                ReleaseDate = update.ReleaseDate,
+                Hash = update.Hash,
             };
             db.Updates.Add(newUpdate);
 
