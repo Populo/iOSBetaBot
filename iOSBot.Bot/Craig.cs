@@ -127,10 +127,6 @@ public class Craig
             case "servers":
                 await AdminCommands.GetServers(arg, Client);
                 break;
-            case "status":
-                var s = !PollTimer.Enabled ? "Paused" : IsSleeping() ? "Sleeping" : "Running";
-                await arg.RespondAsync($"Craig is currently: {s}");
-                break;
             case "start":
                 await PauseBot(arg, false);
                 break;
@@ -225,7 +221,10 @@ public class Craig
         using var db = new BetaContext();
 
         // cycle status
-        var newStatus = GetStatus();
+        var newStatus = $"{GetStatus()} | {GetStatusContent()}";
+        if (newStatus.StartsWith("Sleeping")) _ = Client.SetStatusAsync(UserStatus.AFK);
+        else _ = Client.SetStatusAsync(UserStatus.Online);
+
         _logger.Info($"New status: {newStatus}");
         await Client.SetCustomStatusAsync(newStatus);
 
@@ -328,7 +327,7 @@ public class Craig
         }
     }
 
-    private string GetStatus()
+    private string GetStatusContent()
     {
         var statuses = new[]
         {
@@ -341,6 +340,8 @@ public class Craig
 
         return statuses[new Random().Next(statuses.Length)];
     }
+
+    private string GetStatus() => !PollTimer.Enabled ? "Paused" : IsSleeping() ? "Sleeping" : "Running";
 
     private IServiceProvider CreateProvider()
     {

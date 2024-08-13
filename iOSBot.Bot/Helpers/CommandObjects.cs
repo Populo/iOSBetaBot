@@ -63,14 +63,6 @@ public class CommandObjects
         Options = new List<SlashCommandOptionBuilder>() { }
     };
 
-    private static SlashCommandBuilder statusBuilder = new()
-    {
-        Name = "status",
-        Description = "update check timer status",
-        DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
-    };
-
     private static SlashCommandBuilder fakePostBuilder = new()
     {
         Name = "fake",
@@ -336,7 +328,6 @@ public class CommandObjects
         forceBuilder,
         updateBuilder,
         serverBuilder,
-        statusBuilder,
         startBuilder,
         stopBuilder,
         fakePostBuilder,
