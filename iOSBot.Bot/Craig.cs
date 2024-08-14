@@ -190,19 +190,6 @@ public class Craig
         return Task.CompletedTask;
     }
 
-    private bool IsSleeping()
-    {
-        if (!PollTimer.Enabled) return false;
-
-        using var db = new BetaContext();
-
-        var startTime = int.Parse(db.Configs.First(c => c.Name == "ClockInHour").Value);
-        var endTime = int.Parse(db.Configs.First(c => c.Name == "ClockOutHour").Value);
-        var now = DateTime.Now.Hour;
-
-        return now <= startTime || now >= endTime;
-    }
-
     private async Task PauseBot(SocketSlashCommand arg, bool pause)
     {
         if (!AdminCommands.IsAllowed(arg.User.Id))
@@ -325,6 +312,19 @@ public class Craig
                 _ = UpdatePoster.PostUpdateAsync(server, update, postedThreads, postedForums);
             }
         }
+    }
+
+    private bool IsSleeping()
+    {
+        if (!PollTimer.Enabled) return false;
+
+        using var db = new BetaContext();
+
+        var startTime = int.Parse(db.Configs.First(c => c.Name == "ClockInHour").Value);
+        var endTime = int.Parse(db.Configs.First(c => c.Name == "ClockOutHour").Value);
+        var now = DateTime.Now.Hour;
+
+        return now < startTime || now > endTime;
     }
 
     private string GetStatusContent()
