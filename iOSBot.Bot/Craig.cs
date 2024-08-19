@@ -76,6 +76,7 @@ public class Craig
         await Client.SetCustomStatusAsync(Status);
 
         await Client.StartAsync();
+        PollTimer.Start();
 
         _logger.Info("Started");
         await Task.Delay(-1);
@@ -188,19 +189,6 @@ public class Craig
         }
 
         return Task.CompletedTask;
-    }
-
-    private bool IsSleeping()
-    {
-        if (!PollTimer.Enabled) return false;
-
-        using var db = new BetaContext();
-
-        var startTime = int.Parse(db.Configs.First(c => c.Name == "ClockInHour").Value);
-        var endTime = int.Parse(db.Configs.First(c => c.Name == "ClockOutHour").Value);
-        var now = DateTime.Now.Hour;
-
-        return now <= startTime || now >= endTime;
     }
 
     private async Task PauseBot(SocketSlashCommand arg, bool pause)
@@ -325,6 +313,20 @@ public class Craig
                 _ = UpdatePoster.PostUpdateAsync(server, update, postedThreads, postedForums);
             }
         }
+    }
+
+    private bool IsSleeping()
+    {
+        if (!PollTimer.Enabled) return false;
+        var weekend = DateTime.Today.DayOfWeek == DayOfWeek.Saturday || DateTime.Today.DayOfWeek == DayOfWeek.Sunday;
+
+        using var db = new BetaContext();
+
+        var startTime = int.Parse(db.Configs.First(c => c.Name == "ClockInHour").Value);
+        var endTime = int.Parse(db.Configs.First(c => c.Name == "ClockOutHour").Value);
+        var now = DateTime.Now.Hour;
+
+        return weekend || now < startTime || now > endTime;
     }
 
     private string GetStatusContent()
