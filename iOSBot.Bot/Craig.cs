@@ -76,6 +76,7 @@ public class Craig
         await Client.SetCustomStatusAsync(Status);
 
         await Client.StartAsync();
+        PollTimer.Start();
 
         _logger.Info("Started");
         await Task.Delay(-1);
@@ -317,6 +318,7 @@ public class Craig
     private bool IsSleeping()
     {
         if (!PollTimer.Enabled) return false;
+        var weekend = DateTime.Today.DayOfWeek == DayOfWeek.Saturday || DateTime.Today.DayOfWeek == DayOfWeek.Sunday;
 
         using var db = new BetaContext();
 
@@ -324,7 +326,7 @@ public class Craig
         var endTime = int.Parse(db.Configs.First(c => c.Name == "ClockOutHour").Value);
         var now = DateTime.Now.Hour;
 
-        return now < startTime || now > endTime;
+        return weekend || now < startTime || now > endTime;
     }
 
     private string GetStatusContent()
