@@ -19,7 +19,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 11);
+    private Version _version = new(2024, 08, 19, 2);
     private DiscordSocketClient Client { get; set; }
     private IAppleService AppleService { get; set; }
     private string? Status { get; set; }
