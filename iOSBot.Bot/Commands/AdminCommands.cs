@@ -152,6 +152,33 @@ public class AdminCommands
         await arg.FollowupAsync("Posted update", ephemeral: true);
     }
 
+    public static async Task ToggleDevice(SocketSlashCommand arg)
+    {
+        if (!IsAllowed(arg.User.Id))
+        {
+            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+            return;
+        }
+
+        await arg.DeferAsync();
+
+        var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
+        var enable = (bool)arg.Data.Options.First(o => o.Name == "enable").Value;
+
+        using var db = new BetaContext();
+
+        var device = db.Devices.Where(d => d.Category == category);
+        foreach (var d in device)
+        {
+            d.Enabled = enable;
+        }
+
+        await db.SaveChangesAsync();
+
+        var enabled = enable ? "enabled" : "disabled";
+        await arg.RespondAsync($"Category {category} is now {enabled}");
+    }
+
     public static bool IsAllowed(ulong userId)
     {
         // only me

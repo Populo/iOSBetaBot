@@ -1,6 +1,6 @@
 ﻿using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
+using iOSBot.Bot.Helpers;
 using iOSBot.Data;
 using NLog;
 using Thread = iOSBot.Data.Thread;
@@ -28,13 +28,12 @@ public class AppleCommands
             role = roleParam.Value as SocketRole;
         }
 
-        var channel = await command.GetChannelAsync() as RestTextChannel
-                      ?? throw new Exception("Could not get channel");
-        var guild = client.GetGuild(channel.GuildId)
-                    ?? throw new Exception("Could not get guild");
+        SocketTextChannel channel;
+        SocketGuild guild;
+        CommandObjects.GetChannelAndGuild(command, client, out guild, out channel);
 
-        if (db.Servers.Any(s => s.ChannelId == command.ChannelId
-                                && s.ServerId == command.GuildId
+        if (db.Servers.Any(s => s.ChannelId == channel.Id
+                                && s.ServerId == guild.Id
                                 && s.Category == device.Category))
         {
             await command.FollowupAsync($"You already receive {device.FriendlyName} updates in this channel.",
@@ -70,9 +69,9 @@ public class AppleCommands
         var server = db.Servers.FirstOrDefault(s =>
             s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device.Category);
 
-        var channel = await command.GetChannelAsync() as RestTextChannel
-                      ?? throw new Exception("Could not get channel");
-        var guild = client.GetGuild(channel.GuildId);
+        SocketTextChannel channel;
+        SocketGuild guild;
+        CommandObjects.GetChannelAndGuild(command, client, out guild, out channel);
 
         if (null == server)
         {
@@ -91,26 +90,28 @@ public class AppleCommands
         }
     }
 
-    public static async Task YesThreads(SocketSlashCommand arg)
+    public static async Task YesThreads(SocketSlashCommand command, DiscordSocketClient client)
     {
-        await arg.DeferAsync(ephemeral: true);
+        await command.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
-        var category = (string)arg.Data.Options.First().Value;
-        var channel = await arg.GetChannelAsync() as RestTextChannel
-                      ?? throw new Exception("Could not get channel");
+        var category = (string)command.Data.Options.First().Value;
+
+        SocketTextChannel channel;
+        SocketGuild guild;
+        CommandObjects.GetChannelAndGuild(command, client, out guild, out channel);
 
         db.Threads.Add(new Thread()
         {
             Category = category,
             ChannelId = channel.Id,
-            ServerId = channel.GuildId,
+            ServerId = guild.Id,
             id = Guid.NewGuid()
         });
 
         await db.SaveChangesAsync();
 
-        await arg.FollowupAsync(text: "A release thread will be posted here.", ephemeral: true);
+        await command.FollowupAsync(text: "A release thread will be posted here.", ephemeral: true);
     }
 
     public static async Task NoThreads(SocketSlashCommand arg)

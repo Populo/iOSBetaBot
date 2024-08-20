@@ -1,11 +1,12 @@
 ﻿using Discord;
+using Discord.WebSocket;
 using iOSBot.Data;
 
 namespace iOSBot.Bot.Helpers;
 
 public class CommandObjects
 {
-    #region admin commands
+    #region Builers
 
     private static SlashCommandBuilder errorBuilder = new()
     {
@@ -102,9 +103,30 @@ public class CommandObjects
         }
     };
 
-    #endregion
-
-    #region meme commands
+    private static SlashCommandBuilder toggleDeviceBuilder = new()
+    {
+        Name = "toggle",
+        Description = "Enable or disable devices",
+        DefaultMemberPermissions = GuildPermission.ManageGuild,
+        Options = new List<SlashCommandOptionBuilder>()
+        {
+            new()
+            {
+                Name = "category",
+                Description = "Which devices",
+                IsRequired = true,
+                Type = ApplicationCommandOptionType.String,
+                Choices = GetDeviceCategories()
+            },
+            new()
+            {
+                Name = "enable",
+                Description = "Enable updates",
+                IsRequired = true,
+                Type = ApplicationCommandOptionType.Boolean,
+            }
+        }
+    };
 
     private static SlashCommandBuilder blessBuilder = new()
     {
@@ -164,10 +186,6 @@ public class CommandObjects
         Options = new List<SlashCommandOptionBuilder>()
             { }
     };
-
-    #endregion
-
-    #region apple commands
 
     private static SlashCommandBuilder watchBuilder = new()
     {
@@ -316,10 +334,6 @@ public class CommandObjects
         }
     };
 
-    #endregion
-
-    #region Builers
-
     public static List<SlashCommandBuilder> CommandBuilders = new()
     {
         // admin commands
@@ -331,6 +345,7 @@ public class CommandObjects
         startBuilder,
         stopBuilder,
         fakePostBuilder,
+        //toggleDeviceBuilder,
         // meme commands
         blessBuilder,
         goodBotBuilder,
@@ -349,6 +364,18 @@ public class CommandObjects
 
     #endregion
 
+    #region admin commands
+
+    #endregion
+
+    #region meme commands
+
+    #endregion
+
+    #region apple commands
+
+    #endregion
+
     #region Helpers
 
     private static List<ApplicationCommandOptionChoiceProperties> GetDeviceCategories()
@@ -364,6 +391,20 @@ public class CommandObjects
         using var db = new BetaContext();
 
         return db.Devices.ToList();
+    }
+
+    public static void GetChannelAndGuild(SocketSlashCommand command, DiscordSocketClient bot, out SocketGuild guild,
+        out SocketTextChannel channel)
+    {
+        var cId = command.ChannelId
+                  ?? throw new Exception("Cannot get channelId");
+        var gId = command.GuildId
+                  ?? throw new Exception("Cannot get guildId");
+
+        channel = bot.GetChannelAsync(cId).GetAwaiter().GetResult() as SocketTextChannel
+                  ?? throw new Exception("Could not get channel");
+        guild = bot.GetGuild(gId)
+                ?? throw new Exception("Could not get guild");
     }
 
     #endregion
