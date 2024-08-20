@@ -30,7 +30,8 @@ public class AppleCommands
 
         var channel = await command.GetChannelAsync() as RestTextChannel
                       ?? throw new Exception("Could not get channel");
-        var guild = client.GetGuild(channel.GuildId);
+        var guild = client.GetGuild(channel.GuildId)
+                    ?? throw new Exception("Could not get guild");
 
         if (db.Servers.Any(s => s.ChannelId == command.ChannelId
                                 && s.ServerId == command.GuildId
