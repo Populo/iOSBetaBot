@@ -20,7 +20,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 20, 1);
+    private Version _version = new(2024, 08, 20, 2);
 
     public Craig()
     {
@@ -179,7 +179,7 @@ public class Craig
         }
 
         _logger.Info(
-            $"Command received: {arg.CommandName} in {await Client.GetChannelAsync(arg.ChannelId!.Value)} from {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
+            $"Command received: /{arg.CommandName}\nin channel: {await Client.GetChannelAsync(arg.ChannelId!.Value)}\nin server: {Client.GetGuild(arg.GuildId!.Value).Name}\nfrom: {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
 
         switch (arg.CommandName)
         {
@@ -223,6 +223,9 @@ public class Craig
             case "fake":
                 await AdminCommands.FakeUpdate(arg, UpdatePoster);
                 break;
+            case "toggle":
+                await AdminCommands.ToggleDevice(arg);
+                break;
             // meme commands
             case "manifest":
                 await MemeCommands.Manifest(arg);
@@ -250,7 +253,7 @@ public class Craig
                 await AppleCommands.NoWatch(arg, Client);
                 break;
             case "yesthreads":
-                await AppleCommands.YesThreads(arg);
+                await AppleCommands.YesThreads(arg, Client);
                 break;
             case "nothreads":
                 await AppleCommands.NoThreads(arg);
