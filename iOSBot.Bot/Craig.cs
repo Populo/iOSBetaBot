@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Timers;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Commands;
 using iOSBot.Bot.Helpers;
@@ -19,12 +20,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 19, 2);
-    private DiscordSocketClient Client { get; set; }
-    private IAppleService AppleService { get; set; }
-    private string? Status { get; set; }
-    private Poster UpdatePoster { get; set; }
-    private Timer PollTimer { get; init; }
+    private Version _version = new(2024, 08, 20, 1);
 
     public Craig()
     {
@@ -40,10 +36,16 @@ public class Craig
         {
             AutoReset = true,
             Enabled = false,
-            Interval = 1000 * 60 * 5 // 5 minutes
+            Interval = 1000 * 60 * 2 // 2 minutes
         };
         PollTimer.Elapsed += PollTimerOnElapsed;
     }
+
+    private DiscordSocketClient Client { get; set; }
+    private IAppleService AppleService { get; set; }
+    private string? Status { get; set; }
+    private Poster UpdatePoster { get; set; }
+    private Timer PollTimer { get; init; }
 
     public static Task Main(string[] args) => new Craig().Run(args);
 
@@ -71,6 +73,9 @@ public class Craig
         };
         Client.Log += ClientOnLog;
         Client.SlashCommandExecuted += ClientOnSlashCommandExecuted;
+        Client.MessageReceived += ClientOnMessageReceived;
+        Client.ButtonExecuted += ClientOnButtonExecuted;
+        Client.ModalSubmitted += ClientOnModalSubmitted;
 
         await Client.LoginAsync(TokenType.Bot, args[0]);
         await Client.SetCustomStatusAsync(Status);
@@ -80,6 +85,88 @@ public class Craig
 
         _logger.Info("Started");
         await Task.Delay(-1);
+    }
+
+    private async Task ClientOnModalSubmitted(SocketModal arg)
+    {
+        if (!AdminCommands.IsAllowed(arg.User.Id))
+        {
+            await arg.RespondAsync("Only the bot creator can use this button");
+            return;
+        }
+
+        if (arg.Data.CustomId.Contains("replymodal"))
+        {
+            var channelId = ulong.Parse(arg.Data.CustomId.Split('-').Last());
+            var channel = await Client.GetDMChannelAsync(channelId);
+
+            var textBox = arg.Data.Components.First();
+            var message = textBox.Value + $"\n -@{arg.User.Username}";
+
+            await channel.SendMessageAsync(message);
+            await arg.RespondAsync($"Responded with:\n {message}");
+        }
+    }
+
+    private async Task ClientOnButtonExecuted(SocketMessageComponent arg)
+    {
+        if (arg.Data.CustomId.Contains("reply"))
+        {
+            if (!AdminCommands.IsAllowed(arg.User.Id))
+            {
+                await arg.RespondAsync("Only the bot creator can use this button");
+                return;
+            }
+
+            var channelId = ulong.Parse(arg.Data.CustomId.Split('-').Last());
+
+            var responseBox = new TextInputBuilder()
+            {
+                Placeholder = "What's the reply?",
+                Required = true,
+                CustomId = $"textbox-{channelId}",
+                Label = "Reply",
+                Style = TextInputStyle.Paragraph
+            };
+            var responseModal = new ModalBuilder()
+                {
+                    Title = "Reply",
+                    CustomId = $"replymodal-{channelId}"
+                }
+                .AddTextInput(responseBox);
+
+            await arg.RespondWithModalAsync(responseModal.Build());
+        }
+    }
+
+    private async Task ClientOnMessageReceived(SocketMessage arg)
+    {
+        if (arg.Author.IsBot || arg.Channel is not IDMChannel) return;
+
+        using var db = new BetaContext();
+
+        var channel = arg.Channel as IDMChannel
+                      ?? throw new Exception("Cannot get channel from DM");
+        await channel.SendMessageAsync("Thank you for your message, Someone will be with you shortly.");
+
+        var message = new EmbedBuilder()
+            {
+                Title = "New DM Received"
+            }
+            .AddField("Sender", arg.Author.Username)
+            .AddField("Message", arg.Content)
+            .WithThumbnailUrl(arg.Author.GetAvatarUrl())
+            .WithColor(Color.Gold);
+
+        var button = new ComponentBuilder()
+            .WithButton("Reply", $"reply-{channel.Id}");
+
+        foreach (var s in db.ErrorServers)
+        {
+            var c = await Client.GetChannelAsync(s.ChannelId) as RestTextChannel
+                    ?? throw new Exception("Cannot get error channel.");
+            await c.SendMessageAsync(components: button.Build(), embed: message.Build());
+        }
     }
 
     private async Task ClientOnSlashCommandExecuted(SocketSlashCommand arg)
@@ -110,14 +197,13 @@ public class Craig
                     return;
                 }
 
-                // try to prevent what looks like some race conditions
-                PollTimer.Stop();
-
                 await arg.DeferAsync(ephemeral: true);
 
-                PollTimerOnElapsed(null, null!);
-
+                // try to prevent what looks like some race conditions
+                PollTimer.Stop();
                 PollTimer.Start();
+
+                PollTimerOnElapsed(null, null!);
 
                 _logger.Info($"Update forced by {arg.User.GlobalName}");
                 await arg.FollowupAsync("Updates checked.");
@@ -209,12 +295,15 @@ public class Craig
         using var db = new BetaContext();
 
         // cycle status
-        var newStatus = $"{GetStatus()} | {GetStatusContent()}";
+        var content = GetStatusContent();
+        if (content == "server") content = $"Member of: {Client.Guilds.Count} Servers";
+
+        var newStatus = $"{GetStatus()} | {content}";
         if (newStatus.StartsWith("Sleeping")) _ = Client.SetStatusAsync(UserStatus.AFK);
         else _ = Client.SetStatusAsync(UserStatus.Online);
 
         _logger.Info($"New status: {newStatus}");
-        await Client.SetCustomStatusAsync(newStatus);
+        _ = Client.SetCustomStatusAsync(newStatus);
 
         // should we check for updates
         if (IsSleeping()) return;
@@ -335,7 +424,7 @@ public class Craig
         {
             "Sigma",
             "Now with 10% more AI",
-            $"Member of: {Client.Guilds.Count} Servers",
+            $"server",
             "Traveling on Hair Force One",
             $"Craig version: {_version}"
         };
@@ -349,7 +438,7 @@ public class Craig
     {
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.DirectMessages,
+            GatewayIntents = GatewayIntents.DirectMessages | GatewayIntents.Guilds | GatewayIntents.GuildMessages,
             MessageCacheSize = 15
         };
 
