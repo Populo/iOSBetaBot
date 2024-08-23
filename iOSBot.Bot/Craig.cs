@@ -20,7 +20,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 23, 2);
+    private Version _version = new(2024, 08, 23, 4);
 
     public Craig()
     {
@@ -185,10 +185,10 @@ public class Craig
         {
             // admin commands
             case "yeserrors":
-                await AdminCommands.YesErrors(arg, Client);
+                _ = AdminCommands.YesErrors(arg, Client);
                 break;
             case "noerrors":
-                await AdminCommands.NoErrors(arg, Client);
+                _ = AdminCommands.NoErrors(arg, Client);
                 break;
             case "force":
                 if (!AdminCommands.IsAllowed(arg.User.Id))
@@ -209,60 +209,60 @@ public class Craig
                 await arg.FollowupAsync("Updates checked.");
                 break;
             case "update":
-                await AdminCommands.UpdateCommands(Client, arg);
+                _ = AdminCommands.UpdateCommands(Client, arg);
                 break;
             case "servers":
-                await AdminCommands.GetServers(arg, Client);
+                _ = AdminCommands.GetServers(arg, Client);
                 break;
             case "start":
-                await PauseBot(arg, false);
+                _ = PauseBot(arg, false);
                 break;
             case "stop":
-                await PauseBot(arg, true);
+                _ = PauseBot(arg, true);
                 break;
             case "fake":
-                await AdminCommands.FakeUpdate(arg, UpdatePoster);
+                _ = AdminCommands.FakeUpdate(arg, UpdatePoster);
                 break;
             case "toggle":
-                await AdminCommands.ToggleDevice(arg);
+                _ = AdminCommands.ToggleDevice(arg);
                 break;
             // meme commands
             case "manifest":
-                await MemeCommands.Manifest(arg);
+                _ = MemeCommands.Manifest(arg);
                 break;
             case "goodbot":
-                await MemeCommands.GoodBot(arg, Client.Rest);
+                _ = MemeCommands.GoodBot(arg, Client.Rest);
                 break;
             case "badbot":
-                await MemeCommands.BadBot(arg, Client.Rest);
+                _ = MemeCommands.BadBot(arg, Client.Rest);
                 break;
             case "when":
-                await MemeCommands.When(arg);
+                _ = MemeCommands.When(arg);
                 break;
             case "whycraig":
-                await MemeCommands.WhyCraig(arg);
+                _ = MemeCommands.WhyCraig(arg);
                 break;
             // apple commands
             case "info":
-                await AppleCommands.DeviceInfo(arg);
+                _ = AppleCommands.DeviceInfo(arg);
                 break;
             case "watch":
-                await AppleCommands.YesWatch(arg, Client);
+                _ = AppleCommands.YesWatch(arg, Client);
                 break;
             case "unwatch":
-                await AppleCommands.NoWatch(arg, Client);
+                _ = AppleCommands.NoWatch(arg, Client);
                 break;
             case "yesthreads":
-                await AppleCommands.YesThreads(arg, Client);
+                _ = AppleCommands.YesThreads(arg, Client);
                 break;
             case "nothreads":
-                await AppleCommands.NoThreads(arg);
+                _ = AppleCommands.NoThreads(arg);
                 break;
             case "yesforum":
-                await AppleCommands.YesForum(arg, Client);
+                _ = AppleCommands.YesForum(arg, Client);
                 break;
             case "noforum":
-                await AppleCommands.NoForum(arg, Client);
+                _ = AppleCommands.NoForum(arg, Client);
                 break;
         }
     }
