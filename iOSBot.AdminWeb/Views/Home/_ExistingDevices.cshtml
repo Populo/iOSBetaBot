@@ -1,0 +1,34 @@
+﻿@model List<DeviceViewModel>
+
+<div class="row">
+    <div class="">
+        <div class="list-group m-2" id="deviceList" role="tablist">
+            @foreach (var d in Model)
+            {
+                var idList = $"list-{d.AudienceId}-list";
+                var idContent = $"list-{d.AudienceId}";
+                <div class="list-group-item list-group-item-action p-1" id=@idList data-bs-table="list" href="#" role="tab" aria-controls=@idContent style="border-left-color: @d.Color; border-left-width: 7px">
+                    <div class="row text-center">
+                        <div class="col-9 devicelistbutton" data-devid="@d.AudienceId">
+                            <div class="row user-select-none">
+                                <span>@d.FriendlyName</span>
+                            </div>
+                            <div class="row" style="font-size: 75%">
+                                <div class="col-6">
+                                    <span>@d.Name</span>
+                                </div>
+                                <div class="col-6">
+                                    <span>@d.Version</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="lh-lg col-3 text-end">
+                            <button type="button" class="btn btn-outline-danger devicedeletebutton" data-devid="@d.AudienceId" data-devname="@d.FriendlyName">Delete</button>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
