@@ -185,10 +185,10 @@ public class Craig
         {
             // admin commands
             case "yeserrors":
-                await AdminCommands.YesErrors(arg);
+                await AdminCommands.YesErrors(arg, Client);
                 break;
             case "noerrors":
-                await AdminCommands.NoErrors(arg);
+                await AdminCommands.NoErrors(arg, Client);
                 break;
             case "force":
                 if (!AdminCommands.IsAllowed(arg.User.Id))

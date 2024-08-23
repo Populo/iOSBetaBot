@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Helpers;
 using iOSBot.Data;
@@ -12,7 +11,7 @@ public class AdminCommands
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public static async Task YesErrors(SocketSlashCommand arg)
+    public static async Task YesErrors(SocketSlashCommand arg, DiscordSocketClient client)
     {
         if (!IsAllowed(arg.User.Id))
         {
@@ -20,13 +19,14 @@ public class AdminCommands
             return;
         }
 
-        var channel = await arg.GetChannelAsync() as RestTextChannel
-                      ?? throw new Exception("Cannot get channel");
+        SocketTextChannel channel;
+        SocketGuild guild;
+        CommandObjects.GetChannelAndGuild(arg, client, out guild, out channel);
 
         using var db = new BetaContext();
 
         if (db.ErrorServers.Any(s =>
-                s.ServerId == channel.GuildId && s.ChannelId == channel.Id))
+                s.ServerId == guild.Id && s.ChannelId == channel.Id))
         {
             await arg.RespondAsync("Errors are already set to be posted here.", ephemeral: true);
             return;
@@ -35,7 +35,7 @@ public class AdminCommands
         db.ErrorServers.Add(new ErrorServer
         {
             ChannelId = channel.Id,
-            ServerId = channel.GuildId,
+            ServerId = guild.Id,
             Id = Guid.NewGuid()
         });
 
@@ -44,7 +44,7 @@ public class AdminCommands
         await arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral: true);
     }
 
-    public static async Task NoErrors(SocketSlashCommand arg)
+    public static async Task NoErrors(SocketSlashCommand arg, DiscordSocketClient client)
     {
         if (!IsAllowed(arg.User.Id))
         {
@@ -53,10 +53,12 @@ public class AdminCommands
         }
 
         using var db = new BetaContext();
-        var channel = await arg.GetChannelAsync() as RestTextChannel
-                      ?? throw new Exception("Cannot get channel");
+        SocketTextChannel channel;
+        SocketGuild guild;
+        CommandObjects.GetChannelAndGuild(arg, client, out guild, out channel);
+
         var errorServer = db.ErrorServers.FirstOrDefault(s =>
-            s.ServerId == channel.GuildId && s.ChannelId == channel.Id);
+            s.ServerId == guild.Id && s.ChannelId == channel.Id);
 
         if (null == errorServer)
         {
@@ -99,13 +101,13 @@ public class AdminCommands
         }
 
         await arg.DeferAsync(ephemeral: true);
-        var servers = (await bot.Rest.GetGuildsAsync()).ToArray();
+        var servers = (bot.Guilds).ToArray();
         var response = new StringBuilder();
         response.AppendLine("Servers:");
 
         for (int i = 0; i < servers.Length; ++i)
         {
-            response.AppendLine($"{i + 1}: {servers[i].Name} (@{servers[i].GetOwnerAsync().Result})");
+            response.AppendLine($"{i + 1}: {servers[i].Name} (@{servers[i].Owner}) | {servers[i].MemberCount} Members");
         }
 
         await arg.FollowupAsync(response.ToString());
