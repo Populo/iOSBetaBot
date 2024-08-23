@@ -107,7 +107,8 @@ public class AdminCommands
 
         for (int i = 0; i < servers.Length; ++i)
         {
-            response.AppendLine($"{i + 1}: {servers[i].Name} (@{servers[i].Owner}) | {servers[i].MemberCount} Members");
+            response.AppendLine(
+                $"{i + 1}: {servers[i].Name} (@{servers[i].Owner.Username}) | {servers[i].MemberCount} Members");
         }
 
         await arg.FollowupAsync(response.ToString());
