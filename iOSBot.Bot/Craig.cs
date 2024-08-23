@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Timers;
 using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Commands;
 using iOSBot.Bot.Helpers;
@@ -20,7 +19,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 23, 4);
+    private Version _version = new(2024, 08, 23, 5);
 
     public Craig()
     {
@@ -163,7 +162,7 @@ public class Craig
 
         foreach (var s in db.ErrorServers)
         {
-            var c = await Client.GetChannelAsync(s.ChannelId) as RestTextChannel
+            var c = await Client.GetChannelAsync(s.ChannelId) as SocketTextChannel
                     ?? throw new Exception("Cannot get error channel.");
             await c.SendMessageAsync(components: button.Build(), embed: message.Build());
         }
@@ -231,10 +230,10 @@ public class Craig
                 _ = MemeCommands.Manifest(arg);
                 break;
             case "goodbot":
-                _ = MemeCommands.GoodBot(arg, Client.Rest);
+                _ = MemeCommands.GoodBot(arg, Client);
                 break;
             case "badbot":
-                _ = MemeCommands.BadBot(arg, Client.Rest);
+                _ = MemeCommands.BadBot(arg, Client);
                 break;
             case "when":
                 _ = MemeCommands.When(arg);

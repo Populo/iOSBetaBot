@@ -1,6 +1,6 @@
 ﻿using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
+using iOSBot.Bot.Helpers;
 using iOSBot.Data;
 
 namespace iOSBot.Bot.Commands;
@@ -21,7 +21,7 @@ public class MemeCommands
         await arg.RespondAsync(imgSrc);
     }
 
-    public static async Task GoodBot(SocketSlashCommand arg, DiscordRestClient bot)
+    public static async Task GoodBot(SocketSlashCommand arg, DiscordSocketClient bot)
     {
         await arg.DeferAsync(ephemeral: true);
 
@@ -32,9 +32,9 @@ public class MemeCommands
         {
             reason = arg.Data.Options.First().Value as string
                      ?? throw new Exception("Cannot get reason");
-            var channel = await arg.GetChannelAsync() as RestTextChannel
-                          ?? throw new Exception("Cannot get channel");
-            var guild = await bot.GetGuildAsync(channel.GuildId);
+            SocketTextChannel channel;
+            SocketGuild guild;
+            CommandObjects.GetChannelAndGuild(arg, bot, out guild, out channel);
 
             var embed = new EmbedBuilder
             {
@@ -48,7 +48,7 @@ public class MemeCommands
 
             foreach (var s in db.ErrorServers)
             {
-                var errorChannel = await bot.GetChannelAsync(s.ChannelId) as RestTextChannel
+                var errorChannel = await bot.GetChannelAsync(s.ChannelId) as SocketTextChannel
                                    ?? throw new Exception("Cannot get error channel");
                 await errorChannel.SendMessageAsync(embed: embed.Build());
             }
@@ -57,16 +57,16 @@ public class MemeCommands
         await arg.FollowupAsync($"Thank you :)", ephemeral: true);
     }
 
-    public static async Task BadBot(SocketSlashCommand arg, DiscordRestClient bot)
+    public static async Task BadBot(SocketSlashCommand arg, DiscordSocketClient bot)
     {
         await arg.DeferAsync(ephemeral: true);
 
         using var db = new BetaContext();
         var reason = arg.Data.Options.First().Value.ToString();
 
-        var channel = await arg.GetChannelAsync() as RestTextChannel
-                      ?? throw new Exception("Cannot get channel");
-        var guild = await bot.GetGuildAsync(channel.GuildId);
+        SocketTextChannel channel;
+        SocketGuild guild;
+        CommandObjects.GetChannelAndGuild(arg, bot, out guild, out channel);
 
         var embed = new EmbedBuilder
         {
@@ -80,7 +80,7 @@ public class MemeCommands
 
         foreach (var s in db.ErrorServers)
         {
-            var errorChannel = await bot.GetChannelAsync(s.ChannelId) as RestTextChannel
+            var errorChannel = await bot.GetChannelAsync(s.ChannelId) as SocketTextChannel
                                ?? throw new Exception("Cannot get error channel");
             await errorChannel.SendMessageAsync(embed: embed.Build());
         }
