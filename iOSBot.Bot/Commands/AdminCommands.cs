@@ -102,14 +102,19 @@ public class AdminCommands
 
         await arg.DeferAsync(ephemeral: true);
         var servers = (bot.Guilds).ToArray();
+        var totalMembers = 0;
         var response = new StringBuilder();
         response.AppendLine("Servers:");
 
         for (int i = 0; i < servers.Length; ++i)
         {
+            var members = servers[i].MemberCount;
+            totalMembers += members;
             response.AppendLine(
-                $"{i + 1}: {servers[i].Name} (@{await bot.GetUserAsync(servers[i].OwnerId)}) | {servers[i].MemberCount} Members");
+                $"{i + 1}: {servers[i].Name} (@{await bot.GetUserAsync(servers[i].OwnerId)}) | {members} Members");
         }
+
+        response.AppendLine($"\nServicing {servers.Length} servers with a total of {totalMembers} members.");
 
         await arg.FollowupAsync(response.ToString());
     }
