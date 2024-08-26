@@ -374,16 +374,10 @@ public class Craig
                     // hash == hash -> same update
                     // build, release date, category -> might be different but prevent double posting essentially the same thing
                     // check db + already found updates
-                    if (!dbUpdates.Any(up => (up.Hash == u.Hash &&
-                                              up.Category == u.Group) ||
-                                             (up.Build == u.Build &&
-                                              up.ReleaseDate == u.ReleaseDate &&
-                                              up.Category == u.Group)) &&
-                        !updates.Any(up => (up.Hash == u.Hash &&
-                                            up.Group == u.Group) ||
-                                           (up.Build == u.Build &&
-                                            up.ReleaseDate == u.ReleaseDate &&
-                                            up.Group == u.Group))) updates.Add(u);
+                    var existingDb = dbUpdates.Where(update => update.Category == u.Group && update.Hash == u.Hash);
+                    var existingNew = updates.Where(update => update.Group == u.Group && update.Build == u.Build);
+
+                    if (!existingDb.Any() && !existingNew.Any()) updates.Add(u);
                     else _logger.Info("No new update found for " + device.FriendlyName);
                 }
             }
