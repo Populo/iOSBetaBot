@@ -101,7 +101,7 @@ public class AdminCommands
         }
 
         await arg.DeferAsync(ephemeral: true);
-        var servers = (bot.Guilds).ToArray();
+        var servers = bot.Guilds.OrderBy(g => g.Name).ToArray();
         var totalMembers = 0;
         var response = new StringBuilder();
         response.AppendLine("Servers:");

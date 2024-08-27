@@ -20,7 +20,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 27, 2);
+    private Version _version = new(2024, 08, 27, 3);
 
     public Craig()
     {
@@ -348,7 +348,7 @@ public class Craig
         _ = Client.SetCustomStatusAsync(newStatus);
 
         // should we check for updates
-        //if (IsSleeping()) return;
+        if (IsSleeping() && null != sender) return;
 
         // set new time from config
         PollTimer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
