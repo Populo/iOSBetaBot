@@ -20,7 +20,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 27, 3);
+    private Version _version = new(2024, 08, 27, 4);
 
     public Craig()
     {
@@ -74,8 +74,6 @@ public class Craig
         Client.Log += ClientOnLog;
         Client.SlashCommandExecuted += ClientOnSlashCommandExecuted;
         Client.MessageReceived += ClientOnMessageReceived;
-        Client.ButtonExecuted += ClientOnButtonExecuted;
-        Client.ModalSubmitted += ClientOnModalSubmitted;
 
         await Client.LoginAsync(TokenType.Bot, args[0]);
         await Client.SetCustomStatusAsync(Status);
@@ -85,58 +83,6 @@ public class Craig
 
         _logger.Info("Started");
         await Task.Delay(-1);
-    }
-
-    private async Task ClientOnModalSubmitted(SocketModal arg)
-    {
-        if (!AdminCommands.IsAllowed(arg.User.Id))
-        {
-            await arg.RespondAsync("Only the bot creator can use this button");
-            return;
-        }
-
-        if (arg.Data.CustomId.Contains("replymodal"))
-        {
-            var channelId = ulong.Parse(arg.Data.CustomId.Split('-').Last());
-            var channel = await Client.GetDMChannelAsync(channelId);
-
-            var textBox = arg.Data.Components.First();
-            var message = textBox.Value + $"\n -@{arg.User.Username}";
-
-            await channel.SendMessageAsync(message);
-            await arg.RespondAsync($"Responded with:\n {message}");
-        }
-    }
-
-    private async Task ClientOnButtonExecuted(SocketMessageComponent arg)
-    {
-        if (arg.Data.CustomId.Contains("reply"))
-        {
-            if (!AdminCommands.IsAllowed(arg.User.Id))
-            {
-                await arg.RespondAsync("Only the bot creator can use this button");
-                return;
-            }
-
-            var channelId = ulong.Parse(arg.Data.CustomId.Split('-').Last());
-
-            var responseBox = new TextInputBuilder()
-            {
-                Placeholder = "What's the reply?",
-                Required = true,
-                CustomId = $"textbox-{channelId}",
-                Label = "Reply",
-                Style = TextInputStyle.Paragraph
-            };
-            var responseModal = new ModalBuilder()
-                {
-                    Title = "Reply",
-                    CustomId = $"replymodal-{channelId}"
-                }
-                .AddTextInput(responseBox);
-
-            await arg.RespondWithModalAsync(responseModal.Build());
-        }
     }
 
     private async Task ClientOnMessageReceived(SocketMessage arg)
@@ -184,28 +130,9 @@ public class Craig
         else
         {
             var userId = arg.Channel.Name.Split(' ').Last();
-            var user = Client.GetUser(ulong.Parse(userId));
+            var user = await Client.Rest.GetUserAsync(ulong.Parse(userId));
             await user.SendMessageAsync($"{arg.Content}\n-@{arg.Author.Username}");
         }
-
-        // var message = new EmbedBuilder()
-        //     {
-        //         Title = "New DM Received"
-        //     }
-        //     .AddField("Sender", arg.Author.Username)
-        //     .AddField("Message", arg.Content)
-        //     .WithThumbnailUrl(arg.Author.GetAvatarUrl())
-        //     .WithColor(Color.Gold);
-        //
-        // //var button = new ComponentBuilder()
-        // //    .WithButton("Reply", $"reply-{channel.Id}");
-        //
-        // foreach (var s in db.ErrorServers)
-        // {
-        //     var c = await Client.GetChannelAsync(s.ChannelId) as SocketTextChannel
-        //             ?? throw new Exception("Cannot get error channel.");
-        //    // await c.SendMessageAsync(components: button.Build(), embed: message.Build());
-        // }
     }
 
     private async Task ClientOnSlashCommandExecuted(SocketSlashCommand arg)
