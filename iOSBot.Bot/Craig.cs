@@ -348,7 +348,7 @@ public class Craig
         _ = Client.SetCustomStatusAsync(newStatus);
 
         // should we check for updates
-        if (IsSleeping()) return;
+        //if (IsSleeping()) return;
 
         // set new time from config
         PollTimer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
@@ -371,13 +371,51 @@ public class Craig
                 var ups = await AppleService.GetUpdate(device);
                 foreach (var u in ups)
                 {
-                    // hash == hash -> same update
-                    // build, release date, category -> might be different but prevent double posting essentially the same thing
-                    // check db + already found updates
-                    var existingDb = dbUpdates.Where(update => update.Category == u.Group && update.Hash == u.Hash);
-                    var existingNew = updates.Where(update => update.Group == u.Group && update.Build == u.Build);
+                    /*
+                     * cases:
+                     * 1) new update
+                     *      -> post as normal
+                     * 2) nothing new
+                     *      -> do nothing
+                     * 3) re-release with same build
+                     *      -> post
+                     * 4) new release date but same hash
+                     *      -> dont post
+                     */
 
-                    if (!existingDb.Any() && !existingNew.Any()) updates.Add(u);
+                    var post = false;
+                    var existingDb = dbUpdates.Where(d => d.Category == u.Group && d.Build == u.Build)
+                        .ToList();
+
+                    // we've seen this build before
+                    if (existingDb.Any())
+                    {
+                        // new hash of same update
+                        if (!existingDb.Any(d => d.Hash == u.Hash))
+                        {
+                            // not already going to post this build found just now
+                            if (!updates.Any(d => d.Group == u.Group && d.Build == u.Build))
+                            {
+                                post = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // not saved in db, but have we seen it yet this loop?
+                        if (updates.Any(d => d.Group == u.Group && d.Build == u.Build))
+                        {
+                            // yes, save anyway even though we arent posting
+                            AppleService.SaveUpdate(u);
+                        }
+                        else
+                        {
+                            // no, post it (and save later)
+                            post = true;
+                        }
+                    }
+
+                    if (post) updates.Add(u);
                     else _logger.Info("No new update found for " + device.FriendlyName);
                 }
             }
