@@ -348,7 +348,7 @@ public class Craig
         _ = Client.SetCustomStatusAsync(newStatus);
 
         // should we check for updates
-        //if (IsSleeping()) return;
+        if (IsSleeping() && null != sender) return;
 
         // set new time from config
         PollTimer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
