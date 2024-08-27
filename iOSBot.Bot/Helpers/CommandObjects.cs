@@ -392,7 +392,7 @@ public class CommandObjects
 
         return db.Devices
             .GroupBy(d => d.Category)
-            .SelectMany(d => d)
+            .Select(d => d.First())
             .ToList();
     }
 
