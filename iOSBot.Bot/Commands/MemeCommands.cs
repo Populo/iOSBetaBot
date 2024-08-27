@@ -10,7 +10,10 @@ public class MemeCommands
     public static async Task Manifest(SocketSlashCommand arg)
     {
         using var db = new BetaContext();
-        var gifLocation = db.Configs.First(c => c.Name == "ManifestGif").Value;
+        var rand = new Random();
+        var configItem = rand.Next(100) > 50 ? "ManifestGif" : "PlsCraigGif";
+
+        var gifLocation = db.Configs.First(c => c.Name == configItem).Value;
         await arg.RespondAsync(gifLocation);
     }
 

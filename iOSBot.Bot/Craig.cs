@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Timers;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Commands;
 using iOSBot.Bot.Helpers;
@@ -19,7 +20,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 08, 23, 5);
+    private Version _version = new(2024, 08, 27, 2);
 
     public Craig()
     {
@@ -140,32 +141,71 @@ public class Craig
 
     private async Task ClientOnMessageReceived(SocketMessage arg)
     {
-        if (arg.Author.IsBot || arg.Channel is not IDMChannel) return;
+        if (arg.Author.IsBot) return;
 
         using var db = new BetaContext();
+        var dmForum =
+            await Client.GetChannelAsync(ulong.Parse(db.Configs.First(c => c.Name == "DMForum").Value)) as
+                SocketForumChannel
+            ?? throw new Exception("Cannot get DM Forum from Id provided from database");
 
-        var channel = arg.Channel as IDMChannel
-                      ?? throw new Exception("Cannot get channel from DM");
-        await channel.SendMessageAsync("Thank you for your message, Someone will be with you shortly.");
-
-        var message = new EmbedBuilder()
-            {
-                Title = "New DM Received"
-            }
-            .AddField("Sender", arg.Author.Username)
-            .AddField("Message", arg.Content)
-            .WithThumbnailUrl(arg.Author.GetAvatarUrl())
-            .WithColor(Color.Gold);
-
-        var button = new ComponentBuilder()
-            .WithButton("Reply", $"reply-{channel.Id}");
-
-        foreach (var s in db.ErrorServers)
+        if (arg.Channel is IThreadChannel threadChannel)
         {
-            var c = await Client.GetChannelAsync(s.ChannelId) as SocketTextChannel
-                    ?? throw new Exception("Cannot get error channel.");
-            await c.SendMessageAsync(components: button.Build(), embed: message.Build());
+            var restThread = await Client.Rest.GetChannelAsync(threadChannel.Id) as RestThreadChannel
+                             ?? throw new Exception("Cannot get thread from rest api");
+            if (restThread.ParentChannelId != dmForum.Id) return;
         }
+        else if (arg.Channel is not IDMChannel) return;
+
+        var channels = await dmForum.GetActiveThreadsAsync()
+                       ?? throw new Exception("Cannot get active threads from rest api");
+
+        if (arg.Channel is IDMChannel)
+        {
+            var post = channels.FirstOrDefault(t => t.Name.Contains(arg.Author.Id.ToString())) as IThreadChannel;
+
+            if (null == post)
+            {
+                var embed = new EmbedBuilder()
+                {
+                    Title = $"DMs between Craig and {arg.Author}",
+                    ThumbnailUrl = arg.Author.GetAvatarUrl(),
+                };
+                post = await dmForum.CreatePostAsync($"Craig DM @{arg.Author.Username} - {arg.Author.Id}",
+                    ThreadArchiveDuration.OneWeek, embed: embed.Build());
+                await arg.Channel.SendMessageAsync($"Your message has been sent. Someone will be with you shortly.");
+            }
+
+            if (post.IsArchived)
+                await post.ModifyAsync(t => { t.Archived = false; });
+
+            await post.SendMessageAsync($"{arg.Content}\n-@{arg.Author.Username}");
+        }
+        else
+        {
+            var userId = arg.Channel.Name.Split(' ').Last();
+            var user = Client.GetUser(ulong.Parse(userId));
+            await user.SendMessageAsync($"{arg.Content}\n-@{arg.Author.Username}");
+        }
+
+        // var message = new EmbedBuilder()
+        //     {
+        //         Title = "New DM Received"
+        //     }
+        //     .AddField("Sender", arg.Author.Username)
+        //     .AddField("Message", arg.Content)
+        //     .WithThumbnailUrl(arg.Author.GetAvatarUrl())
+        //     .WithColor(Color.Gold);
+        //
+        // //var button = new ComponentBuilder()
+        // //    .WithButton("Reply", $"reply-{channel.Id}");
+        //
+        // foreach (var s in db.ErrorServers)
+        // {
+        //     var c = await Client.GetChannelAsync(s.ChannelId) as SocketTextChannel
+        //             ?? throw new Exception("Cannot get error channel.");
+        //    // await c.SendMessageAsync(components: button.Build(), embed: message.Build());
+        // }
     }
 
     private async Task ClientOnSlashCommandExecuted(SocketSlashCommand arg)
@@ -308,7 +348,7 @@ public class Craig
         _ = Client.SetCustomStatusAsync(newStatus);
 
         // should we check for updates
-        if (IsSleeping()) return;
+        //if (IsSleeping()) return;
 
         // set new time from config
         PollTimer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
@@ -331,19 +371,51 @@ public class Craig
                 var ups = await AppleService.GetUpdate(device);
                 foreach (var u in ups)
                 {
-                    // hash == hash -> same update
-                    // build, release date, category -> might be different but prevent double posting essentially the same thing
-                    // check db + already found updates
-                    if (!dbUpdates.Any(up => (up.Hash == u.Hash &&
-                                              up.Category == u.Group) ||
-                                             (up.Build == u.Build &&
-                                              up.ReleaseDate == u.ReleaseDate &&
-                                              up.Category == u.Group)) &&
-                        !updates.Any(up => (up.Hash == u.Hash &&
-                                            up.Group == u.Group) ||
-                                           (up.Build == u.Build &&
-                                            up.ReleaseDate == u.ReleaseDate &&
-                                            up.Group == u.Group))) updates.Add(u);
+                    /*
+                     * cases:
+                     * 1) new update
+                     *      -> post as normal
+                     * 2) nothing new
+                     *      -> do nothing
+                     * 3) re-release with same build
+                     *      -> post
+                     * 4) new release date but same hash
+                     *      -> dont post
+                     */
+
+                    var post = false;
+                    var existingDb = dbUpdates.Where(d => d.Category == u.Group && d.Build == u.Build)
+                        .ToList();
+
+                    // we've seen this build before
+                    if (existingDb.Any())
+                    {
+                        // new hash of same update
+                        if (!existingDb.Any(d => d.Hash == u.Hash))
+                        {
+                            // not already going to post this build found just now
+                            if (!updates.Any(d => d.Group == u.Group && d.Build == u.Build))
+                            {
+                                post = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // not saved in db, but have we seen it yet this loop?
+                        if (updates.Any(d => d.Group == u.Group && d.Build == u.Build))
+                        {
+                            // yes, save anyway even though we arent posting
+                            AppleService.SaveUpdate(u);
+                        }
+                        else
+                        {
+                            // no, post it (and save later)
+                            post = true;
+                        }
+                    }
+
+                    if (post) updates.Add(u);
                     else _logger.Info("No new update found for " + device.FriendlyName);
                 }
             }
@@ -428,7 +500,8 @@ public class Craig
             "Now with 10% more AI",
             $"server",
             "Traveling on Hair Force One",
-            $"Craig version: {_version}"
+            $"Craig version: {_version}",
+            "DM me for help :)"
         };
 
         return statuses[new Random().Next(statuses.Length)];
@@ -440,7 +513,8 @@ public class Craig
     {
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.DirectMessages | GatewayIntents.Guilds | GatewayIntents.GuildMessages,
+            GatewayIntents = GatewayIntents.DirectMessages | GatewayIntents.Guilds | GatewayIntents.GuildMessages |
+                             GatewayIntents.MessageContent,
             MessageCacheSize = 15
         };
 

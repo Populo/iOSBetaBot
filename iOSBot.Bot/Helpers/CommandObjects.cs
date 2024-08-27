@@ -390,7 +390,10 @@ public class CommandObjects
     {
         using var db = new BetaContext();
 
-        return db.Devices.ToList();
+        return db.Devices
+            .GroupBy(d => d.Category)
+            .Select(d => d.First())
+            .ToList();
     }
 
     public static void GetChannelAndGuild(SocketSlashCommand command, DiscordSocketClient bot, out SocketGuild guild,
