@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Timers;
+using Bluesky.Net;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -20,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 09, 02, 1);
+    private Version _version = new(2024, 11, 14, 1);
 
     public Craig()
     {
@@ -29,6 +30,7 @@ public class Craig
         Client = serviceProvider.GetRequiredService<DiscordSocketClient>()
                  ?? throw new Exception("Cannot get client from factory");
         AppleService = serviceProvider.GetRequiredService<IAppleService>();
+        BlueSkyService = new BlueSkyService(serviceProvider.GetRequiredService<IBlueskyApi>());
 
         UpdatePoster = new Poster(AppleService, Client);
 
@@ -43,6 +45,7 @@ public class Craig
 
     private DiscordSocketClient Client { get; set; }
     private IAppleService AppleService { get; set; }
+    private BlueSkyService BlueSkyService { get; set; }
     private string? Status { get; set; }
     private Poster UpdatePoster { get; set; }
     private Timer PollTimer { get; init; }
@@ -69,6 +72,7 @@ public class Craig
         Client.Ready += () =>
         {
             _ = UpdatePoster.PostError("Good morning! Welcome to Apple Park.");
+            //_ = BlueSkyService.PostUpdate("testing 123");
             return AdminCommands.UpdateCommands(Client, null, true);
         };
         Client.Log += ClientOnLog;
@@ -286,7 +290,7 @@ public class Craig
 
         // should we check for updates
         if (IsSleeping() && null != sender) return;
-        
+
         // get updates
         var updates = new ConcurrentBag<Update>();
         var dbUpdates = db.Updates.ToList();
@@ -378,6 +382,13 @@ public class Craig
                 continue;
             }
 
+            // post to bluesky
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Release")
+            {
+                _ = BlueSkyService.PostUpdate(
+                    $"New update found.\n\n\nTrack: {update.Device.FriendlyName}\nVersion: {update.VersionReadable}\nBuild: {update.Build}");
+            }
+
             foreach (var server in servers)
             {
                 var threads = db.Threads.Where(t => t.Category == category && t.ServerId == server.ServerId);
@@ -447,6 +458,7 @@ public class Craig
 
         var collection = new ServiceCollection();
 
+        collection.AddBluesky();
         collection.AddTransient<IAppleService, AppleService>();
         collection
             .AddSingleton(config)
