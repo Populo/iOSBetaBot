@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 11, 14, 1);
+    private Version _version = new(2024, 11, 14, 2);
 
     public Craig()
     {
@@ -234,6 +234,21 @@ public class Craig
             case "noforum":
                 _ = AppleCommands.NoForum(arg, Client);
                 break;
+            // misc commands
+            case "whygm":
+                _ = arg.RespondAsync(
+                    "GM is being used instead of RC because based on the IDs Apple gives releases, they are different than RCs." +
+                    " A normal beta release has an ID similar to iOS182Beta3; an RC would have something like iOS182Short;" +
+                    " while a stable update would have iOS182Long. This update has an ID ending in 'Long' despite being " +
+                    "on a beta track rather than stable releases track. Therefore, it technically isnt an RC, but it isnt stable." +
+                    " Hence, Golden Master.", ephemeral: true);
+                break;
+            case "craiginfo":
+                _ = arg.RespondAsync(
+                    "Craig is a bot meant to track Apple OS releases, specifically the beta ones\n" +
+                    "Created by: @populo\n[Bluesky](https://bsky.app/profile/craigbot.bsky.social)\n[Support discord](https://discord.gg/NX6nYrNtbU)"
+                    , ephemeral: true);
+                break;
         }
     }
 
@@ -439,7 +454,8 @@ public class Craig
             $"server",
             "Traveling on Hair Force One",
             $"Craig version: {_version}",
-            "DM me for help :)"
+            "DM me for help :)",
+            "/craiginfo"
         };
 
         return statuses[new Random().Next(statuses.Length)];

@@ -8,6 +8,20 @@ public class CommandObjects
 {
     #region Builers
 
+    private static SlashCommandBuilder craigInfoBuilder = new()
+    {
+        Name = "craiginfo",
+        Description = "Very basic description of Craig",
+        DefaultMemberPermissions = GuildPermission.SendMessages
+    };
+
+    private static SlashCommandBuilder whyGMBuilder = new()
+    {
+        Name = "whygm",
+        Description = "Explanation of why Craig referred to an update as GM rather than RC",
+        DefaultMemberPermissions = GuildPermission.SendMessages
+    };
+
     private static SlashCommandBuilder errorBuilder = new()
     {
         Name = "yeserrors",
@@ -359,7 +373,10 @@ public class CommandObjects
         yesThreadBuilder,
         noThreadBuilder,
         yesForumBuilder,
-        noForumBuilder
+        noForumBuilder,
+        // misc commands
+        craigInfoBuilder,
+        whyGMBuilder
     };
 
     #endregion
