@@ -8,8 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Discord.Net" Version="3.15.3"/>
-        <PackageReference Include="NLog" Version="5.3.2"/>
+        <PackageReference Include="Bluesky.Net" Version="0.4.0-alpha"/>
+        <PackageReference Include="Discord.Net" Version="3.16.0"/>
+        <PackageReference Include="NLog" Version="5.3.4"/>
     </ItemGroup>
 
     <ItemGroup>

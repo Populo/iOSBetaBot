@@ -12,14 +12,14 @@ public class Poster
 {
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-    private IAppleService AppleService { get; init; }
-    private DiscordSocketClient Client { get; init; }
-
     public Poster(IAppleService appleService, DiscordSocketClient client)
     {
         AppleService = appleService;
         Client = client;
     }
+
+    private IAppleService AppleService { get; init; }
+    private DiscordSocketClient Client { get; init; }
 
     public static async void StaticError(Poster poster, string message)
         => await poster.PostError(message);
@@ -126,6 +126,10 @@ public class Poster
             embed.AddField(name: "Discussion Thread(s)", value: string.Join('\n', postedThreads));
         if (null != postedForums && postedForums.Any())
             embed.AddField(name: "Discussion Forum(s)", value: string.Join('\n', postedForums));
+        var isGM = update.VersionReadable.Contains("Golden Master"); // split because testing
+        if (isGM)
+            embed.AddField(name: "Why Golden Master?", value: "use /whygm to learn why.");
+
 
         var imagePath = GetImagePath(update.Device.Category);
         if (!string.IsNullOrEmpty(imagePath))

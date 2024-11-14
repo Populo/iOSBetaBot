@@ -18,12 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
+      <PackageReference Include="Bluesky.Net" Version="0.4.0-alpha"/>
       <PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0"/>
-      <PackageReference Include="Discord.Net" Version="3.15.2"/>
+      <PackageReference Include="Discord.Net" Version="3.16.0"/>
+      <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.2.0"/>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-      <PackageReference Include="NLog" Version="5.3.2"/>
-      <PackageReference Include="RestSharp" Version="111.3.0"/>
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.2"/>
+      <PackageReference Include="NLog" Version="5.3.4"/>
+      <PackageReference Include="RestSharp" Version="112.1.0"/>
   </ItemGroup>
 
   <ItemGroup>

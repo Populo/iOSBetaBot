@@ -1,7 +1,7 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Runtime.ExceptionServices;
+﻿using System.Runtime.ExceptionServices;
 using System.Text;
 using iOSBot.Data;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
 using NLog;
 using Org.BouncyCastle.Crypto.Digests;
@@ -28,8 +28,6 @@ namespace iOSBot.Service
     {
         Logger _logger = LogManager.GetCurrentClassLogger();
 
-        private RestClient RestClient { get; set; }
-
         public AppleService()
         {
             var restOptions = new RestClientOptions("https://gdmf.apple.com/v2/assets")
@@ -39,6 +37,8 @@ namespace iOSBot.Service
 
             RestClient = new RestClient(restOptions);
         }
+
+        private RestClient RestClient { get; set; }
 
         public async Task<List<Update>> GetUpdate(Device device)
         {
@@ -58,12 +58,12 @@ namespace iOSBot.Service
             var updates = new List<Update>();
 
             request.AddJsonBody(JsonConvert.SerializeObject(reqBody));
-            RestResponse response = null;
+            RestResponse response;
             try
             {
                 response = await RestClient.PostAsync(request);
 
-                var jwt = new JwtSecurityToken(response.Content);
+                var jwt = new JsonWebToken(response.Content);
 
                 // no assets present
                 if (!jwt.Claims.Any(c => c.Type == "Assets"))
