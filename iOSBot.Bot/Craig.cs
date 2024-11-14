@@ -400,6 +400,7 @@ public class Craig
             // post to bluesky
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Release")
             {
+                _logger.Info($"Posting {update.VersionReadable} ({update.Build}) to Bluesky.");
                 _ = BlueSkyService.PostUpdate(
                     $"New update found.\n\n\nTrack: {update.Device.FriendlyName}\nVersion: {update.VersionReadable}\nBuild: {update.Build}");
             }
