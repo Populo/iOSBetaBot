@@ -305,6 +305,8 @@ public class Craig
         // should we check for updates
         if (IsSleeping() && null != sender) return;
 
+        _ = BlueSkyService.Auth();
+
         // get updates
         var updates = new ConcurrentBag<Update>();
         var dbUpdates = db.Updates.ToList();
