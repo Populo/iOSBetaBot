@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 11, 14, 3);
+    private Version _version = new(2024, 11, 18, 1);
 
     public Craig()
     {
@@ -286,12 +286,11 @@ public class Craig
         var content = GetStatusContent();
         if (content == "server") content = $"Member of: {Client.Guilds.Count} Servers";
 
-        var newStatus = $"{GetStatus()} | {content}";
-        if (newStatus.StartsWith("Sleeping")) _ = Client.SetStatusAsync(UserStatus.AFK);
+        if (GetStatus() == "Sleeping") _ = Client.SetStatusAsync(UserStatus.AFK);
         else _ = Client.SetStatusAsync(UserStatus.Online);
 
-        _logger.Info($"New status: {newStatus}");
-        _ = Client.SetCustomStatusAsync(newStatus);
+        _logger.Info($"New status: {content}");
+        _ = Client.SetCustomStatusAsync(content);
 
         // set new time from config
         PollTimer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
