@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 11, 18, 2);
+    private Version _version = new(2024, 11, 18, 3);
 
     public Craig()
     {
@@ -286,8 +286,18 @@ public class Craig
         var content = GetStatusContent();
         if (content == "server") content = $"Member of: {Client.Guilds.Count} Servers";
 
-        if (GetStatus() == "Sleeping") _ = Client.SetStatusAsync(UserStatus.AFK);
-        else _ = Client.SetStatusAsync(UserStatus.Online);
+        switch (GetStatus().ToLower())
+        {
+            case "sleeping":
+                _ = Client.SetStatusAsync(UserStatus.AFK);
+                break;
+            case "paused":
+                _ = Client.SetStatusAsync(UserStatus.DoNotDisturb);
+                break;
+            case "running":
+                _ = Client.SetStatusAsync(UserStatus.Online);
+                break;
+        }
 
         _logger.Info($"New status: {content}");
         _ = Client.SetCustomStatusAsync(content);
