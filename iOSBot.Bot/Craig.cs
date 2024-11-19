@@ -411,9 +411,24 @@ public class Craig
             // post to bluesky
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Release")
             {
+                var devHashtag = "";
+                if (category.Contains("ios", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "iOS";
+                else if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "watchOS";
+                else if (category.Contains("macOS", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "macOS";
+                else if (category.Contains("tvOS", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "tvOS";
+                else if (category.Contains("audioOS", StringComparison.CurrentCultureIgnoreCase))
+                    devHashtag = "audioOS";
+                else if (category.Contains("VisionOS", StringComparison.CurrentCultureIgnoreCase))
+                    devHashtag = "visionOS";
+
+
                 _logger.Info($"Posting {update.VersionReadable} ({update.Build}) to Bluesky.");
                 _ = BlueSkyService.PostUpdate(
-                    $"New update found.\n\n\nTrack: {update.Device.FriendlyName}\nVersion: {update.VersionReadable}\nBuild: {update.Build}");
+                    $"New update found." +
+                    $"\n\n\nTrack: {update.Device.FriendlyName}" +
+                    $"\nVersion: {update.VersionReadable}" +
+                    $"\nBuild: {update.Build}" +
+                    $"\n\n#apple #beta #{devHashtag}");
             }
 
             foreach (var server in servers)
