@@ -79,6 +79,9 @@ public class Craig
         Client.Log += ClientOnLog;
         Client.SlashCommandExecuted += ClientOnSlashCommandExecuted;
         Client.MessageReceived += ClientOnMessageReceived;
+        Client.JoinedGuild += ClientOnJoinedGuild;
+        Client.LeftGuild += guild => _ = UpdatePoster.PostError($"Craig has been removed from {guild.Name}");
+        ;
 
         await Client.LoginAsync(TokenType.Bot, args[0]);
         await Client.SetCustomStatusAsync(Status);
@@ -88,6 +91,27 @@ public class Craig
 
         _logger.Info("Started");
         await Task.Delay(-1);
+    }
+
+    private async Task ClientOnJoinedGuild(SocketGuild arg)
+    {
+        _ = UpdatePoster.PostError($"Craig has joined {arg.Name}");
+
+        var owner = await Client.GetUserAsync(arg.OwnerId);
+        if (null == owner) return;
+
+        var message = "Hello!\nThank you for inviting Craig to your server.\n" +
+                      "To get started, use /watch in the channel you want to see updates posted in. " +
+                      "You will be given various update tracks to choose from. " +
+                      "You can add as many or as few as you like.\n" +
+                      "/yesthread will tell Craig to create a discussion thread for the specified update in the channel.\n" +
+                      "/yesforum will tell him to create a forum post in a forum channel.\n" +
+                      "/nothread and /noforum will undo these commands.\n\n" +
+                      "For support you can join my dedicated bot server: https://discord.gg/NX6nYrNtbU, " +
+                      "message my creator (@populo), or DM me in this chat directly.\n" +
+                      "Thanks again!";
+
+        _ = owner.SendMessageAsync(message);
     }
 
     private async Task ClientOnMessageReceived(SocketMessage arg)
