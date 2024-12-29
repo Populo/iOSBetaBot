@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 11, 18, 3);
+    private Version _version = new(2024, 12, 28, 1);
 
     public Craig()
     {
@@ -71,7 +71,8 @@ public class Craig
 
         Client.Ready += () =>
         {
-            _ = UpdatePoster.PostError("Good morning! Welcome to Apple Park.");
+            // so annoying please stop
+            // _ = UpdatePoster.PostError("Good morning! Welcome to Apple Park.");
             //_ = BlueSkyService.PostUpdate("testing 123");
             return AdminCommands.UpdateCommands(Client, null, true);
         };
