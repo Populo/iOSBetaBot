@@ -27,6 +27,7 @@ namespace iOSBot.Service
     public class AppleService : IAppleService
     {
         Logger _logger = LogManager.GetCurrentClassLogger();
+        private string Queue = "CRAIG_UPDATES";
 
         public AppleService()
         {

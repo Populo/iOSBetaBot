@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Timers;
+﻿using System.Timers;
 using Bluesky.Net;
 using Discord;
 using Discord.Rest;
@@ -31,6 +30,8 @@ public class Craig
                  ?? throw new Exception("Cannot get client from factory");
         AppleService = serviceProvider.GetRequiredService<IAppleService>();
         BlueSkyService = new BlueSkyService(serviceProvider.GetRequiredService<IBlueskyApi>());
+        BotService = serviceProvider.GetRequiredService<IBotService>();
+        MqService = serviceProvider.GetRequiredService<IMqService>();
 
         UpdatePoster = new Poster(AppleService, Client);
 
@@ -38,12 +39,14 @@ public class Craig
         {
             AutoReset = true,
             Enabled = false,
-            Interval = 1000 * 60 * 2 // 2 minutes
+            Interval = 1000 * 30 * 1 // 30 seconds
         };
         PollTimer.Elapsed += PollTimerOnElapsed;
     }
 
     private DiscordSocketClient Client { get; set; }
+    private IMqService MqService { get; set; }
+    private IBotService BotService { get; set; }
     private IAppleService AppleService { get; set; }
     private BlueSkyService BlueSkyService { get; set; }
     private string? Status { get; set; }
@@ -336,9 +339,6 @@ public class Craig
         _logger.Info($"New status: {content}");
         _ = Client.SetCustomStatusAsync(content);
 
-        // set new time from config
-        PollTimer.Interval = int.Parse(db.Configs.First(c => c.Name == "Timer").Value);
-
         // update server count
         var channelId = ulong.Parse(db.Configs.First(c => c.Name == "StatusChannel").Value);
         var env = db.Configs.First(c => c.Name == "Environment").Value;
@@ -347,75 +347,12 @@ public class Craig
             c.Name = $"{env} Bot Servers: {Client.Rest.GetGuildsAsync().Result.Count}");
 
         // should we check for updates
-        if (IsSleeping() && null != sender) return;
+        //if (BotService.IsSleeping() && null != sender) return;
 
         _ = BlueSkyService.Auth();
 
         // get updates
-        var updates = new ConcurrentBag<Update>();
-        var dbUpdates = db.Updates.ToList();
-
-        await Parallel.ForEachAsync(db.Devices.Where(d => d.Enabled), async (device, _) =>
-        {
-            try
-            {
-                var ups = await AppleService.GetUpdate(device);
-                foreach (var u in ups)
-                {
-                    /*
-                     * cases:
-                     * 1) new update
-                     *      -> post as normal
-                     * 2) nothing new
-                     *      -> do nothing
-                     * 3) re-release with same build
-                     *      -> post
-                     * 4) new release date but same hash
-                     *      -> dont post
-                     */
-
-                    var post = false;
-                    var existingDb = dbUpdates.Where(d => d.Category == u.Group && d.Build == u.Build)
-                        .ToList();
-
-                    // we've seen this build before
-                    if (existingDb.Any())
-                    {
-                        // new hash of same update
-                        if (!existingDb.Any(d => d.Hash == u.Hash))
-                        {
-                            // not already going to post this build found just now
-                            if (!updates.Any(d => d.Group == u.Group && d.Build == u.Build))
-                            {
-                                post = true;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // not saved in db, but have we seen it yet this loop?
-                        if (updates.Any(d => d.Group == u.Group && d.Build == u.Build))
-                        {
-                            // yes, save anyway even though we arent posting
-                            AppleService.SaveUpdate(u);
-                        }
-                        else
-                        {
-                            // no, post it (and save later)
-                            post = true;
-                        }
-                    }
-
-                    if (post) updates.Add(u);
-                    else _logger.Info("No new update found for " + device.FriendlyName);
-                }
-            }
-            catch (Exception ex)
-            {
-                Poster.StaticError(UpdatePoster,
-                    $"Error checking update for {device.FriendlyName}:\n{ex.Message}");
-            }
-        });
+        var updates = MqService.GetMessage<Update>("UPDATE");
 
         // post updates
         foreach (var update in updates)
@@ -492,20 +429,6 @@ public class Craig
         }
     }
 
-    private bool IsSleeping()
-    {
-        if (!PollTimer.Enabled) return false;
-        var weekend = DateTime.Today.DayOfWeek == DayOfWeek.Saturday || DateTime.Today.DayOfWeek == DayOfWeek.Sunday;
-
-        using var db = new BetaContext();
-
-        var startTime = int.Parse(db.Configs.First(c => c.Name == "ClockInHour").Value);
-        var endTime = int.Parse(db.Configs.First(c => c.Name == "ClockOutHour").Value);
-        var now = DateTime.Now.Hour;
-
-        return weekend || now < startTime || now > endTime;
-    }
-
     private string GetStatusContent()
     {
         var statuses = new[]
@@ -522,7 +445,7 @@ public class Craig
         return statuses[new Random().Next(statuses.Length)];
     }
 
-    private string GetStatus() => !PollTimer.Enabled ? "Paused" : IsSleeping() ? "Sleeping" : "Running";
+    private string GetStatus() => !PollTimer.Enabled ? "Paused" : BotService.IsSleeping() ? "Sleeping" : "Running";
 
     private IServiceProvider CreateProvider()
     {
@@ -537,6 +460,8 @@ public class Craig
 
         collection.AddBluesky();
         collection.AddTransient<IAppleService, AppleService>();
+        collection.AddTransient<IBotService, BotService>();
+        collection.AddTransient<IMqService, MqService>();
         collection
             .AddSingleton(config)
             .AddSingleton<DiscordSocketClient>();
