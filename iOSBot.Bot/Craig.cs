@@ -1,4 +1,6 @@
 ﻿using System.Timers;
+using Apache.NMS;
+using Apache.NMS.ActiveMQ;
 using Bluesky.Net;
 using Discord;
 using Discord.Rest;
@@ -8,8 +10,10 @@ using iOSBot.Bot.Helpers;
 using iOSBot.Data;
 using iOSBot.Service;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using IMessage = Apache.NMS.IMessage;
 using Timer = System.Timers.Timer;
 using Update = iOSBot.Service.Update;
 
@@ -91,8 +95,102 @@ public class Craig
         await Client.StartAsync();
         PollTimer.Start();
 
+        var factory = new ConnectionFactory("tcp://localhost:61616")
+        {
+            UserName = "daledoback",
+            Password = Environment.GetEnvironmentVariable("daleActiveMqPass")
+        };
+        using var connection = factory.CreateConnection();
+        connection.Start();
+        using var session = connection.CreateSession();
+
+        var destination = session.GetQueue("UPDATE");
+        var consumer = session.CreateConsumer(destination);
+        consumer.Listener += ConsumerOnListener;
+
         _logger.Info("Started");
         await Task.Delay(-1);
+    }
+
+    private async void ConsumerOnListener(IMessage message)
+    {
+        var textMsg = message as ITextMessage;
+        if (textMsg == null) throw new Exception("Could not read message");
+
+        var update = JsonConvert.DeserializeObject<Update>(textMsg.Text);
+        if (null == update) throw new Exception("Could not parse message");
+
+        using var db = new BetaContext();
+
+        var category = update.Device.Category;
+        var servers = db.Servers.Where(s => s.Category == category);
+
+        _logger.Info(
+            $"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
+
+        // dont post if older than 12 hours, still add to db tho
+        var postOld = Convert.ToBoolean(Convert.ToInt16(db.Configs.First(c => c.Name == "PostOld").Value));
+
+        // save update to db
+        AppleService.SaveUpdate(update);
+
+        if (!postOld && update.ReleaseDate.DayOfYear != DateTime.Today.DayOfYear)
+        {
+            var error =
+                $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
+            _logger.Info(error);
+            await UpdatePoster.PostError(error);
+
+            return;
+        }
+
+        // post to bluesky
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Release")
+        {
+            var devHashtag = "";
+            if (category.Contains("ios", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "iOS";
+            else if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "watchOS";
+            else if (category.Contains("macOS", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "macOS";
+            else if (category.Contains("tvOS", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "tvOS";
+            else if (category.Contains("audioOS", StringComparison.CurrentCultureIgnoreCase))
+                devHashtag = "audioOS";
+            else if (category.Contains("VisionOS", StringComparison.CurrentCultureIgnoreCase))
+                devHashtag = "visionOS";
+
+
+            _logger.Info($"Posting {update.VersionReadable} ({update.Build}) to Bluesky.");
+            _ = BlueSkyService.PostUpdate(
+                $"New update found." +
+                $"\n\n\nTrack: {update.Device.FriendlyName}" +
+                $"\nVersion: {update.VersionReadable}" +
+                $"\nBuild: {update.Build}" +
+                $"\n\n#apple #beta #{devHashtag}");
+        }
+
+        foreach (var server in servers)
+        {
+            var threads = db.Threads.Where(t => t.Category == category && t.ServerId == server.ServerId);
+            var forums = db.Forums.Where(f => f.Category == category && f.ServerId == server.ServerId);
+            var postedThreads = new List<string>();
+            var postedForums = new List<string>();
+
+            // post threads
+            foreach (var thread in threads)
+            {
+                var post = await UpdatePoster.CreateThreadAsync(thread, update);
+                if (null != post) postedThreads.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
+            }
+
+            // post forums
+            foreach (var forum in forums)
+            {
+                var post = await UpdatePoster.CreateForumAsync(forum, update);
+                if (null != post) postedForums.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
+            }
+
+            // send alert
+            _ = UpdatePoster.PostUpdateAsync(server, update, postedThreads, postedForums);
+        }
     }
 
     private async Task ClientOnJoinedGuild(SocketGuild arg)
@@ -355,78 +453,6 @@ public class Craig
         var updates = MqService.GetMessage<Update>("UPDATE");
 
         // post updates
-        foreach (var update in updates)
-        {
-            var category = update.Device.Category;
-            var servers = db.Servers.Where(s => s.Category == category);
-
-            _logger.Info(
-                $"Update for {update.Device.FriendlyName} found. Version {update.VersionReadable} with build id {update.Build}");
-
-            // dont post if older than 12 hours, still add to db tho
-            var postOld = Convert.ToBoolean(Convert.ToInt16(db.Configs.First(c => c.Name == "PostOld").Value));
-
-            // save update to db
-            AppleService.SaveUpdate(update);
-
-            if (!postOld && update.ReleaseDate.DayOfYear != DateTime.Today.DayOfYear)
-            {
-                var error =
-                    $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
-                _logger.Info(error);
-                await UpdatePoster.PostError(error);
-
-                continue;
-            }
-
-            // post to bluesky
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Release")
-            {
-                var devHashtag = "";
-                if (category.Contains("ios", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "iOS";
-                else if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "watchOS";
-                else if (category.Contains("macOS", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "macOS";
-                else if (category.Contains("tvOS", StringComparison.CurrentCultureIgnoreCase)) devHashtag = "tvOS";
-                else if (category.Contains("audioOS", StringComparison.CurrentCultureIgnoreCase))
-                    devHashtag = "audioOS";
-                else if (category.Contains("VisionOS", StringComparison.CurrentCultureIgnoreCase))
-                    devHashtag = "visionOS";
-
-
-                _logger.Info($"Posting {update.VersionReadable} ({update.Build}) to Bluesky.");
-                _ = BlueSkyService.PostUpdate(
-                    $"New update found." +
-                    $"\n\n\nTrack: {update.Device.FriendlyName}" +
-                    $"\nVersion: {update.VersionReadable}" +
-                    $"\nBuild: {update.Build}" +
-                    $"\n\n#apple #beta #{devHashtag}");
-            }
-
-            foreach (var server in servers)
-            {
-                var threads = db.Threads.Where(t => t.Category == category && t.ServerId == server.ServerId);
-                var forums = db.Forums.Where(f => f.Category == category && f.ServerId == server.ServerId);
-                var postedThreads = new List<string>();
-                var postedForums = new List<string>();
-
-                // post threads
-                foreach (var thread in threads)
-                {
-                    var post = await UpdatePoster.CreateThreadAsync(thread, update);
-                    if (null != post) postedThreads.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
-                }
-
-                // post forums
-                foreach (var forum in forums)
-                {
-                    var post = await UpdatePoster.CreateForumAsync(forum, update);
-                    if (null != post) postedForums.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
-                }
-
-                // send alert
-                _ = UpdatePoster.PostUpdateAsync(server, update, postedThreads, postedForums);
-            }
-        }
     }
 
     private string GetStatusContent()
