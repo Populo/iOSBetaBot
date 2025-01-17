@@ -95,6 +95,16 @@ public class Craig
     private async Task ClientOnJoinedGuild(SocketGuild arg)
     {
         _ = UpdatePoster.PostError($"Craig has joined {arg.Name}");
+        try
+        {
+            var me = arg.GetUser(Client.CurrentUser.Id);
+            _ = me.ModifyAsync(m => { m.Nickname = "Craig"; });
+        }
+        catch
+        {
+            _logger.Info("Could not change nickname to Craig");
+        }
+
 
         var owner = await Client.GetUserAsync(arg.OwnerId);
         if (null == owner) return;
