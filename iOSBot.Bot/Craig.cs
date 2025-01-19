@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2024, 12, 28, 2);
+    private Version _version = new(2025, 1, 19, 1);
 
     public Craig()
     {
@@ -74,6 +74,7 @@ public class Craig
             // so annoying please stop
             // _ = UpdatePoster.PostError("Good morning! Welcome to Apple Park.");
             //_ = BlueSkyService.PostUpdate("testing 123");
+            //_ = RunBulkCommand();
             return AdminCommands.UpdateCommands(Client, null, true);
         };
         Client.Log += ClientOnLog;
@@ -95,6 +96,15 @@ public class Craig
     private async Task ClientOnJoinedGuild(SocketGuild arg)
     {
         _ = UpdatePoster.PostError($"Craig has joined {arg.Name}");
+        try
+        {
+            var me = arg.GetUser(Client.CurrentUser.Id);
+            _ = me.ModifyAsync(m => { m.Nickname = "Craig"; });
+        }
+        catch
+        {
+            _logger.Info("Could not change nickname to Craig");
+        }
 
         var owner = await Client.GetUserAsync(arg.OwnerId);
         if (null == owner) return;
@@ -532,5 +542,29 @@ public class Craig
             .AddSingleton<DiscordSocketClient>();
 
         return collection.BuildServiceProvider();
+    }
+
+    private async Task RunBulkCommand()
+    {
+        foreach (var server in Client.Guilds)
+        {
+            try
+            {
+                var me = server.GetUser(Client.CurrentUser.Id);
+                if (me.Nickname != null)
+                {
+                    _logger.Info($"Custom nickname already set in {server.Name}: {me.Nickname}");
+                    continue;
+                }
+
+                await me.ModifyAsync(m => { m.Nickname = "Craig"; });
+                Task.Delay(1000).Wait();
+                _logger.Info($"Changed nickname to {me.Nickname} in {server.Name}");
+            }
+            catch
+            {
+                _logger.Info("Could not change nickname to Craig");
+            }
+        }
     }
 }
