@@ -280,7 +280,7 @@ public class Craig
             case "craiginfo":
                 _ = arg.RespondAsync(
                     "Craig is a bot meant to track Apple OS releases, specifically the beta ones\n" +
-                    "Created by: @populo\n[Bluesky](https://bsky.app/profile/craigbot.bsky.social)\n[Support discord](https://discord.gg/NX6nYrNtbU)"
+                    "Created by: @populo\n[Bluesky](https://bsky.app/profile/craig.populo.dev)\n[Support discord](https://discord.gg/NX6nYrNtbU)"
                     , ephemeral: true);
                 break;
         }
