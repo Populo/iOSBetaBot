@@ -510,15 +510,15 @@ public class Craig
     {
         var statuses = new[]
         {
-            "Sigma",
-            "Now with 10% more AI",
-            $"server",
-            "Traveling on Hair Force One",
-            $"Craig version: {_version}",
-            "DM me for help :)",
-            "/craiginfo",
-            "\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f",
-            "Don't talk to the feds"
+            // "Sigma",
+            // "Now with 10% more AI",
+            // $"server",
+            // "Traveling on Hair Force One",
+            // $"Craig version: {_version}",
+            // "DM me for help :)",
+            // "/craiginfo",
+            "\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f \ud83c\udff3\ufe0f\u200d\ud83c\udf08",
+            "Craig says: Don't talk to the feds"
         };
 
         return statuses[new Random().Next(statuses.Length)];
