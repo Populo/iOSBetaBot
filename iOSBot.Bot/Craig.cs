@@ -516,7 +516,9 @@ public class Craig
             "Traveling on Hair Force One",
             $"Craig version: {_version}",
             "DM me for help :)",
-            "/craiginfo"
+            "/craiginfo",
+            "\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f",
+            "Don't talk to the feds"
         };
 
         return statuses[new Random().Next(statuses.Length)];
