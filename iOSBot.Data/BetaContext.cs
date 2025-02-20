@@ -18,6 +18,7 @@ namespace iOSBot.Data
                     DbName = "iOSBeta";
                     break;
                 case "Develop":
+                case "Development":
                     DbName = "iOSBetaDev";
                     break;
             }
