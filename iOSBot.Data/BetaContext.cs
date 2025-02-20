@@ -16,15 +16,18 @@ namespace iOSBot.Data
             {
                 case "Release":
                     DbName = "iOSBeta";
+                    DbUser = "BetaBot";
                     break;
                 case "Develop":
                 case "Development":
                     DbName = "iOSBetaDev";
+                    DbUser = "BetaBotDev";
                     break;
             }
         }
 
         private string DbName { get; set; }
+        private string DbUser { get; set; }
 
         public DbSet<Update> Updates { get; set; }
         public DbSet<Server> Servers { get; set; }
@@ -44,7 +47,9 @@ namespace iOSBot.Data
 
                 connection.Database = DbName;
 
-                connection.UserID = "BetaBot";
+                connection.UserID = DbUser;
+
+                //connection.Password = "dev password";
                 connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
 
                 //connection.ForceSynchronous = true;
