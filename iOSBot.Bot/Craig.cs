@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2025, 1, 19, 1);
+    private Version _version = new(2025, 2, 20, 1);
 
     public Craig()
     {
@@ -510,7 +510,6 @@ public class Craig
     {
         var statuses = new[]
         {
-            "Sigma",
             "Now with 10% more AI",
             $"server",
             "Traveling on Hair Force One",

@@ -9,19 +9,20 @@ public class MemeCommands
 {
     public static async Task Manifest(SocketSlashCommand arg)
     {
+        await arg.DeferAsync();
         using var db = new BetaContext();
-        var rand = new Random();
-        var configItem = rand.Next(100) > 50 ? "ManifestGif" : "PlsCraigGif";
+        var options = db.Configs.First(c => c.Name == "ManifestGifs").Value.Split(';');
+        var gif = options[new Random().Next(options.Length)];
 
-        var gifLocation = db.Configs.First(c => c.Name == configItem).Value;
-        await arg.RespondAsync(gifLocation);
+        await arg.FollowupAsync(gif);
     }
 
     public static async Task WhyCraig(SocketSlashCommand arg)
     {
+        await arg.DeferAsync();
         using var db = new BetaContext();
         var imgSrc = db.Configs.First(c => c.Name == "WhyCraig").Value;
-        await arg.RespondAsync(imgSrc);
+        await arg.FollowupAsync(imgSrc);
     }
 
     public static async Task GoodBot(SocketSlashCommand arg, DiscordSocketClient bot)
