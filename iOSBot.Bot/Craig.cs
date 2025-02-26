@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2025, 2, 20, 1);
+    private Version _version = new(2025, 2, 25, 1);
 
     public Craig()
     {
@@ -62,7 +62,7 @@ public class Craig
             case "Release":
                 _logger.Info("Environment: Prod");
                 break;
-            case "Develop":
+            default:
                 _logger.Info("Environment: Dev");
                 break;
         }
@@ -184,105 +184,112 @@ public class Craig
 
         _logger.Info(
             $"Command received: /{arg.CommandName}\nin channel: {await Client.GetChannelAsync(arg.ChannelId!.Value)}\nin server: {Client.GetGuild(arg.GuildId!.Value).Name}\nfrom: {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
-
-        switch (arg.CommandName)
+        try
         {
-            // admin commands
-            case "yeserrors":
-                _ = AdminCommands.YesErrors(arg, Client);
-                break;
-            case "noerrors":
-                _ = AdminCommands.NoErrors(arg, Client);
-                break;
-            case "force":
-                if (!AdminCommands.IsAllowed(arg.User.Id))
-                {
-                    await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
-                    return;
-                }
+            switch (arg.CommandName)
+            {
+                // admin commands
+                case "yeserrors":
+                    _ = AdminCommands.YesErrors(arg, Client);
+                    break;
+                case "noerrors":
+                    _ = AdminCommands.NoErrors(arg, Client);
+                    break;
+                case "force":
+                    if (!AdminCommands.IsAllowed(arg.User.Id))
+                    {
+                        await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                        return;
+                    }
 
-                await arg.DeferAsync(ephemeral: true);
+                    await arg.DeferAsync(ephemeral: true);
 
-                // try to prevent what looks like some race conditions
-                PollTimer.Stop();
-                PollTimer.Start();
+                    // try to prevent what looks like some race conditions
+                    PollTimer.Stop();
+                    PollTimer.Start();
 
-                PollTimerOnElapsed(null, null!);
+                    PollTimerOnElapsed(null, null!);
 
-                _logger.Info($"Update forced by {arg.User.GlobalName}");
-                await arg.FollowupAsync("Updates checked.");
-                break;
-            case "update":
-                _ = AdminCommands.UpdateCommands(Client, arg);
-                break;
-            case "servers":
-                _ = AdminCommands.GetServers(arg, Client);
-                break;
-            case "start":
-                _ = PauseBot(arg, false);
-                break;
-            case "stop":
-                _ = PauseBot(arg, true);
-                break;
-            case "fake":
-                _ = AdminCommands.FakeUpdate(arg, UpdatePoster);
-                break;
-            case "toggle":
-                _ = AdminCommands.ToggleDevice(arg);
-                break;
-            // meme commands
-            case "manifest":
-                _ = MemeCommands.Manifest(arg);
-                break;
-            case "goodbot":
-                _ = MemeCommands.GoodBot(arg, Client);
-                break;
-            case "badbot":
-                _ = MemeCommands.BadBot(arg, Client);
-                break;
-            case "when":
-                _ = MemeCommands.When(arg);
-                break;
-            case "whycraig":
-                _ = MemeCommands.WhyCraig(arg);
-                break;
-            // apple commands
-            case "info":
-                _ = AppleCommands.DeviceInfo(arg);
-                break;
-            case "watch":
-                _ = AppleCommands.YesWatch(arg, Client);
-                break;
-            case "unwatch":
-                _ = AppleCommands.NoWatch(arg, Client);
-                break;
-            case "yesthreads":
-                _ = AppleCommands.YesThreads(arg, Client);
-                break;
-            case "nothreads":
-                _ = AppleCommands.NoThreads(arg);
-                break;
-            case "yesforum":
-                _ = AppleCommands.YesForum(arg, Client);
-                break;
-            case "noforum":
-                _ = AppleCommands.NoForum(arg, Client);
-                break;
-            // misc commands
-            case "whygm":
-                _ = arg.RespondAsync(
-                    "GM is being used instead of RC because based on the IDs Apple gives releases, they are different than RCs." +
-                    " A normal beta release has an ID similar to iOS182Beta3; an RC would have something like iOS182Short;" +
-                    " while a stable update would have iOS182Long. This update has an ID ending in 'Long' despite being " +
-                    "on a beta track rather than stable releases track. Therefore, it technically isnt an RC, but it isnt stable." +
-                    " Hence, Golden Master.", ephemeral: true);
-                break;
-            case "craiginfo":
-                _ = arg.RespondAsync(
-                    "Craig is a bot meant to track Apple OS releases, specifically the beta ones\n" +
-                    "Created by: @populo\n[Bluesky](https://bsky.app/profile/craig.populo.dev)\n[Support discord](https://discord.gg/NX6nYrNtbU)"
-                    , ephemeral: true);
-                break;
+                    _logger.Info($"Update forced by {arg.User.GlobalName}");
+                    await arg.FollowupAsync("Updates checked.");
+                    break;
+                case "update":
+                    _ = AdminCommands.UpdateCommands(Client, arg);
+                    break;
+                case "servers":
+                    _ = AdminCommands.GetServers(arg, Client);
+                    break;
+                case "start":
+                    _ = PauseBot(arg, false);
+                    break;
+                case "stop":
+                    _ = PauseBot(arg, true);
+                    break;
+                case "fake":
+                    _ = AdminCommands.FakeUpdate(arg, UpdatePoster);
+                    break;
+                case "toggle":
+                    _ = AdminCommands.ToggleDevice(arg);
+                    break;
+                // meme commands
+                case "manifest":
+                    _ = MemeCommands.Manifest(arg);
+                    break;
+                case "goodbot":
+                    _ = MemeCommands.GoodBot(arg, Client);
+                    break;
+                case "badbot":
+                    _ = MemeCommands.BadBot(arg, Client);
+                    break;
+                case "when":
+                    _ = MemeCommands.When(arg);
+                    break;
+                case "whycraig":
+                    _ = MemeCommands.WhyCraig(arg);
+                    break;
+                // apple commands
+                case "info":
+                    _ = AppleCommands.DeviceInfo(arg);
+                    break;
+                case "watch":
+                    _ = AppleCommands.YesWatch(arg, Client);
+                    break;
+                case "unwatch":
+                    _ = AppleCommands.NoWatch(arg, Client);
+                    break;
+                case "yesthreads":
+                    _ = AppleCommands.YesThreads(arg, Client);
+                    break;
+                case "nothreads":
+                    _ = AppleCommands.NoThreads(arg);
+                    break;
+                case "yesforum":
+                    _ = AppleCommands.YesForum(arg, Client);
+                    break;
+                case "noforum":
+                    _ = AppleCommands.NoForum(arg, Client);
+                    break;
+                // misc commands
+                case "whygm":
+                    _ = arg.RespondAsync(
+                        "GM is being used instead of RC because based on the IDs Apple gives releases, they are different than RCs." +
+                        " A normal beta release has an ID similar to iOS182Beta3; an RC would have something like iOS182Short;" +
+                        " while a stable update would have iOS182Long. This update has an ID ending in 'Long' despite being " +
+                        "on a beta track rather than stable releases track. Therefore, it technically isnt an RC, but it isnt stable." +
+                        " Hence, Golden Master.", ephemeral: true);
+                    break;
+                case "craiginfo":
+                    _ = arg.RespondAsync(
+                        "Craig is a bot meant to track Apple OS releases, specifically the beta ones\n" +
+                        "Created by: @populo\n[Bluesky](https://bsky.app/profile/craig.populo.dev)\n[Support discord](https://discord.gg/NX6nYrNtbU)"
+                        , ephemeral: true);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+            Poster.StaticError(UpdatePoster, $"Error executing command:\n{ex.Message}\n{jsonArgs}");
         }
     }
 
@@ -291,7 +298,7 @@ public class Craig
         _logger.Info(arg.Message);
         if (null != arg.Exception)
         {
-            Poster.StaticError(UpdatePoster, $"Bot error:\n{arg.Exception.Message}");
+            //Poster.StaticError(UpdatePoster, $"Bot error:\n{arg.Exception.Message}");
             _logger.Error(arg.Exception);
             _logger.Error(arg.Exception.InnerException?.StackTrace);
         }
@@ -320,18 +327,14 @@ public class Craig
         var content = GetStatusContent();
         if (content == "server") content = $"Member of: {Client.Guilds.Count} Servers";
 
-        switch (GetStatus().ToLower())
+        var newStatus = GetStatus().ToLower() switch
         {
-            case "sleeping":
-                _ = Client.SetStatusAsync(UserStatus.AFK);
-                break;
-            case "paused":
-                _ = Client.SetStatusAsync(UserStatus.DoNotDisturb);
-                break;
-            case "running":
-                _ = Client.SetStatusAsync(UserStatus.Online);
-                break;
-        }
+            "sleeping" => UserStatus.AFK,
+            "paused" => UserStatus.DoNotDisturb,
+            "running" => UserStatus.Online,
+            _ => UserStatus.Online,
+        };
+        _ = Client.SetStatusAsync(newStatus);
 
         _logger.Info($"New status: {content}");
         _ = Client.SetCustomStatusAsync(content);
@@ -523,7 +526,7 @@ public class Craig
         return statuses[new Random().Next(statuses.Length)];
     }
 
-    private string GetStatus() => !PollTimer.Enabled ? "Paused" : IsSleeping() ? "Sleeping" : "Running";
+    private string GetStatus() => !PollTimer.Enabled ? "Paused" : (IsSleeping() ? "Sleeping" : "Running");
 
     private IServiceProvider CreateProvider()
     {

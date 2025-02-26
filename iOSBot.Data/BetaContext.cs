@@ -18,8 +18,7 @@ namespace iOSBot.Data
                     DbName = "iOSBeta";
                     DbUser = "BetaBot";
                     break;
-                case "Develop":
-                case "Development":
+                default:
                     DbName = "iOSBetaDev";
                     DbUser = "BetaBotDev";
                     break;
@@ -56,7 +55,11 @@ namespace iOSBot.Data
 
                 optionsBuilder.UseMySql(connection.ConnectionString,
                     ServerVersion.AutoDetect(connection.ConnectionString),
-                    options => { options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>()); });
+                    options =>
+                    {
+                        options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
+                        options.CommandTimeout(600);
+                    });
             }
         }
     }
