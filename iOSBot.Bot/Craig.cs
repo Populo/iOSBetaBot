@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2025, 2, 25, 1);
+    private Version _version = new(2025, 2, 25, 2);
 
     public Craig()
     {
@@ -182,8 +182,10 @@ public class Craig
             else jsonArgs.Add(new JProperty(o.Name, "null"));
         }
 
-        _logger.Info(
-            $"Command received: /{arg.CommandName}\nin channel: {await Client.GetChannelAsync(arg.ChannelId!.Value)}\nin server: {Client.GetGuild(arg.GuildId!.Value).Name}\nfrom: {arg.User.Username}\n```json\nargs:{jsonArgs}\n```");
+        var command =
+            $"Command received: /{arg.CommandName}\nin channel: {await Client.GetChannelAsync(arg.ChannelId!.Value)}\nin server: {Client.GetGuild(arg.GuildId!.Value).Name}\nfrom: {arg.User.Username}\n```json\nargs:{jsonArgs}\n```";
+
+        _logger.Info(command);
         try
         {
             switch (arg.CommandName)
@@ -289,7 +291,7 @@ public class Craig
         catch (Exception ex)
         {
             _logger.Error(ex);
-            Poster.StaticError(UpdatePoster, $"Error executing command:\n{ex.Message}\n{jsonArgs}");
+            Poster.StaticError(UpdatePoster, $"Error executing command:\n{ex.Message}\n\n{command}");
         }
     }
 
