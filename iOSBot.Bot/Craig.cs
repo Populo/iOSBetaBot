@@ -95,7 +95,7 @@ public class Craig
 
     private async Task ClientOnJoinedGuild(SocketGuild arg)
     {
-        _ = UpdatePoster.PostError($"Craig has joined {arg.Name}");
+        _ = UpdatePoster.PostError($"Craig has joined {arg.Name} adding {arg.MemberCount} members.");
         try
         {
             var me = arg.GetUser(Client.CurrentUser.Id);
