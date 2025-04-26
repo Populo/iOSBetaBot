@@ -21,7 +21,7 @@ public class Craig
     // https://discord.com/api/oauth2/authorize?client_id=1126703029618475118&permissions=3136&redirect_uri=https%3A%2F%2Fgithub.com%2FPopulo%2FiOSBetaBot&scope=bot
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-    private Version _version = new(2025, 3, 8, 2);
+    private Version _version = new(2025, 4, 26, 1);
 
     public Craig()
     {
@@ -56,7 +56,8 @@ public class Craig
     {
         AppDomain.CurrentDomain.UnhandledException += (_, e) => { _logger.Error($"{e}\n{e.ExceptionObject}"); };
 
-        if (args.Length == 0) throw new Exception("Include token in args");
+        var token = (await File.ReadAllTextAsync("/run/secrets/botToken")).Trim();
+
         switch (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
         {
             case "Release":
@@ -83,7 +84,7 @@ public class Craig
         Client.JoinedGuild += ClientOnJoinedGuild;
         Client.LeftGuild += guild => _ = UpdatePoster.PostError($"Craig has been removed from {guild.Name}");
 
-        await Client.LoginAsync(TokenType.Bot, args[0]);
+        await Client.LoginAsync(TokenType.Bot, token);
         await Client.SetCustomStatusAsync(Status);
 
         await Client.StartAsync();

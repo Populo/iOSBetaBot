@@ -42,14 +42,14 @@ namespace iOSBot.Data
             if (!optionsBuilder.IsConfigured)
             {
                 var connection = new MySqlConnectionStringBuilder();
-                connection.Server = "pinas";
+                connection.Server = "dale-server";
 
                 connection.Database = DbName;
 
                 connection.UserID = DbUser;
 
                 //connection.Password = "dev password";
-                connection.Password = Environment.GetEnvironmentVariable("BetaBotDbPass");
+                connection.Password = File.ReadAllText("/run/secrets/dbPass");
 
                 //connection.ForceSynchronous = true;
 
