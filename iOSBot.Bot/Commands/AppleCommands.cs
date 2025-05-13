@@ -2,15 +2,13 @@
 using Discord.WebSocket;
 using iOSBot.Bot.Helpers;
 using iOSBot.Data;
-using NLog;
+using Serilog;
 using Thread = iOSBot.Data.Thread;
 
 namespace iOSBot.Bot.Commands;
 
 public class AppleCommands
 {
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
     public static async Task YesWatch(SocketSlashCommand command, DiscordSocketClient client)
     {
         using var db = new BetaContext();
@@ -52,9 +50,10 @@ public class AppleCommands
 
         db.Servers.Add(server);
 
-        db.SaveChanges();
+        await db.SaveChangesAsync();
 
-        Logger.Info($"Signed up for {device.FriendlyName} updates in {guild.Name}:{channel.Name}");
+        Log.ForContext<AppleCommands>()
+            .Information($"Signed up for {device.FriendlyName} updates in {guild.Name}:{channel.Name}");
         await command.FollowupAsync($"You will now receive {device.FriendlyName} updates in this channel.",
             ephemeral: true);
     }
@@ -81,9 +80,9 @@ public class AppleCommands
         else
         {
             db.Servers.Remove(server);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
 
-            Logger.Info(
+            Log.ForContext<AppleCommands>().Information(
                 $"Removed notifications for {device.FriendlyName} updates in {guild.Name}:{channel.Name}");
             await command.FollowupAsync($"You will no longer receive {device.FriendlyName} updates in this channel",
                 ephemeral: true);

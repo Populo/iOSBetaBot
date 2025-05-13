@@ -95,25 +95,11 @@ public class CommandObjects
             },
             new()
             {
-                Name = "build",
-                Description = "Build ID of the update",
-                IsRequired = true,
-                Type = ApplicationCommandOptionType.String,
-            },
-            new()
-            {
                 Name = "version",
                 Description = "Build version of the update",
                 IsRequired = true,
                 Type = ApplicationCommandOptionType.String,
-            },
-            new()
-            {
-                Name = "docid",
-                Description = "documentationid for update. 18Beta0, 173Long, 1934Beta2, etc",
-                IsRequired = true,
-                Type = ApplicationCommandOptionType.String,
-            },
+            }
         }
     };
 

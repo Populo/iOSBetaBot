@@ -12,8 +12,7 @@
       <PackageReference Include="Mapster.Core" Version="1.2.2-pre01" />
       <PackageReference Include="Mapster.DependencyInjection" Version="1.0.2-pre01" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.2"/>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NLog" Version="5.3.4"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1"/>
     </ItemGroup>
 
     <ItemGroup>
