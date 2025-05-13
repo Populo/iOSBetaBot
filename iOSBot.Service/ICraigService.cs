@@ -35,7 +35,7 @@ public class CraigService(
 
     public bool IsSleeping()
     {
-        if (!IsPaused()) return false;
+        if (IsPaused()) return false;
         var weekend = DateTime.Today.DayOfWeek == DayOfWeek.Saturday || DateTime.Today.DayOfWeek == DayOfWeek.Sunday;
 
         using var db = new BetaContext();
