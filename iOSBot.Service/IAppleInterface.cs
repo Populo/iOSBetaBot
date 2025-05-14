@@ -1,9 +1,10 @@
-﻿using System.Runtime.ExceptionServices;
+﻿using System.Collections.Concurrent;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using iOSBot.Data;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
-using NLog;
 using Org.BouncyCastle.Crypto.Digests;
 using RestSharp;
 
@@ -12,6 +13,7 @@ namespace iOSBot.Service
     public interface IAppleService
     {
         public Task<List<Update>> GetUpdate(Device device);
+        public bool ShouldPost(Update update, ref ConcurrentBag<Update> updates);
         public void SaveUpdate(Update update);
         public void DeleteServer(Server server, BetaContext? db = null);
         public void DeleteErrorServer(ErrorServer server, BetaContext? db = null);
@@ -26,9 +28,9 @@ namespace iOSBot.Service
 
     public class AppleService : IAppleService
     {
-        Logger _logger = LogManager.GetCurrentClassLogger();
+        private ILogger<AppleService> _logger;
 
-        public AppleService()
+        public AppleService(ILogger<AppleService> logger)
         {
             var restOptions = new RestClientOptions("https://gdmf.apple.com/v2/assets")
             {
@@ -36,13 +38,14 @@ namespace iOSBot.Service
             };
 
             RestClient = new RestClient(restOptions);
+            _logger = logger;
         }
 
         private RestClient RestClient { get; set; }
 
         public async Task<List<Update>> GetUpdate(Device device)
         {
-            _logger.Info($"Getting updates for {device.FriendlyName}");
+            _logger.LogInformation($"Getting updates for {device.FriendlyName}");
             var request = new RestRequest();
             var reqBody = new AssetRequest
             {
@@ -144,12 +147,63 @@ namespace iOSBot.Service
             catch (Exception e)
             {
                 string error = $"Error checking {device.Category}:\n {e.Message}";
-                _logger.Error(error);
+                _logger.LogError(error);
                 ExceptionDispatchInfo.Capture(e).Throw();
                 throw;
             }
 
             return updates;
+        }
+
+        public bool ShouldPost(Update update, ref ConcurrentBag<Update> updates)
+        {
+            using var db = new BetaContext();
+            var dbUpdates = db.Updates.ToList();
+            /*
+             * cases:
+             * 1) new update
+             *      -> post as normal
+             * 2) nothing new
+             *      -> do nothing
+             * 3) re-release with same build
+             *      -> post
+             * 4) new release date but same hash
+             *      -> dont post
+             */
+
+            var post = false;
+            var existingDb = dbUpdates.Where(d => d.Category == update.Group && d.Build == update.Build)
+                .ToList();
+
+            // we've seen this build before
+            if (existingDb.Any())
+            {
+                // new hash of same update
+                if (!existingDb.Any(d => d.Hash == update.Hash))
+                {
+                    // not already going to post this build found just now
+                    if (!updates.Any(d => d.Group == update.Group && d.Build == update.Build))
+                    {
+                        post = true;
+                    }
+                }
+            }
+            else
+            {
+                // not saved in db, but have we seen it yet this loop?
+                if (updates.Any(d => d.Group == update.Group && d.Build == update.Build))
+                {
+                    // yes, save anyway even though we arent posting
+                    SaveUpdate(update);
+                }
+                else
+                {
+                    // no, post it (and save later)
+                    post = true;
+                }
+            }
+
+            return post;
         }
 
         public void SaveUpdate(Update update)
@@ -218,7 +272,7 @@ namespace iOSBot.Service
 
         public List<Device> GetAllDevices()
         {
-            _logger.Info("Getting all devices");
+            _logger.LogInformation("Getting all devices");
             using var db = new BetaContext();
             return db.Devices.ToList();
         }
@@ -229,14 +283,14 @@ namespace iOSBot.Service
             device.Changelog ??= "";
 
             db.Devices.Add(device);
-            _logger.Info($"Adding device to find updates for {device.FriendlyName}");
+            _logger.LogInformation($"Adding device to find updates for {device.FriendlyName}");
 
             db.SaveChangesAsync();
         }
 
         public void RemoveDevice(Device device)
         {
-            _logger.Info($"Deleting {device.FriendlyName}");
+            _logger.LogInformation($"Deleting {device.FriendlyName}");
             using var db = new BetaContext();
             db.Devices.Remove(device);
             db.SaveChangesAsync();

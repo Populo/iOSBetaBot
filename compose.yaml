@@ -1,6 +1,8 @@
 ﻿services:
   iosbot.bot:
     image: iosbot.bot
+    container_name: CraigBot-Dev
+    restart: unless-stopped
     build:
       context: .
       dockerfile: iOSBot.Bot/Dockerfile

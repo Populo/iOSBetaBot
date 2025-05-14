@@ -2,7 +2,7 @@
 using Discord.WebSocket;
 using iOSBot.Data;
 using iOSBot.Service;
-using NLog;
+using Microsoft.Extensions.Logging;
 using Thread = iOSBot.Data.Thread;
 using Update = iOSBot.Service.Update;
 
@@ -10,12 +10,13 @@ namespace iOSBot.Bot.Helpers;
 
 public class Poster
 {
-    private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+    private readonly ILogger<Poster> _logger;
 
-    public Poster(IAppleService appleService, DiscordSocketClient client)
+    public Poster(IAppleService appleService, DiscordSocketClient client, ILogger<Poster> logger)
     {
         AppleService = appleService;
         Client = client;
+        _logger = logger;
     }
 
     private IAppleService AppleService { get; init; }
@@ -28,7 +29,7 @@ public class Poster
     {
         try
         {
-            using var db = new BetaContext();
+            await using var db = new BetaContext();
 
             foreach (var s in db.ErrorServers)
             {
@@ -48,8 +49,7 @@ public class Poster
         }
         catch (Exception e)
         {
-            _logger.Error(e);
-            Environment.Exit(1);
+            _logger.LogError(1, e, "Error in poster. {error}", e.Message);
         }
     }
 
@@ -58,11 +58,11 @@ public class Poster
         var channel = await Client.GetChannelAsync(thread.ChannelId) as ITextChannel;
         if (channel == null)
         {
-            _logger.Error($"Channel {thread.ChannelId} does not exist");
+            _logger.LogError("Channel {ThreadChannelId} does not exist", thread.ChannelId);
             return null;
         }
 
-        _logger.Info($"Creating thread in {channel.Name} for {update.VersionReadable}");
+        _logger.LogInformation($"Creating thread in {channel.Name} for {update.VersionReadable}");
         return await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
     }
 
@@ -71,11 +71,11 @@ public class Poster
         var dForum = await Client.GetChannelAsync(forum.ChannelId) as IForumChannel;
         if (null == dForum)
         {
-            _logger.Error($"forum {forum.ChannelId} does not exist");
+            _logger.LogError("forum {ForumChannelId} does not exist", forum.ChannelId);
             return null;
         }
 
-        _logger.Info($"Creating post in {dForum.Name} for {update.VersionReadable}");
+        _logger.LogInformation($"Creating post in {dForum.Name} for {update.VersionReadable}");
         var embed = new EmbedBuilder()
         {
             Color = update.Device.Color,
@@ -104,7 +104,7 @@ public class Poster
         var channel = await Client.GetChannelAsync(server.ChannelId) as ITextChannel;
         if (null == channel)
         {
-            _logger.Warn($"Channel with id {server.ChannelId} doesnt exist. Removing");
+            _logger.LogWarning("Channel with id {ServerChannelId} doesnt exist. Removing", server.ChannelId);
             AppleService.DeleteServer(server);
 
             return null!;
@@ -142,14 +142,15 @@ public class Poster
             embed.Url = update.Device.Changelog;
         }
 
-        _logger.Info($"Posting {update.VersionReadable} to {channel.Name}");
+        _logger.LogInformation($"Posting {update.VersionReadable} to {channel.Name}");
         try
         {
             return await channel.SendMessageAsync(text: mention, embed: embed.Build());
         }
         catch (Exception ex)
         {
-            _logger.Error(ex);
+            _logger.LogError(420, ex, "Error posting to {ChannelName}. {ErrorMessage}", channel.Name, ex.Message);
+            ;
             await PostError($"Error posting to {channel.Name}. {ex.Message}");
         }
 
@@ -161,16 +162,16 @@ public class Poster
         if (category.Contains("ios", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/iphone.png";
-        else if (category.Contains("mac", StringComparison.CurrentCultureIgnoreCase))
+        if (category.Contains("mac", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/mac.png";
-        else if (category.Contains("tv", StringComparison.CurrentCultureIgnoreCase))
+        if (category.Contains("tv", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/tv.png";
-        else if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase))
+        if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/watch.png";
-        else if (category.Contains("vision", StringComparison.CurrentCultureIgnoreCase))
+        if (category.Contains("vision", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/vision.png";
 

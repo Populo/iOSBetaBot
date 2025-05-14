@@ -2,15 +2,14 @@
 using Discord.WebSocket;
 using iOSBot.Bot.Helpers;
 using iOSBot.Data;
-using NLog;
+using iOSBot.Service;
+using Serilog;
 using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot.Commands;
 
 public class AdminCommands
 {
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
     public static async Task YesErrors(SocketSlashCommand arg, DiscordSocketClient client)
     {
         if (!IsAllowed(arg.User.Id))
@@ -82,8 +81,9 @@ public class AdminCommands
         }
         else
         {
-            Logger.Info($"Updating commands");
-            Logger.Trace(string.Join(" | ", CommandObjects.CommandBuilders.Select(c => c.Name)));
+            Log.ForContext(typeof(AdminCommands)).Information("Updating commands");
+            Log.ForContext(typeof(AdminCommands))
+                .Information(string.Join(" | ", CommandObjects.CommandBuilders.Select(c => c.Name)));
             await client.BulkOverwriteGlobalApplicationCommandsAsync(
                 // ReSharper disable once CoVariantArrayConversion
                 CommandObjects.CommandBuilders.Select(b => b.Build()).ToArray());
@@ -119,7 +119,7 @@ public class AdminCommands
         await arg.FollowupAsync(response.ToString());
     }
 
-    public static async Task FakeUpdate(SocketSlashCommand arg, Poster poster)
+    public static async Task FakeUpdate(SocketSlashCommand arg, ICraigService craig)
     {
         if (!IsAllowed(arg.User.Id))
         {
@@ -130,9 +130,8 @@ public class AdminCommands
         await arg.DeferAsync();
 
         var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
-        var fakeBuild = (string)arg.Data.Options.First(o => o.Name == "build").Value;
+        var fakeBuild = (string)"42069f";
         var fakeVersion = (string)arg.Data.Options.First(o => o.Name == "version").Value;
-        var fakeDocId = (string)arg.Data.Options.First(o => o.Name == "docid").Value;
 
         var db = new BetaContext();
 
@@ -148,13 +147,13 @@ public class AdminCommands
             SizeBytes = 69420000000,
             ReleaseDate = DateTime.Today,
             ReleaseType = device.Type,
-            VersionDocId = fakeDocId,
+            VersionDocId = $"{fakeVersion.Replace(".", "")}Beta0",
             Group = device.Category
         };
 
         foreach (var s in servers)
         {
-            _ = poster.PostUpdateAsync(s, fakeUpdate);
+            _ = craig.PostUpdateNotification(s, fakeUpdate);
         }
 
         await arg.FollowupAsync("Posted update", ephemeral: true);
