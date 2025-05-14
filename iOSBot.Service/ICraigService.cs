@@ -95,10 +95,16 @@ public class CraigService(
 
     public async Task CheckForUpdates()
     {
+        logger.LogInformation("CheckForUpdates called.");
         await using var db = new BetaContext();
         var updates = new ConcurrentBag<Update>();
 
-        foreach (var device in db.Devices.Where(d => d.Enabled))
+        var distinctDevices = db.Devices
+            .Where(d => d.Enabled)
+            .GroupBy(d => d.Category)
+            .Select(g => g.First());
+
+        foreach (var device in distinctDevices)
         {
             try
             {

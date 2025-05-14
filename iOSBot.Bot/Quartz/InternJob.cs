@@ -14,6 +14,7 @@ public class InternJob(
 {
     public async Task Execute(IJobExecutionContext context)
     {
+        logger.LogInformation("InternJob Executing...");
         await using var db = new BetaContext();
         var serverCount = discordService.GetServerCount();
 
