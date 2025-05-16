@@ -60,11 +60,7 @@ public class Craig
 
         _logger.LogInformation("Environment: {Tier}", _tier);
 
-        _client.Ready += () =>
-        {
-            //_ = RunBulkCommand();
-            return AdminCommands.UpdateCommands(_client, null, true);
-        };
+        _client.Ready += ClientOnReady;
         _client.Log += ClientOnLog;
         _client.SlashCommandExecuted += ClientOnSlashCommandExecuted;
         _client.MessageReceived += ClientOnMessageReceived;
@@ -74,6 +70,16 @@ public class Craig
         await _client.LoginAsync(TokenType.Bot, token);
         await _client.SetCustomStatusAsync(_craigService.GetVersion().ToString());
         await _client.StartAsync();
+
+
+        _logger.LogInformation("Started");
+        await Task.Delay(-1);
+    }
+
+    private async Task ClientOnReady()
+    {
+        //_ = RunBulkCommand();
+        await AdminCommands.UpdateCommands(_client, null, true);
 
         _scheduler = await StdSchedulerFactory.GetDefaultScheduler();
         _scheduler.JobFactory =
@@ -88,10 +94,6 @@ public class Craig
             .WithSimpleSchedule(x => x.WithIntervalInSeconds(secondDelay).RepeatForever())
             .Build();
         await _scheduler.ScheduleJob(job, _trigger);
-        Console.WriteLine($"Running in: {_trigger.GetNextFireTimeUtc().Value.ToLocalTime()}");
-
-        _logger.LogInformation("Started");
-        await Task.Delay(-1);
     }
 
     private async Task ClientOnJoinedGuild(SocketGuild arg)
