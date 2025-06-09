@@ -100,9 +100,9 @@ public class CraigService(
         var updates = new ConcurrentBag<Update>();
 
         var distinctDevices = db.Devices
-            .Where(d => d.Enabled)
-            .GroupBy(d => d.Category)
-            .Select(g => g.First());
+            .Where(d => d.Enabled);
+        // .GroupBy(d => d.AudienceId)
+        // .Select(g => g.First());
 
         foreach (var device in distinctDevices)
         {
