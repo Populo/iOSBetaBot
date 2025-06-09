@@ -94,6 +94,10 @@ public class Craig
             .WithSimpleSchedule(x => x.WithIntervalInSeconds(secondDelay).RepeatForever())
             .Build();
         await _scheduler.ScheduleJob(job, _trigger);
+
+        _logger.LogInformation($"Bot UserID: {_client.CurrentUser.Id}");
+        // prod: 1126703029618475118
+        // dev: 1133469416458301510
     }
 
     private async Task ClientOnJoinedGuild(SocketGuild arg)
