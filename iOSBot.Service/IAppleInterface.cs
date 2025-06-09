@@ -1,11 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using iOSBot.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Digests;
 using RestSharp;
 
 namespace iOSBot.Service
@@ -80,18 +78,26 @@ namespace iOSBot.Service
                 foreach (var asset in assets)
                 {
                     var json = JsonConvert.DeserializeObject<AssetResponse>(asset.Value);
+                    string hashString = json.ArchiveID;
 
-                    var hashAlgorithm = new Sha3Digest(512);
-
-                    byte[] input = Encoding.ASCII.GetBytes(json._AssetReceipt.AssetSignature);
-
-                    hashAlgorithm.BlockUpdate(input, 0, input.Length);
-
-                    byte[] result = new byte[64]; // 512 / 8 = 64
-                    hashAlgorithm.DoFinal(result, 0);
-
-                    string hashString = BitConverter.ToString(result);
-                    hashString = hashString.Replace("-", "").ToLowerInvariant();
+                    // try
+                    // {
+                    //     var hashAlgorithm = new Sha3Digest(512);
+                    //
+                    //     byte[] input = Encoding.ASCII.GetBytes(json._AssetReceipt.AssetSignature);
+                    //
+                    //     hashAlgorithm.BlockUpdate(input, 0, input.Length);
+                    //
+                    //     byte[] result = new byte[64]; // 512 / 8 = 64
+                    //     hashAlgorithm.DoFinal(result, 0);
+                    //
+                    //     hashString = BitConverter.ToString(result);
+                    //     hashString = hashString.Replace("-", "").ToLowerInvariant();
+                    // }
+                    // catch (Exception ex)
+                    // {
+                    //     _logger.LogError(ex, "Cannot hash signature. Falling back to ArchiveID");
+                    // }
 
                     var update = new Update
                     {

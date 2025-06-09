@@ -2,6 +2,7 @@
 {
     public class AssetResponse
     {
+        public string ArchiveID { get; set; }
         public string _EventRecordingServiceURL { get; set; }
         public bool SUInstallTonightEnabled { get; set; }
         public string InstallationSizeSnapshot { get; set; }
