@@ -39,10 +39,10 @@ public class Craig
                   ?? throw new Exception("Cannot get logger from factory");
         _client = _services.GetRequiredService<DiscordSocketClient>()
                   ?? throw new Exception("Cannot get client from factory");
-        _craigService = _services.GetRequiredService<ICraigService>()
-                        ?? throw new Exception("Cannot get craig service from factory");
         _discordService = _services.GetRequiredService<IDiscordService>()
                           ?? throw new Exception("Cannot get discord service from factory");
+        _craigService = _services.GetRequiredService<ICraigService>()
+                        ?? throw new Exception("Cannot get craig service from factory");
 
         _tier = _craigService.GetTier();
     }
@@ -349,39 +349,9 @@ public class Craig
 
         collection
             .AddSingleton(config)
-            .AddSingleton<DiscordSocketClient>();
-
-        // Register services first without resolving dependencies
-        collection.AddSingleton<ICraigService>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<CraigService>>();
-            var apple = sp.GetRequiredService<IAppleService>();
-            var client = sp.GetRequiredService<DiscordSocketClient>();
-
-            var craig = new CraigService(logger, apple)
-            {
-                DiscordService = new DiscordService(sp.GetRequiredService<ILogger<DiscordService>>(),
-                    apple,
-                    client,
-                    client.Rest)
-            };
-
-            return craig;
-        });
-
-        collection.AddSingleton<IDiscordService>(sp =>
-        {
-            var client = sp.GetRequiredService<DiscordSocketClient>();
-            var logger = sp.GetRequiredService<ILogger<DiscordService>>();
-            var apple = sp.GetRequiredService<IAppleService>();
-
-            var disc = new DiscordService(logger, apple, client, client.Rest)
-            {
-                CraigService = sp.GetRequiredService<ICraigService>()
-            };
-
-            return disc;
-        });
+            .AddSingleton<DiscordSocketClient>()
+            .AddTransient<IDiscordService, DiscordService>()
+            .AddTransient<ICraigService, CraigService>();
 
         collection.AddLogging(configuration =>
         {

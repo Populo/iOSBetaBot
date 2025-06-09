@@ -13,7 +13,6 @@ public interface ICraigService
     string GetStatusContent();
     string GetOperationStatus();
     Version GetVersion();
-    IEnumerable<ErrorServer> GetErrorServers();
     Task CheckForUpdates();
     Task PostUpdateNotification(Server server, Update update, bool skipExtras = false);
     string GetTier();
@@ -21,11 +20,10 @@ public interface ICraigService
 
 public class CraigService(
     ILogger<CraigService> logger,
-    IAppleService appleService)
+    IAppleService appleService,
+    IDiscordService discordService)
     : ICraigService
 {
-    public IDiscordService DiscordService { get; set; }
-
     public int GetSecondsDelay()
     {
         using var db = new BetaContext();
@@ -87,12 +85,6 @@ public class CraigService(
         return new Version(db.Configs.First(c => c.Name == "Version").Value);
     }
 
-    public IEnumerable<ErrorServer> GetErrorServers()
-    {
-        using var db = new BetaContext();
-        return db.ErrorServers;
-    }
-
     public async Task CheckForUpdates()
     {
         logger.LogInformation("CheckForUpdates called.");
@@ -117,26 +109,26 @@ public class CraigService(
             }
             catch (Exception ex)
             {
-                await DiscordService.PostError($"Error checking update for {device.FriendlyName}:\n{ex.Message}");
+                await discordService.PostError($"Error checking update for {device.FriendlyName}:\n{ex.Message}");
             }
-
-            await Parallel.ForEachAsync(updates, async (update, _) =>
-            {
-                logger.LogInformation(
-                    "Update for {DeviceFriendlyName} found. Version {UpdateVersionReadable} with build id {UpdateBuild}",
-                    update.Device.FriendlyName, update.VersionReadable, update.Build);
-
-                // save update to db
-                appleService.SaveUpdate(update);
-
-                // queue the update
-                var postServers = db.Servers.Where(s => s.Category == update.Device.Category);
-                foreach (var server in postServers)
-                {
-                    await PostUpdateNotification(server, update);
-                }
-            });
         }
+
+        await Parallel.ForEachAsync(updates, async (update, _) =>
+        {
+            logger.LogInformation(
+                "Update for {DeviceFriendlyName} found. Version {UpdateVersionReadable} with build id {UpdateBuild}",
+                update.Device.FriendlyName, update.VersionReadable, update.Build);
+
+            // save update to db
+            appleService.SaveUpdate(update);
+
+            // queue the update
+            var postServers = db.Servers.Where(s => s.Category == update.Device.Category);
+            foreach (var server in postServers)
+            {
+                await PostUpdateNotification(server, update);
+            }
+        });
     }
 
     public async Task PostUpdateNotification(Server server, Update update, bool skipExtras = false)
@@ -149,7 +141,8 @@ public class CraigService(
             var error =
                 $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
             logger.LogInformation(error);
-            await DiscordService.PostError(error);
+            await discordService.PostError(error);
+            return;
         }
 
         var postedThreads = new List<string>();
@@ -162,19 +155,19 @@ public class CraigService(
             // post threads
             foreach (var thread in threads)
             {
-                var post = await DiscordService.CreateThread(thread, update);
+                var post = await discordService.CreateThread(thread, update);
                 postedThreads.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
             }
 
             // post forums
             foreach (var forum in forums)
             {
-                var post = await DiscordService.CreateForum(forum, update);
+                var post = await discordService.CreateForum(forum, update);
                 postedForums.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
             }
         }
 
-        await DiscordService.PostUpdate(server, update, postedThreads, postedForums);
+        await discordService.PostUpdate(server, update, postedThreads, postedForums);
     }
 
     public string GetTier()
