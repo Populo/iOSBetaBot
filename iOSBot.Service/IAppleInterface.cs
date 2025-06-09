@@ -1,9 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
+using System.Text;
 using iOSBot.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Crypto.Digests;
 using RestSharp;
 
 namespace iOSBot.Service
@@ -80,24 +82,29 @@ namespace iOSBot.Service
                     var json = JsonConvert.DeserializeObject<AssetResponse>(asset.Value);
                     string hashString = json.ArchiveID;
 
-                    // try
-                    // {
-                    //     var hashAlgorithm = new Sha3Digest(512);
-                    //
-                    //     byte[] input = Encoding.ASCII.GetBytes(json._AssetReceipt.AssetSignature);
-                    //
-                    //     hashAlgorithm.BlockUpdate(input, 0, input.Length);
-                    //
-                    //     byte[] result = new byte[64]; // 512 / 8 = 64
-                    //     hashAlgorithm.DoFinal(result, 0);
-                    //
-                    //     hashString = BitConverter.ToString(result);
-                    //     hashString = hashString.Replace("-", "").ToLowerInvariant();
-                    // }
-                    // catch (Exception ex)
-                    // {
-                    //     _logger.LogError(ex, "Cannot hash signature. Falling back to ArchiveID");
-                    // }
+                    if (string.IsNullOrEmpty(hashString))
+                    {
+                        try
+                        {
+                            var hashAlgorithm = new Sha3Digest(512);
+
+                            byte[] input = Encoding.ASCII.GetBytes(json._AssetReceipt.AssetSignature);
+
+                            hashAlgorithm.BlockUpdate(input, 0, input.Length);
+
+                            byte[] result = new byte[64]; // 512 / 8 = 64
+                            hashAlgorithm.DoFinal(result, 0);
+
+                            hashString = BitConverter.ToString(result);
+                            hashString = hashString.Replace("-", "").ToLowerInvariant();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Cannot hash signature.");
+                            hashString = "-";
+                        }
+                    }
+
 
                     var update = new Update
                     {
@@ -109,7 +116,7 @@ namespace iOSBot.Service
                         ReleaseType = device.Type,
                         Group = device.Category,
                         Device = device,
-                        Hash = hashString
+                        Hash = hashString ?? "-"
                     };
 
                     /*
