@@ -22,16 +22,16 @@ public interface IDiscordService
     Task SetActivity(string activity);
     int GetServerCount();
     Task PostError(string message);
+    List<ErrorServer> GetErrorServers();
 }
 
 public class DiscordService(
     ILogger<DiscordService> logger,
     IAppleService appleService,
-    DiscordSocketClient socketClient,
-    DiscordRestClient restClient)
+    DiscordSocketClient socketClient)
     : IDiscordService
 {
-    public ICraigService CraigService { get; set; }
+    private DiscordRestClient RestClient => socketClient.Rest;
 
     public async Task SetStatus(UserStatus status) => await socketClient.SetStatusAsync(status);
 
@@ -39,11 +39,18 @@ public class DiscordService(
 
     public int GetServerCount() => socketClient.Guilds.Count;
 
+    public List<ErrorServer> GetErrorServers()
+    {
+        using var db = new BetaContext();
+        return db.ErrorServers.ToList();
+    }
+
     public async Task PostError(string message)
     {
-        await Parallel.ForEachAsync(CraigService.GetErrorServers(), async (server, _) =>
+        var errorServers = GetErrorServers();
+        await Parallel.ForEachAsync(errorServers, async (server, _) =>
         {
-            var channel = await restClient.GetChannelAsync(server.ChannelId) as ITextChannel;
+            var channel = await RestClient.GetChannelAsync(server.ChannelId) as ITextChannel;
             if (null == channel)
             {
                 logger.LogCritical(42069, "Cannot get error posting server.");
@@ -57,7 +64,7 @@ public class DiscordService(
     public DiscordServer GetServerAndChannels(ulong serverId)
     {
         using var db = new BetaContext();
-        var server = restClient.GetGuildAsync(serverId).Result;
+        var server = RestClient.GetGuildAsync(serverId).Result;
 
         return new DiscordServer()
         {
@@ -76,12 +83,12 @@ public class DiscordService(
 
     public async Task<RestChannel> GetChannel(ulong channelId)
     {
-        return await restClient.GetChannelAsync(channelId);
+        return await RestClient.GetChannelAsync(channelId);
     }
 
     public async Task<IUserMessage> SendMessage(ulong channelId, string message, Embed? embed = null)
     {
-        if (await restClient.GetChannelAsync(channelId) is ITextChannel channel)
+        if (await RestClient.GetChannelAsync(channelId) is ITextChannel channel)
         {
             return await channel.SendMessageAsync(message);
         }
@@ -92,7 +99,7 @@ public class DiscordService(
 
     public async Task<IThreadChannel> CreateThread(Thread thread, Update update)
     {
-        var channel = await restClient.GetChannelAsync(thread.ChannelId) as ITextChannel;
+        var channel = await RestClient.GetChannelAsync(thread.ChannelId) as ITextChannel;
         if (channel == null)
         {
             logger.LogError("Channel {ThreadChannelId} does not exist", thread.ChannelId);
@@ -105,7 +112,7 @@ public class DiscordService(
 
     public async Task<IThreadChannel> CreateForum(Forum forum, Update update)
     {
-        var dForum = await restClient.GetChannelAsync(forum.ChannelId) as IForumChannel;
+        var dForum = await RestClient.GetChannelAsync(forum.ChannelId) as IForumChannel;
         if (null == dForum)
         {
             logger.LogError("forum {ForumChannelId} does not exist", forum.ChannelId);
@@ -138,7 +145,7 @@ public class DiscordService(
     public async Task<IUserMessage> PostUpdate(Server server, Update update, List<string>? postedThreads = null,
         List<string>? postedForums = null)
     {
-        var channel = await restClient.GetChannelAsync(server.ChannelId) as ITextChannel;
+        var channel = await RestClient.GetChannelAsync(server.ChannelId) as ITextChannel;
         if (null == channel)
         {
             logger.LogWarning("Channel with id {ServerChannelId} doesnt exist. Removing", server.ChannelId);
