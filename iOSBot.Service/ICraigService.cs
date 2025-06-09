@@ -113,7 +113,7 @@ public class CraigService(
             }
         }
 
-        await Parallel.ForEachAsync(updates, async (update, _) =>
+        foreach (var update in updates)
         {
             logger.LogInformation(
                 "Update for {DeviceFriendlyName} found. Version {UpdateVersionReadable} with build id {UpdateBuild}",
@@ -128,7 +128,7 @@ public class CraigService(
             {
                 await PostUpdateNotification(server, update);
             }
-        });
+        }
     }
 
     public async Task PostUpdateNotification(Server server, Update update, bool skipExtras = false)
