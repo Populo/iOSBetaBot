@@ -54,6 +54,7 @@ public class Craig
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
             _logger.LogError("{UnhandledExceptionEventArgs}\n{EExceptionObject}", e, e.ExceptionObject);
+            _discordService.PostError($"Unhandled exception: {e.ExceptionObject}");
         };
 
         var token = (await File.ReadAllTextAsync("/run/secrets/botToken")).Trim();
@@ -301,13 +302,17 @@ public class Craig
     private Task ClientOnLog(LogMessage arg)
     {
         _logger.LogInformation(arg.Message);
-        if (null != arg.Exception)
+        if (null == arg.Exception ||
+            arg.Message.Contains("Server requested a reconnect") ||
+            arg.Message.Contains("WebSocket connection was closed"))
         {
-            _discordService.PostError(
-                $"Bot error:\n{arg.Exception.Message}\n\n{arg.Exception.InnerException?.StackTrace}");
-            _logger.LogError(1, arg.Exception, "Bot error:\n{ExMessage}\n\n{InnerStackTrace}", arg.Exception.Message,
-                arg.Exception.InnerException?.StackTrace);
+            return Task.CompletedTask;
         }
+
+        _discordService.PostError(
+            $"Bot error:\n{arg.Exception.Message}\n\n{arg.Exception.InnerException?.StackTrace}");
+        _logger.LogError(1, arg.Exception, "Bot error:\n{ExMessage}\n\n{InnerStackTrace}", arg.Exception.Message,
+            arg.Exception.InnerException?.StackTrace);
 
         return Task.CompletedTask;
     }
