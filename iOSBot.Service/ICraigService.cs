@@ -113,21 +113,28 @@ public class CraigService(
             }
         }
 
-        foreach (var update in updates)
+        try
         {
-            logger.LogInformation(
-                "Update for {DeviceFriendlyName} found. Version {UpdateVersionReadable} with build id {UpdateBuild}",
-                update.Device.FriendlyName, update.VersionReadable, update.Build);
-
-            // save update to db
-            appleService.SaveUpdate(update);
-
-            // queue the update
-            var postServers = db.Servers.Where(s => s.Category == update.Device.Category);
-            foreach (var server in postServers)
+            foreach (var update in updates)
             {
-                await PostUpdateNotification(server, update);
+                logger.LogInformation(
+                    "Update for {DeviceFriendlyName} found. Version {UpdateVersionReadable} with build id {UpdateBuild}",
+                    update.Device.FriendlyName, update.VersionReadable, update.Build);
+
+                // save update to db
+                appleService.SaveUpdate(update);
+
+                // queue the update
+                var postServers = db.Servers.Where(s => s.Category == update.Device.Category);
+                foreach (var server in postServers)
+                {
+                    await PostUpdateNotification(server, update);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            await discordService.PostError($"Error posting update:\n{ex.Message}");
         }
     }
 
