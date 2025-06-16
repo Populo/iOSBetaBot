@@ -193,7 +193,7 @@ public class DiscordService(
         }
         catch (Exception ex)
         {
-            logger.LogError(420, ex, "Error posting to {ChannelName}. {ErrorMessage}", channel.Name, ex.Message);
+            logger.LogError(420, ex, "Error posting to {ChannelName} ({channelId}). {ErrorMessage}", channel.Name, server.channelId, ex.Message);
             await PostError($"Error posting to {channel.Name}. {ex.Message}");
         }
 
