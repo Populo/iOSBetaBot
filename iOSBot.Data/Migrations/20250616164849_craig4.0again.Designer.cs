@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using iOSBot.Data;
 
@@ -11,9 +12,11 @@ using iOSBot.Data;
 namespace iOSBot.Data.Migrations
 {
     [DbContext(typeof(BetaContext))]
-    partial class BetaContextModelSnapshot : ModelSnapshot
+    [Migration("20250616164849_craig4.0again")]
+    partial class craig40again
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

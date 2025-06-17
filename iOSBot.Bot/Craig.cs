@@ -1,18 +1,24 @@
-﻿using Discord;
+﻿using Apache.NMS;
+using Apache.NMS.ActiveMQ;
+using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using iOSBot.Bot.Commands;
+using iOSBot.Bot.Models;
 using iOSBot.Bot.Quartz;
 using iOSBot.Data;
 using iOSBot.Service;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Simpl;
 using Serilog;
+using IConnection = Apache.NMS.IConnection;
+using IMessage = Apache.NMS.IMessage;
 
 namespace iOSBot.Bot;
 
@@ -27,9 +33,14 @@ public class Craig
     private readonly ILogger<Craig> _logger;
     private readonly string _tier;
 
+    private IConnection _mqConnection;
+    private IMessageConsumer _mqConsumer;
+    private ISession _mqSession;
+
     private IScheduler _scheduler;
     private IServiceProvider _services;
     private ITrigger _trigger;
+
 
     public Craig()
     {
@@ -96,9 +107,59 @@ public class Craig
             .Build();
         await _scheduler.ScheduleJob(job, _trigger);
 
-        _logger.LogInformation($"Bot UserID: {_client.CurrentUser.Id}");
         // prod: 1126703029618475118
         // dev: 1133469416458301510
+        _logger.LogInformation($"Bot UserID: {_client.CurrentUser.Id}");
+
+        // artemis
+        var factory = new ConnectionFactory("tcp://dale-server:61616")
+        {
+            UserName = "CraigBot",
+            Password = await File.ReadAllTextAsync("/run/secrets/mqPass")
+        };
+        _mqConnection = await factory.CreateConnectionAsync();
+        await _mqConnection.StartAsync();
+        _mqSession = await _mqConnection.CreateSessionAsync();
+
+        var destination = await _mqSession.GetQueueAsync("updates-queue");
+        _mqConsumer = await _mqSession.CreateConsumerAsync(destination);
+        _mqConsumer.Listener += ConsumerOnListener;
+    }
+
+    private async void ConsumerOnListener(IMessage message)
+    {
+        var textMsg = message as ITextMessage;
+        if (textMsg == null) throw new Exception("Could not read message");
+
+        var update = JsonConvert.DeserializeObject<UpdateDto>(textMsg.Text);
+        if (null == update) throw new Exception("Could not parse message");
+        await using var craigDb = new BetaContext();
+
+        var track = update.TrackId;
+        var servers = craigDb.Servers.Where(s => s.Track == track);
+
+        _logger.LogInformation(
+            $"Update for {update.TrackName} found. Version {update.Version} with build id {update.Build}");
+
+        // dont post if older than 12 hours, still add to db tho
+        var postOld = Convert.ToBoolean(craigDb.Configs.First(c => c.Name == "PostOld").Value);
+
+        if (!postOld && update.ReleaseDate.DayOfYear != DateTime.Today.DayOfYear)
+        {
+            var error =
+                $"{update.TrackName} update {update.Version}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
+            _logger.LogInformation(error);
+            await _discordService.PostError(error);
+
+            return;
+        }
+
+        var up = update.ConvertUpdate();
+
+        foreach (var server in servers)
+        {
+            await _craigService.PostUpdateNotification(server, up);
+        }
     }
 
     private async Task ClientOnJoinedGuild(SocketGuild arg)
@@ -197,6 +258,25 @@ public class Craig
         {
             switch (arg.CommandName)
             {
+                case "test":
+                    try
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithAuthor(_client.CurrentUser)
+                            .WithTitle("Test Embed")
+                            .WithDescription("This is a test embed")
+                            .AddField("Test Field", "GOOD MORNING and welcome to Apple Park");
+
+                        await arg.RespondAsync("Test command executed.", embed: embed.Build());
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error executing test command.\n{ExMessage}", e.Message);
+                        ;
+                        await arg.RespondAsync("Failed", ephemeral: true);
+                    }
+
+                    break;
                 // admin commands
                 case "yeserrors":
                     _ = AdminCommands.YesErrors(arg, _client);
@@ -204,21 +284,21 @@ public class Craig
                 case "noerrors":
                     _ = AdminCommands.NoErrors(arg, _client);
                     break;
-                case "force":
-                    if (!AdminCommands.IsAllowed(arg.User.Id))
-                    {
-                        await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
-                        return;
-                    }
-
-                    await arg.DeferAsync(ephemeral: true);
-
-                    //await _craigService.CheckForUpdates();
-                    await _scheduler.TriggerJob(_trigger.JobKey);
-
-                    _logger.LogInformation("Update forced by {UserGlobalName}", arg.User.GlobalName);
-                    await arg.FollowupAsync("Updates checked.");
-                    break;
+                // case "force":
+                //     if (!AdminCommands.IsAllowed(arg.User.Id))
+                //     {
+                //         await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
+                //         return;
+                //     }
+                //
+                //     await arg.DeferAsync(ephemeral: true);
+                //
+                //     //await _craigService.CheckForUpdates();
+                //     await _scheduler.TriggerJob(_trigger.JobKey);
+                //
+                //     _logger.LogInformation("Update forced by {UserGlobalName}", arg.User.GlobalName);
+                //     await arg.FollowupAsync("Updates checked.");
+                //     break;
                 case "update":
                     _ = AdminCommands.UpdateCommands(_client, arg);
                     break;
@@ -233,9 +313,6 @@ public class Craig
                     break;
                 case "fake":
                     _ = AdminCommands.FakeUpdate(arg, _craigService);
-                    break;
-                case "toggle":
-                    _ = AdminCommands.ToggleDevice(arg);
                     break;
                 // meme commands
                 case "manifest":
@@ -254,9 +331,6 @@ public class Craig
                     _ = MemeCommands.WhyCraig(arg);
                     break;
                 // apple commands
-                case "info":
-                    _ = AppleCommands.DeviceInfo(arg);
-                    break;
                 case "watch":
                     _ = AppleCommands.YesWatch(arg, _client);
                     break;
@@ -349,8 +423,6 @@ public class Craig
             .CreateLogger();
 
         var collection = new ServiceCollection();
-
-        collection.AddTransient<IAppleService, AppleService>();
 
         collection
             .AddSingleton(config)

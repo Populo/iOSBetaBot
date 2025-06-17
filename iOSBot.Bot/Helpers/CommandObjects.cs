@@ -8,6 +8,13 @@ public class CommandObjects
 {
     #region Builers
 
+    private static SlashCommandBuilder testBuilder = new()
+    {
+        Name = "test",
+        Description = "Test Craig's ability to post to this channel",
+        DefaultMemberPermissions = GuildPermission.ManageGuild
+    };
+
     private static SlashCommandBuilder craigInfoBuilder = new()
     {
         Name = "craiginfo",
@@ -61,22 +68,22 @@ public class CommandObjects
         DefaultMemberPermissions = GuildPermission.Administrator,
         Options = new List<SlashCommandOptionBuilder>() { }
     };
-
-    private static SlashCommandBuilder stopBuilder = new()
-    {
-        Name = "stop",
-        Description = "Stop update checks",
-        DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
-    };
-
-    private static SlashCommandBuilder startBuilder = new()
-    {
-        Name = "start",
-        Description = "start update checks",
-        DefaultMemberPermissions = GuildPermission.Administrator,
-        Options = new List<SlashCommandOptionBuilder>() { }
-    };
+    //
+    // private static SlashCommandBuilder stopBuilder = new()
+    // {
+    //     Name = "stop",
+    //     Description = "Stop update checks",
+    //     DefaultMemberPermissions = GuildPermission.Administrator,
+    //     Options = new List<SlashCommandOptionBuilder>() { }
+    // };
+    //
+    // private static SlashCommandBuilder startBuilder = new()
+    // {
+    //     Name = "start",
+    //     Description = "start update checks",
+    //     DefaultMemberPermissions = GuildPermission.Administrator,
+    //     Options = new List<SlashCommandOptionBuilder>() { }
+    // };
 
     private static SlashCommandBuilder fakePostBuilder = new()
     {
@@ -87,7 +94,7 @@ public class CommandObjects
         {
             new()
             {
-                Name = "category",
+                Name = "track",
                 Description = "Which OS updates",
                 IsRequired = true,
                 Type = ApplicationCommandOptionType.String,
@@ -338,12 +345,13 @@ public class CommandObjects
     {
         // admin commands
         errorBuilder,
+        testBuilder,
         noerrorBuilder,
         forceBuilder,
         updateBuilder,
         serverBuilder,
-        startBuilder,
-        stopBuilder,
+        // startBuilder,
+        // stopBuilder,
         fakePostBuilder,
         //toggleDeviceBuilder,
         // meme commands
@@ -353,7 +361,7 @@ public class CommandObjects
         whenBuilder,
         whyCraigBuilder,
         // apple commands
-        infoBuilder,
+        //infoBuilder,
         watchBuilder,
         unwatchBuilder,
         yesThreadBuilder,
@@ -383,20 +391,17 @@ public class CommandObjects
 
     private static List<ApplicationCommandOptionChoiceProperties> GetDeviceCategories()
     {
-        var devices = GetDevices();
+        var devices = GetTracks();
 
         return devices.Select(c => new ApplicationCommandOptionChoiceProperties
-            { Name = c.FriendlyName, Value = c.Category }).ToList();
+            { Name = c.Name, Value = c.TrackId.ToString() }).ToList();
     }
 
-    private static List<Device> GetDevices()
+    private static List<Track> GetTracks()
     {
-        using var db = new BetaContext();
+        using var db = new InternContext();
 
-        return db.Devices
-            .GroupBy(d => d.Category)
-            .Select(d => d.First())
-            .ToList();
+        return db.Tracks.ToList();
     }
 
     public static void GetChannelAndGuild(SocketSlashCommand command, DiscordSocketClient bot, out SocketGuild guild,

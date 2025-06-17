@@ -15,11 +15,11 @@ namespace iOSBot.Data
             switch (dbtier)
             {
                 case "Release":
-                    DbName = "iOSBeta";
+                    DbName = "CraigBot";
                     DbUser = "BetaBot";
                     break;
                 default:
-                    DbName = "iOSBetaDev";
+                    DbName = "CraigBotDev";
                     DbUser = "BetaBotDev";
                     break;
             }
@@ -28,51 +28,36 @@ namespace iOSBot.Data
         private string DbName { get; set; }
         private string DbUser { get; set; }
 
-        public DbSet<Update> Updates { get; set; }
         public DbSet<Server> Servers { get; set; }
         public DbSet<Thread> Threads { get; set; }
         public DbSet<Forum> Forums { get; set; }
-        public DbSet<Device> Devices { get; set; }
         public DbSet<Config> Configs { get; set; }
         public DbSet<ErrorServer> ErrorServers { get; set; }
-        public DbSet<Release> Releases { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder = null)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                var connection = new MySqlConnectionStringBuilder();
-                connection.Server = "dale-server";
+            if (optionsBuilder.IsConfigured) return;
 
-                connection.Database = DbName;
+            var connection = new MySqlConnectionStringBuilder();
+            connection.Server = "dale-server";
 
-                connection.UserID = DbUser;
+            connection.Database = DbName;
 
-                //connection.Password = "dev password";
-                connection.Password = File.ReadAllText("/run/secrets/dbPass");
+            connection.UserID = DbUser;
 
-                //connection.ForceSynchronous = true;
+            //connection.Password = "";
+            connection.Password = File.ReadAllText("/run/secrets/dbPass");
 
-                optionsBuilder.UseMySql(connection.ConnectionString,
-                    ServerVersion.AutoDetect(connection.ConnectionString),
-                    options =>
-                    {
-                        options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
-                        options.CommandTimeout(600);
-                    });
-            }
+            //connection.ForceSynchronous = true;
+
+            optionsBuilder.UseMySql(connection.ConnectionString,
+                ServerVersion.AutoDetect(connection.ConnectionString),
+                options =>
+                {
+                    options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
+                    options.CommandTimeout(600);
+                });
         }
-    }
-
-    [PrimaryKey(nameof(Guid))]
-    public class Update
-    {
-        public Guid Guid { get; set; }
-        public string Version { get; set; }
-        public string Build { get; set; }
-        public string Category { get; set; }
-        public DateTime ReleaseDate { get; set; }
-        public string Hash { get; set; }
     }
 
     public class Server
@@ -80,7 +65,7 @@ namespace iOSBot.Data
         public Guid Id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
-        public string Category { get; set; }
+        public Guid Track { get; set; }
         public string TagId { get; set; }
     }
 
@@ -89,7 +74,7 @@ namespace iOSBot.Data
         public Guid id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
-        public string Category { get; set; }
+        public Guid Track { get; set; }
     }
 
     public class Thread
@@ -97,29 +82,7 @@ namespace iOSBot.Data
         public Guid id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
-        public string Category { get; set; }
-    }
-
-    [PrimaryKey("AudienceId")]
-    public class Device
-    {
-        public string AudienceId { get; set; }
-        public string Name { get; set; }
-        public string FriendlyName { get; set; }
-        public string Version { get; set; }
-        public string BuildId { get; set; }
-        public string Product { get; set; }
-        public string BoardId { get; set; }
-        public string Category { get; set; }
-
-        public string Changelog { get; set; }
-
-        // Developer, Public, Release
-        public string Type { get; set; }
-        public uint Color { get; set; }
-        public string AssetType { get; set; }
-        public int Priority { get; set; }
-        public bool Enabled { get; set; }
+        public Guid Track { get; set; }
     }
 
     [PrimaryKey("Name")]
@@ -134,15 +97,5 @@ namespace iOSBot.Data
         public Guid Id { get; set; }
         public ulong ServerId { get; set; }
         public ulong ChannelId { get; set; }
-    }
-
-    public class Release
-    {
-        public Guid Id { get; set; }
-        public string Major { get; set; }
-        public string Minor { get; set; }
-        public string Beta { get; set; }
-        public DateTime Date { get; set; }
-        public int WaitTime { get; set; }
     }
 }
