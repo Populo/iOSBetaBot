@@ -4,7 +4,6 @@ using iOSBot.Bot.Helpers;
 using iOSBot.Data;
 using iOSBot.Service;
 using Serilog;
-using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot.Commands;
 
@@ -22,7 +21,7 @@ public class AdminCommands
         SocketGuild guild;
         CommandObjects.GetChannelAndGuild(arg, client, out guild, out channel);
 
-        using var db = new BetaContext();
+        await using var db = new BetaContext();
 
         if (db.ErrorServers.Any(s =>
                 s.ServerId == guild.Id && s.ChannelId == channel.Id))
@@ -38,7 +37,7 @@ public class AdminCommands
             Id = Guid.NewGuid()
         });
 
-        db.SaveChanges();
+        await db.SaveChangesAsync();
 
         await arg.RespondAsync("bot errors will now be posted here (if possible)", ephemeral: true);
     }
@@ -51,7 +50,7 @@ public class AdminCommands
             return;
         }
 
-        using var db = new BetaContext();
+        await using var db = new BetaContext();
         SocketTextChannel channel;
         SocketGuild guild;
         CommandObjects.GetChannelAndGuild(arg, client, out guild, out channel);
@@ -69,7 +68,7 @@ public class AdminCommands
 
             await arg.RespondAsync("errors will not post here anymore", ephemeral: true);
 
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
     }
 
@@ -129,26 +128,25 @@ public class AdminCommands
 
         await arg.DeferAsync();
 
-        var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
+        var track = (string)arg.Data.Options.First(o => o.Name == "track").Value;
         var fakeBuild = (string)"42069f";
         var fakeVersion = (string)arg.Data.Options.First(o => o.Name == "version").Value;
 
         var db = new BetaContext();
+        var internDb = new InternContext();
 
-        var device = db.Devices.FirstOrDefault(d => d.Category == category)
-                     ?? throw new Exception("cant get device");
-        var servers = db.Servers.Where(s => s.Category == category);
+        var dbTrack = internDb.Tracks.First(t => t.Name == track);
+        var servers = db.Servers.Where(s => s.Track == dbTrack.TrackId);
 
-        var fakeUpdate = new Update()
+        var fakeUpdate = new Update2()
         {
             Build = fakeBuild,
-            Device = device,
             Version = fakeVersion,
-            SizeBytes = 69420000000,
             ReleaseDate = DateTime.Today,
-            ReleaseType = device.Type,
-            VersionDocId = $"{fakeVersion.Replace(".", "")}Beta0",
-            Group = device.Category
+            Size = "69.42tb",
+            TrackName = dbTrack.Name,
+            ReleaseType = dbTrack.ReleaseType,
+            TrackId = dbTrack.TrackId
         };
 
         foreach (var s in servers)
@@ -157,33 +155,6 @@ public class AdminCommands
         }
 
         await arg.FollowupAsync("Posted update", ephemeral: true);
-    }
-
-    public static async Task ToggleDevice(SocketSlashCommand arg)
-    {
-        if (!IsAllowed(arg.User.Id))
-        {
-            await arg.RespondAsync("Only the bot creator can use this command.", ephemeral: true);
-            return;
-        }
-
-        await arg.DeferAsync();
-
-        var category = (string)arg.Data.Options.First(o => o.Name == "category").Value;
-        var enable = (bool)arg.Data.Options.First(o => o.Name == "enable").Value;
-
-        using var db = new BetaContext();
-
-        var device = db.Devices.Where(d => d.Category == category);
-        foreach (var d in device)
-        {
-            d.Enabled = enable;
-        }
-
-        await db.SaveChangesAsync();
-
-        var enabled = enable ? "enabled" : "disabled";
-        await arg.RespondAsync($"Category {category} is now {enabled}");
     }
 
     public static bool IsAllowed(ulong userId)

@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using iOSBot.Data;
+﻿using iOSBot.Data;
 using Microsoft.Extensions.Logging;
 
 namespace iOSBot.Service;
@@ -13,14 +12,12 @@ public interface ICraigService
     string GetStatusContent();
     string GetOperationStatus();
     Version GetVersion();
-    Task CheckForUpdates();
-    Task PostUpdateNotification(Server server, Update update, bool skipExtras = false);
+    Task PostUpdateNotification(Server server, Update2 update, bool skipExtras = false);
     string GetTier();
 }
 
 public class CraigService(
     ILogger<CraigService> logger,
-    IAppleService appleService,
     IDiscordService discordService)
     : ICraigService
 {
@@ -85,96 +82,42 @@ public class CraigService(
         return new Version(db.Configs.First(c => c.Name == "Version").Value);
     }
 
-    public async Task CheckForUpdates()
+
+    public async Task PostUpdateNotification(Server server, Update2 update, bool skipExtras = false)
     {
-        logger.LogInformation("CheckForUpdates called.");
-        await using var db = new BetaContext();
-        var updates = new ConcurrentBag<Update>();
-
-        var distinctDevices = db.Devices
-            .Where(d => d.Enabled);
-        // .GroupBy(d => d.AudienceId)
-        // .Select(g => g.First());
-
-        foreach (var device in distinctDevices)
-        {
-            try
-            {
-                var ups = await appleService.GetUpdate(device);
-                foreach (var u in ups)
-                {
-                    if (appleService.ShouldPost(u, ref updates)) updates.Add(u);
-                    else logger.LogInformation("No new update found for {updateName}", device.FriendlyName);
-                }
-            }
-            catch (Exception ex)
-            {
-                await discordService.PostError($"Error checking update for {device.FriendlyName}:\n{ex.Message}");
-            }
-        }
+        await using var craigDb = new BetaContext();
+        var postedThreads = new List<string>();
+        var postedForums = new List<string>();
 
         try
         {
-            foreach (var update in updates)
+            if (!skipExtras)
             {
-                logger.LogInformation(
-                    "Update for {DeviceFriendlyName} found. Version {UpdateVersionReadable} with build id {UpdateBuild}",
-                    update.Device.FriendlyName, update.VersionReadable, update.Build);
+                var threads = craigDb.Threads.Where(t => t.Track == update.TrackId && t.ServerId == server.ServerId);
+                var forums = craigDb.Forums.Where(f => f.Track == update.TrackId && f.ServerId == server.ServerId);
 
-                // save update to db
-                appleService.SaveUpdate(update);
-
-                // queue the update
-                var postServers = db.Servers.Where(s => s.Category == update.Device.Category);
-                foreach (var server in postServers)
+                // post threads
+                foreach (var thread in threads)
                 {
-                    await PostUpdateNotification(server, update);
+                    var post = await discordService.CreateThread(thread, update);
+                    postedThreads.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
+                }
+
+                // post forums
+                foreach (var forum in forums)
+                {
+                    var post = await discordService.CreateForum(forum, update);
+                    postedForums.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
                 }
             }
+
+            await discordService.PostUpdate(server, update, postedThreads, postedForums);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            await discordService.PostError($"Error posting update:\n{ex.Message}");
+            logger.LogError(e, "Error posting update");
+            await discordService.PostError($"Error posting update:\n{e}");
         }
-    }
-
-    public async Task PostUpdateNotification(Server server, Update update, bool skipExtras = false)
-    {
-        await using var db = new BetaContext();
-
-        var postOld = bool.Parse(db.Configs.First(c => c.Name == "PostOld").Value);
-        if (!postOld && update.ReleaseDate.DayOfYear != DateTime.Today.DayOfYear)
-        {
-            var error =
-                $"{update.Device.FriendlyName} update {update.VersionReadable}-{update.Build} was released on {update.ReleaseDate.ToShortDateString()}. too old. not posting.";
-            logger.LogInformation(error);
-            await discordService.PostError(error);
-            return;
-        }
-
-        var postedThreads = new List<string>();
-        var postedForums = new List<string>();
-        if (!skipExtras)
-        {
-            var threads = db.Threads.Where(t => t.Category == update.Device.Category && t.ServerId == server.ServerId);
-            var forums = db.Forums.Where(f => f.Category == update.Device.Category && f.ServerId == server.ServerId);
-
-            // post threads
-            foreach (var thread in threads)
-            {
-                var post = await discordService.CreateThread(thread, update);
-                postedThreads.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
-            }
-
-            // post forums
-            foreach (var forum in forums)
-            {
-                var post = await discordService.CreateForum(forum, update);
-                postedForums.Add($"https://discord.com/channels/{post.GuildId}/{post.Id}");
-            }
-        }
-
-        await discordService.PostUpdate(server, update, postedThreads, postedForums);
     }
 
     public string GetTier()

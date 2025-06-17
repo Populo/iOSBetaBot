@@ -1,23 +1,20 @@
-﻿using iOSBot.Data;
-using Newtonsoft.Json.Linq;
-
-namespace iOSBot.Service
+﻿namespace iOSBot.Service
 {
     public class Update
     {
         public DateTime ReleaseDate { get; set; }
-        public string Group { get; set; }
+        public Guid Group { get; set; }
         public string Version { get; set; }
         public string VersionDocId { get; set; }
         public string Build { get; set; }
         public long SizeBytes { get; set; }
-        public Device Device { get; set; }
         public string ReleaseType { get; set; }
         public int Revision { get; set; }
         public string Hash { get; set; }
         public string VersionReadable => GetReadableVersion();
+
         public string Size => GetReadableSize();
-        public JObject JsonRequest => GetJsonRequest();
+        //public JObject JsonRequest => GetJsonRequest();
 
         private string GetReadableVersion()
         {
@@ -63,16 +60,16 @@ namespace iOSBot.Service
             return $"{Math.Round(size, 2)} {units[i]}";
         }
 
-        private JObject GetJsonRequest()
-        {
-            return new JObject(
-                new JProperty("AssetAudience", Device.AudienceId),
-                new JProperty("AssetType", Device.AssetType),
-                new JProperty("ClientVersion", 2),
-                new JProperty("BuildVersion", Device.BuildId),
-                new JProperty("HWModelStr", Device.BoardId),
-                new JProperty("ProductType", Device.Product),
-                new JProperty("ProductVersion", Device.Version));
-        }
+        // private JObject GetJsonRequest()
+        // {
+        //     return new JObject(
+        //         new JProperty("AssetAudience", Device.AudienceId),
+        //         new JProperty("AssetType", Device.AssetType),
+        //         new JProperty("ClientVersion", 2),
+        //         new JProperty("BuildVersion", Device.BuildId),
+        //         new JProperty("HWModelStr", Device.BoardId),
+        //         new JProperty("ProductType", Device.Product),
+        //         new JProperty("ProductVersion", Device.Version));
+        // }
     }
 }

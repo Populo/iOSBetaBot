@@ -11,12 +11,14 @@ public class AppleCommands
 {
     public static async Task YesWatch(SocketSlashCommand command, DiscordSocketClient client)
     {
-        using var db = new BetaContext();
+        await using var db = new BetaContext();
+        await using var internDb = new InternContext();
 
         await command.DeferAsync(ephemeral: true);
+        var trackId = (string)command.Data.Options.First().Value;
 
-        var device = db.Devices.FirstOrDefault(d => d.Category == (string)command.Data.Options.First().Value)
-                     ?? throw new Exception("No device provided");
+        var track = internDb.Tracks.FirstOrDefault(d => d.TrackId.ToString() == trackId)
+                    ?? throw new Exception("Not a valid track");
 
         var roleParam = command.Data.Options.FirstOrDefault(c => c.Name == "role");
 
@@ -32,9 +34,9 @@ public class AppleCommands
 
         if (db.Servers.Any(s => s.ChannelId == channel.Id
                                 && s.ServerId == guild.Id
-                                && s.Category == device.Category))
+                                && s.Track == track.TrackId))
         {
-            await command.FollowupAsync($"You already receive {device.FriendlyName} updates in this channel.",
+            await command.FollowupAsync($"You already receive {track.Name} updates in this channel.",
                 ephemeral: true);
             return;
         }
@@ -44,7 +46,7 @@ public class AppleCommands
             ChannelId = channel.Id,
             ServerId = guild.Id,
             Id = Guid.NewGuid(),
-            Category = device.Category,
+            Track = track.TrackId,
             TagId = null == role ? "" : role.Id.ToString()
         };
 
@@ -53,20 +55,23 @@ public class AppleCommands
         await db.SaveChangesAsync();
 
         Log.ForContext<AppleCommands>()
-            .Information($"Signed up for {device.FriendlyName} updates in {guild.Name}:{channel.Name}");
-        await command.FollowupAsync($"You will now receive {device.FriendlyName} updates in this channel.",
+            .Information(
+                "Signed up for {TrackName} updates in {GuildName}:{ChannelName}", track.Name, guild.Name, channel.Name);
+        await command.FollowupAsync($"You will now receive {track.Name} updates in this channel.",
             ephemeral: true);
     }
 
     public static async Task NoWatch(SocketSlashCommand command, DiscordSocketClient client)
     {
-        using var db = new BetaContext();
+        await using var db = new BetaContext();
+        await using var internDb = new InternContext();
         await command.DeferAsync(ephemeral: true);
+        var trackId = (string)command.Data.Options.First().Value;
 
-        var device = db.Devices.FirstOrDefault(d => d.Category == (string)command.Data.Options.First().Value)
-                     ?? throw new Exception("No device provided");
+        var track = internDb.Tracks.FirstOrDefault(d => d.TrackId.ToString() == trackId)
+                    ?? throw new Exception("Not a valid track");
         var server = db.Servers.FirstOrDefault(s =>
-            s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Category == device.Category);
+            s.ChannelId == command.ChannelId && s.ServerId == command.GuildId && s.Track.ToString() == trackId);
 
         SocketTextChannel channel;
         SocketGuild guild;
@@ -74,7 +79,7 @@ public class AppleCommands
 
         if (null == server)
         {
-            await command.FollowupAsync($"You were not receiving {device.FriendlyName} updates in this channel",
+            await command.FollowupAsync($"You were not receiving {track.Name} updates in this channel",
                 ephemeral: true);
         }
         else
@@ -83,8 +88,9 @@ public class AppleCommands
             await db.SaveChangesAsync();
 
             Log.ForContext<AppleCommands>().Information(
-                $"Removed notifications for {device.FriendlyName} updates in {guild.Name}:{channel.Name}");
-            await command.FollowupAsync($"You will no longer receive {device.FriendlyName} updates in this channel",
+                "Removed notifications for {TrackName} updates in {GuildName}:{ChannelName}", track.Name, guild.Name,
+                channel.Name);
+            await command.FollowupAsync($"You will no longer receive {track.Name} updates in this channel",
                 ephemeral: true);
         }
     }
@@ -93,16 +99,18 @@ public class AppleCommands
     {
         await command.DeferAsync(ephemeral: true);
 
-        using var db = new BetaContext();
+        await using var db = new BetaContext();
+        await using var internDb = new InternContext();
         var category = (string)command.Data.Options.First().Value;
 
         SocketTextChannel channel;
         SocketGuild guild;
         CommandObjects.GetChannelAndGuild(command, client, out guild, out channel);
+        var dbTrack = internDb.Tracks.First(t => t.TrackId.ToString() == category);
 
         db.Threads.Add(new Thread()
         {
-            Category = category,
+            Track = dbTrack.TrackId,
             ChannelId = channel.Id,
             ServerId = guild.Id,
             id = Guid.NewGuid()
@@ -117,10 +125,10 @@ public class AppleCommands
     {
         await arg.DeferAsync(ephemeral: true);
 
-        using var db = new BetaContext();
-        var category = (string)arg.Data.Options.First().Value;
+        await using var db = new BetaContext();
+        var track = (string)arg.Data.Options.First().Value;
 
-        var thread = db.Threads.FirstOrDefault(t => t.ChannelId == arg.ChannelId && t.Category == category);
+        var thread = db.Threads.FirstOrDefault(t => t.ChannelId == arg.ChannelId && t.Track.ToString() == track);
 
         if (thread is null)
         {
@@ -140,8 +148,8 @@ public class AppleCommands
         await arg.DeferAsync(ephemeral: true);
 
         var channel = arg.Data.Options.First(o => o.Name == "channel").Value;
-        var category = arg.Data.Options.First(o => o.Name == "category").Value.ToString()
-                       ?? throw new Exception("No category provided");
+        var trackId = arg.Data.Options.First(o => o.Name == "category").Value.ToString()
+                      ?? throw new Exception("No category provided");
 
         if (null == channel || channel.GetType() != typeof(SocketForumChannel))
         {
@@ -151,18 +159,22 @@ public class AppleCommands
 
         var forum = channel as SocketForumChannel ?? throw new Exception("Channel is not a forum channel");
 
-        using var db = new BetaContext();
-        var dbF = db.Forums.FirstOrDefault(f => f.Category == category && f.ChannelId == forum.Id);
+        await using var db = new BetaContext();
+        await using var internDb = new InternContext();
+
+        var track = internDb.Tracks.First(t => t.TrackId.ToString() == trackId);
+        var dbF = db.Forums.FirstOrDefault(f => f.Track == track.TrackId && f.ChannelId == forum.Id);
         if (null != dbF)
         {
-            await arg.FollowupAsync($"Forum posts will already happen for {category} in {forum.Name}", ephemeral: true);
+            await arg.FollowupAsync($"Forum posts will already happen for {track.Name} in {forum.Name}",
+                ephemeral: true);
             return;
         }
 
         db.Forums.Add(new Forum()
         {
             ChannelId = forum.Id,
-            Category = category,
+            Track = track.TrackId,
             ServerId = forum.Guild.Id,
             id = Guid.NewGuid()
         });
@@ -176,7 +188,7 @@ public class AppleCommands
         await arg.DeferAsync(ephemeral: true);
 
         var channel = arg.Data.Options.First(o => o.Name == "channel").Value;
-        var category = arg.Data.Options.First(o => o.Name == "category").Value.ToString();
+        var trackId = arg.Data.Options.First(o => o.Name == "category").Value.ToString();
 
         if (null == channel || channel.GetType() != typeof(SocketForumChannel))
         {
@@ -186,43 +198,20 @@ public class AppleCommands
 
         var forum = channel as SocketForumChannel ?? throw new Exception("Channel is not a forum channel");
 
-        using var db = new BetaContext();
-        var dbF = db.Forums.FirstOrDefault(f => f.Category == category && f.ChannelId == forum.Id);
+        await using var db = new BetaContext();
+        await using var internDb = new InternContext();
+
+        var track = internDb.Tracks.First(t => t.TrackId.ToString() == trackId);
+        var dbF = db.Forums.FirstOrDefault(f => f.Track == track.TrackId && f.ChannelId == forum.Id);
         if (null == dbF)
         {
-            await arg.FollowupAsync($"Forum posts are not set to happen for {category} in {forum.Name}",
+            await arg.FollowupAsync($"Forum posts are not set to happen for {track.Name} in {forum.Name}",
                 ephemeral: true);
             return;
         }
 
         db.Forums.Remove(dbF);
         await db.SaveChangesAsync();
-        await arg.FollowupAsync($"Forum posts for {category} will no longer happen in {forum.Name}", ephemeral: true);
-    }
-
-    public static async Task DeviceInfo(SocketSlashCommand arg)
-    {
-        await arg.DeferAsync(ephemeral: true);
-
-        using var db = new BetaContext();
-        var device = db.Devices.FirstOrDefault(d => d.Category == (string)arg.Data.Options.First().Value)
-                     ?? throw new Exception("Cannot get device");
-        var update = db.Updates
-                         .Where(u => u.Category == device.Category)
-                         .OrderByDescending(u => u.ReleaseDate)
-                         .FirstOrDefault()
-                     ?? throw new Exception("Cannot get latest update");
-
-        var embed = new EmbedBuilder
-        {
-            Color = new Color(device.Color),
-            Title = "Device Info",
-            Description = $"{device.FriendlyName} feed"
-        };
-        embed.AddField(name: "Device", value: device.Name)
-            .AddField(name: "Device Version", value: $"{device.Version} ({device.BuildId})")
-            .AddField(name: "Newest Version", value: $"{update.Version} ({update.Build})");
-
-        await arg.FollowupAsync(embed: embed.Build());
+        await arg.FollowupAsync($"Forum posts for {track.Name} will no longer happen in {forum.Name}", ephemeral: true);
     }
 }

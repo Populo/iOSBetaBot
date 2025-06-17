@@ -51,11 +51,5 @@ public class InternJob(
             logger.LogError(e, "Error updating server count");
             await discordService.PostError($"Error updating server count channel name:\n{e}");
         }
-
-        // should we check for updates
-        if (craigService.IsSleeping()) return;
-
-        // check for updates
-        await craigService.CheckForUpdates();
     }
 }

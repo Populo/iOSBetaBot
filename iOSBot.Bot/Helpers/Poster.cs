@@ -8,19 +8,9 @@ using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot.Helpers;
 
-public class Poster
+public class Poster(DiscordSocketClient client, ILogger<Poster> logger)
 {
-    private readonly ILogger<Poster> _logger;
-
-    public Poster(IAppleService appleService, DiscordSocketClient client, ILogger<Poster> logger)
-    {
-        AppleService = appleService;
-        Client = client;
-        _logger = logger;
-    }
-
-    private IAppleService AppleService { get; init; }
-    private DiscordSocketClient Client { get; init; }
+    private DiscordSocketClient Client { get; init; } = client;
 
     public static async void StaticError(Poster poster, string message)
         => await poster.PostError(message);
@@ -36,7 +26,7 @@ public class Poster
                 var server = await Client.GetChannelAsync(s.ChannelId);
                 if (null == server)
                 {
-                    AppleService.DeleteErrorServer(s, db);
+                    logger.LogError("Cannot get error channel {SChannelId}", s.ChannelId);
                     continue;
                 }
 
@@ -49,7 +39,7 @@ public class Poster
         }
         catch (Exception e)
         {
-            _logger.LogError(1, e, "Error in poster. {error}", e.Message);
+            logger.LogError(1, e, "Error in poster. {error}", e.Message);
         }
     }
 
@@ -58,54 +48,52 @@ public class Poster
         var channel = await Client.GetChannelAsync(thread.ChannelId) as ITextChannel;
         if (channel == null)
         {
-            _logger.LogError("Channel {ThreadChannelId} does not exist", thread.ChannelId);
+            logger.LogError("Channel {ThreadChannelId} does not exist", thread.ChannelId);
             return null;
         }
 
-        _logger.LogInformation($"Creating thread in {channel.Name} for {update.VersionReadable}");
+        logger.LogInformation($"Creating thread in {channel.Name} for {update.VersionReadable}");
         return await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
     }
 
-    public async Task<IThreadChannel?> CreateForumAsync(Forum forum, Update update)
+    public async Task<IThreadChannel?> CreateForumAsync(Forum forum, Update2 update)
     {
         var dForum = await Client.GetChannelAsync(forum.ChannelId) as IForumChannel;
         if (null == dForum)
         {
-            _logger.LogError("forum {ForumChannelId} does not exist", forum.ChannelId);
+            logger.LogError("forum {ForumChannelId} does not exist", forum.ChannelId);
             return null;
         }
 
-        _logger.LogInformation($"Creating post in {dForum.Name} for {update.VersionReadable}");
+        logger.LogInformation($"Creating post in {dForum.Name} for {update.Version}");
         var embed = new EmbedBuilder()
         {
-            Color = update.Device.Color,
-            Title = update.VersionReadable,
+            Color = update.Color,
+            Title = update.Version,
         };
         embed.AddField(name: "Build", value: update.Build)
             .AddField(name: "Size", value: update.Size)
-            .AddField(name: "Release Date", value: update.ReleaseDate.ToShortDateString())
-            .AddField(name: "Changelog", value: update.Device.Changelog);
+            .AddField(name: "Release Date", value: update.ReleaseDate.ToShortDateString());
 
-        var imagePath = GetImagePath(update.Device.Category);
+        var imagePath = GetImagePath(update.TrackName);
         if (!string.IsNullOrEmpty(imagePath))
         {
             embed.ThumbnailUrl = imagePath;
         }
 
-        return await dForum.CreatePostAsync(title: $"{update.VersionReadable} Discussion",
-            text: $"Discuss the release of {update.VersionReadable} here.",
+        return await dForum.CreatePostAsync(title: $"{update.Version} Discussion",
+            text: $"Discuss the release of {update.Version} here.",
             embed: embed.Build(),
             archiveDuration: ThreadArchiveDuration.OneWeek);
     }
 
-    public async Task<IUserMessage> PostUpdateAsync(Server server, Update update, List<string>? postedThreads = null,
+    public async Task<IUserMessage> PostUpdateAsync(Server server, Update2 update, List<string>? postedThreads = null,
         List<string>? postedForums = null)
     {
         var channel = await Client.GetChannelAsync(server.ChannelId) as ITextChannel;
         if (null == channel)
         {
-            _logger.LogWarning("Channel with id {ServerChannelId} doesnt exist. Removing", server.ChannelId);
-            AppleService.DeleteServer(server);
+            logger.LogWarning("Channel with id {ServerChannelId} doesnt exist.", server.ChannelId);
 
             return null!;
         }
@@ -114,11 +102,11 @@ public class Poster
 
         var embed = new EmbedBuilder
         {
-            Color = new Color(update.Device.Color),
-            Title = $"New {update.Device.FriendlyName} Release!",
+            Color = new Color(update.Color),
+            Title = $"New {update.TrackName} Release!",
             Timestamp = DateTime.Now,
         };
-        embed.AddField(name: "Version", value: update.VersionReadable)
+        embed.AddField(name: "Version", value: update.Version)
             .AddField(name: "Build", value: update.Build)
             .AddField(name: "Size", value: update.Size);
 
@@ -126,30 +114,25 @@ public class Poster
             embed.AddField(name: "Discussion Thread(s)", value: string.Join('\n', postedThreads));
         if (null != postedForums && postedForums.Any())
             embed.AddField(name: "Discussion Forum(s)", value: string.Join('\n', postedForums));
-        var isGM = update.VersionReadable.Contains("Golden Master"); // split because testing
+        var isGM = update.Version.Contains("Golden Master"); // split because testing
         if (isGM)
             embed.AddField(name: "Why Golden Master?", value: "use /whygm to learn why.");
 
 
-        var imagePath = GetImagePath(update.Device.Category);
+        var imagePath = GetImagePath(update.TrackName);
         if (!string.IsNullOrEmpty(imagePath))
         {
             embed.ThumbnailUrl = imagePath;
         }
 
-        if (!string.IsNullOrEmpty(update.Device.Changelog))
-        {
-            embed.Url = update.Device.Changelog;
-        }
-
-        _logger.LogInformation($"Posting {update.VersionReadable} to {channel.Name}");
+        logger.LogInformation("Posting {UpdateVersion} to {ChannelName}", update.Version, channel.Name);
         try
         {
             return await channel.SendMessageAsync(text: mention, embed: embed.Build());
         }
         catch (Exception ex)
         {
-            _logger.LogError(420, ex, "Error posting to {ChannelName}. {ErrorMessage}", channel.Name, ex.Message);
+            logger.LogError(420, ex, "Error posting to {ChannelName}. {ErrorMessage}", channel.Name, ex.Message);
             ;
             await PostError($"Error posting to {channel.Name}. {ex.Message}");
         }
