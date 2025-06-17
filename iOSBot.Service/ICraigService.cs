@@ -11,7 +11,7 @@ public interface ICraigService
     bool IsPaused();
     string GetStatusContent();
     string GetOperationStatus();
-    Version GetVersion();
+    string GetVersion();
     Task PostUpdateNotification(Server server, Update2 update, bool skipExtras = false);
     string GetTier();
 }
@@ -76,10 +76,10 @@ public class CraigService(
 
     public string GetOperationStatus() => IsPaused() ? "Paused" : (IsSleeping() ? "Sleeping" : "Running");
 
-    public Version GetVersion()
+    public string GetVersion()
     {
         using var db = new BetaContext();
-        return new Version(db.Configs.First(c => c.Name == "Version").Value);
+        return db.Configs.First(c => c.Name == "Version").Value;
     }
 
 
