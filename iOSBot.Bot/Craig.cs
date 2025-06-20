@@ -135,11 +135,11 @@ public class Craig
         if (null == update) throw new Exception("Could not parse message");
         await using var craigDb = new BetaContext();
 
-        var track = update.TrackId;
-        var servers = craigDb.Servers.Where(s => s.Track == track);
+        var servers = craigDb.Servers.Where(s => s.Track == update.TrackId);
 
         _logger.LogInformation(
-            $"Update for {update.TrackName} found. Version {update.Version} with build id {update.Build}");
+            "Update for {UpdateTrackName} found. Version {UpdateVersion} with build id {UpdateBuild}", update.TrackName,
+            update.Version, update.Build);
 
         // dont post if older than 12 hours, still add to db tho
         var postOld = Convert.ToBoolean(craigDb.Configs.First(c => c.Name == "PostOld").Value);
@@ -158,7 +158,15 @@ public class Craig
 
         foreach (var server in servers)
         {
-            await _craigService.PostUpdateNotification(server, up);
+            try
+            {
+                await _craigService.PostUpdateNotification(server, up);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error posting update to server {ServerId}", server.Id);
+                await _discordService.PostError($"Error posting update to server {server.Id}\n{e.Message}");
+            }
         }
     }
 
@@ -250,10 +258,21 @@ public class Craig
             jsonArgs.Add(null != o.Value ? new JProperty(o.Name, o.Value.ToString()) : new JProperty(o.Name, "null"));
         }
 
-        var command =
-            $"Command received: /{arg.CommandName}\nin channel: {await _client.GetChannelAsync(arg.ChannelId!.Value)}\nin server: {_client.GetGuild(arg.GuildId!.Value).Name}\nfrom: {arg.User.Username}\n```json\nargs:{jsonArgs}\n```";
+        string command = "";
+        try
+        {
+            command =
+                $"Command received: /{arg.CommandName}\nin channel: {await _client.GetChannelAsync(arg.ChannelId.Value)}\nin server: {_client.GetGuild(arg.GuildId.Value).Name}\nfrom: {arg.User.Username}\n```json\nargs:{jsonArgs}\n```";
 
-        _logger.LogInformation(command);
+            _logger.LogInformation(command);
+        }
+        catch
+        {
+            _logger.LogError(
+                "Could not get channel or server from slash command.\nCommand received: /{ArgCommandName}\nin channel: {GetChannelAsync}",
+                arg.CommandName, await _client.GetChannelAsync(arg.ChannelId.Value));
+        }
+
         try
         {
             switch (arg.CommandName)
