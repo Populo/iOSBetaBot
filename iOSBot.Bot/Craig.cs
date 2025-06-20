@@ -110,18 +110,21 @@ public class Craig
         // prod: 1126703029618475118
         // dev: 1133469416458301510
         _logger.LogInformation($"Bot UserID: {_client.CurrentUser.Id}");
+        var isProd = _tier == "prod";
+        var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
+        var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
 
         // artemis
         var factory = new ConnectionFactory("tcp://dale-server:61616")
         {
-            UserName = "CraigBot",
+            UserName = mqUsername,
             Password = await File.ReadAllTextAsync("/run/secrets/mqPass")
         };
         _mqConnection = await factory.CreateConnectionAsync();
         await _mqConnection.StartAsync();
         _mqSession = await _mqConnection.CreateSessionAsync();
 
-        var destination = await _mqSession.GetQueueAsync("updates-queue");
+        var destination = await _mqSession.GetQueueAsync(mqQueue);
         _mqConsumer = await _mqSession.CreateConsumerAsync(destination);
         _mqConsumer.Listener += ConsumerOnListener;
     }

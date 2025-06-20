@@ -6,17 +6,24 @@ namespace iOSBot.Data;
 
 public class InternContext : DbContext
 {
-    private string DbUser;
+    private string _dbName;
+    private string _dbUser;
 
     public InternContext(string? dbtier = null)
     {
         dbtier ??= Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-        DbUser = dbtier switch
+        switch (dbtier)
         {
-            "Release" => "BetaBot",
-            _ => "BetaBotDev"
-        };
+            case "Release":
+                _dbUser = "BetaBot";
+                _dbName = "CraigsIntern";
+                break;
+            default:
+                _dbName = "CraigsInternDev";
+                _dbUser = "BetaBotDev";
+                break;
+        }
     }
 
     public DbSet<Update> Updates { get; set; }
@@ -30,8 +37,8 @@ public class InternContext : DbContext
         {
             var connection = new MySqlConnectionStringBuilder();
             connection.Server = "dale-server";
-            connection.Database = "CraigsIntern";
-            connection.UserID = DbUser;
+            connection.Database = _dbName;
+            connection.UserID = _dbUser;
             connection.Password = File.ReadAllText("/run/secrets/dbPass");
 
             optionsBuilder.UseMySql(connection.ConnectionString,
