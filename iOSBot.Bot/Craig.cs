@@ -110,7 +110,7 @@ public class Craig
         // prod: 1126703029618475118
         // dev: 1133469416458301510
         _logger.LogInformation($"Bot UserID: {_client.CurrentUser.Id}");
-        var isProd = _tier == "prod";
+        var isProd = _tier == "Prod";
         var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
         var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
 
