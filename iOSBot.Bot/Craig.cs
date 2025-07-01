@@ -33,6 +33,9 @@ public class Craig
     private readonly ILogger<Craig> _logger;
     private readonly string _tier;
 
+    // mq heartbeat
+    private Timer _heartbeatTimer;
+
     private IConnection _mqConnection;
     private IMessageConsumer _mqConsumer;
     private ISession _mqSession;
@@ -54,6 +57,8 @@ public class Craig
                           ?? throw new Exception("Cannot get discord service from factory");
         _craigService = _services.GetRequiredService<ICraigService>()
                         ?? throw new Exception("Cannot get craig service from factory");
+
+        _heartbeatTimer = new Timer(MqHeartbeat, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(60));
 
         _tier = _craigService.GetTier();
     }
@@ -110,23 +115,110 @@ public class Craig
         // prod: 1126703029618475118
         // dev: 1133469416458301510
         _logger.LogInformation($"Bot UserID: {_client.CurrentUser.Id}");
+
+        await ConnectMqAsync();
+    }
+
+    private async Task ConnectMqAsync()
+    {
+        // Reconnect using the same setup code
         var isProd = _tier == "Prod";
         var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
         var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
 
-        // artemis
         var factory = new ConnectionFactory("tcp://dale-server:61616")
         {
             UserName = mqUsername,
             Password = await File.ReadAllTextAsync("/run/secrets/mqPass")
         };
         _mqConnection = await factory.CreateConnectionAsync();
+        _mqConnection.ExceptionListener += MqConnectionOnExceptionListener;
         await _mqConnection.StartAsync();
         _mqSession = await _mqConnection.CreateSessionAsync();
 
         var destination = await _mqSession.GetQueueAsync(mqQueue);
         _mqConsumer = await _mqSession.CreateConsumerAsync(destination);
         _mqConsumer.Listener += ConsumerOnListener;
+    }
+
+    private async Task ReconnectMqAsync()
+    {
+        try
+        {
+            // Clean up existing resources
+            await DisposeMqResourcesAsync();
+
+            await ConnectMqAsync();
+
+            _logger.LogInformation("Successfully reconnected to ActiveMQ");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in reconnection attempt");
+            throw;
+        }
+    }
+
+    private void MqConnectionOnExceptionListener(Exception exception)
+    {
+        _logger.LogError(exception, "ActiveMQ connection error");
+        // Attempt to reconnect
+        Task.Run(async () =>
+        {
+            try
+            {
+                await ReconnectMqAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to reconnect to ActiveMQ");
+                await _discordService.PostError("Failed to reconnect to ActiveMQ\n" + ex.Message);
+            }
+        });
+    }
+
+    private async Task DisposeMqResourcesAsync()
+    {
+        try
+        {
+            if (_mqConnection?.IsStarted == true)
+            {
+                _mqConsumer.Listener -= ConsumerOnListener;
+                await _mqConsumer.CloseAsync();
+            }
+
+            await _mqSession.CloseAsync();
+            await _mqConnection.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error disposing MQ resources");
+        }
+    }
+
+    private void MqHeartbeat(object? state)
+    {
+        try
+        {
+            if (_client.ConnectionState == ConnectionState.Connected && !_mqConnection.IsStarted)
+            {
+                _logger.LogWarning("Connection is not active, attempting to reconnect");
+                Task.Run(ReconnectMqAsync);
+                return;
+            }
+
+            // forcefully interact with mq to keep connection alive
+            _logger.LogDebug("Sending ActiveMQ heartbeat");
+            var tempQueue = _mqSession.CreateTemporaryQueue();
+            var tempProducer = _mqSession.CreateProducer(tempQueue);
+            tempProducer.Close();
+            tempQueue.Delete();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in heartbeat");
+            Task.Run(ReconnectMqAsync);
+        }
     }
 
     private async void ConsumerOnListener(IMessage message)
