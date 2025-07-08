@@ -2,6 +2,8 @@
   iosbot.bot:
     image: iosbot.bot
     container_name: CraigBot-Dev
+    extra_hosts:
+      - "dale-server:172.17.0.1"
     restart: unless-stopped
     build:
       context: .
