@@ -1,6 +1,6 @@
 ﻿namespace iOSBot.Service;
 
-public class Update2
+public class MqUpdate
 {
     public DateTime ReleaseDate { get; set; }
     public string Version { get; set; }

@@ -138,7 +138,7 @@ public class AdminCommands
         var dbTrack = internDb.Tracks.First(t => t.Name == track);
         var servers = db.Servers.Where(s => s.Track == dbTrack.TrackId);
 
-        var fakeUpdate = new Update2()
+        var fakeUpdate = new MqUpdate()
         {
             Build = fakeBuild,
             Version = fakeVersion,
