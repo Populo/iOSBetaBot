@@ -4,7 +4,6 @@ using iOSBot.Data;
 using iOSBot.Service;
 using Microsoft.Extensions.Logging;
 using Thread = iOSBot.Data.Thread;
-using Update = iOSBot.Service.Update;
 
 namespace iOSBot.Bot.Helpers;
 
@@ -43,7 +42,7 @@ public class Poster(DiscordSocketClient client, ILogger<Poster> logger)
         }
     }
 
-    public async Task<IThreadChannel?> CreateThreadAsync(Thread thread, Update update)
+    public async Task<IThreadChannel?> CreateThreadAsync(Thread thread, MqUpdate update)
     {
         var channel = await Client.GetChannelAsync(thread.ChannelId) as ITextChannel;
         if (channel == null)
@@ -52,11 +51,11 @@ public class Poster(DiscordSocketClient client, ILogger<Poster> logger)
             return null;
         }
 
-        logger.LogInformation($"Creating thread in {channel.Name} for {update.VersionReadable}");
-        return await channel.CreateThreadAsync($"{update.VersionReadable} Release Thread");
+        logger.LogInformation($"Creating thread in {channel.Name} for {update.Version}");
+        return await channel.CreateThreadAsync($"{update.Version} Release Thread");
     }
 
-    public async Task<IThreadChannel?> CreateForumAsync(Forum forum, Update2 update)
+    public async Task<IThreadChannel?> CreateForumAsync(Forum forum, MqUpdate update)
     {
         var dForum = await Client.GetChannelAsync(forum.ChannelId) as IForumChannel;
         if (null == dForum)
@@ -87,7 +86,7 @@ public class Poster(DiscordSocketClient client, ILogger<Poster> logger)
             archiveDuration: ThreadArchiveDuration.OneWeek);
     }
 
-    public async Task<IUserMessage> PostUpdateAsync(Server server, Update2 update, List<string>? postedThreads = null,
+    public async Task<IUserMessage> PostUpdateAsync(Server server, MqUpdate update, List<string>? postedThreads = null,
         List<string>? postedForums = null)
     {
         var channel = await Client.GetChannelAsync(server.ChannelId) as ITextChannel;

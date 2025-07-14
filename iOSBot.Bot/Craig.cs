@@ -35,6 +35,7 @@ public class Craig
 
     // mq heartbeat
     private Timer _heartbeatTimer;
+    private IJobDetail _job;
 
     private IConnection _mqConnection;
     private IMessageConsumer _mqConsumer;
@@ -82,7 +83,7 @@ public class Craig
         _client.SlashCommandExecuted += ClientOnSlashCommandExecuted;
         _client.MessageReceived += ClientOnMessageReceived;
         _client.JoinedGuild += ClientOnJoinedGuild;
-        _client.LeftGuild += guild => _ = _discordService.PostError($"Craig has been removed from {guild.Name}");
+        _client.LeftGuild += ClientOnLeftGuild;
 
         await _client.LoginAsync(TokenType.Bot, token);
         await _client.SetCustomStatusAsync(_craigService.GetVersion().ToString());
@@ -91,6 +92,12 @@ public class Craig
 
         _logger.LogInformation("Started");
         await Task.Delay(-1);
+    }
+
+    private async Task ClientOnLeftGuild(SocketGuild guild)
+    {
+        await _discordService.PostError($"Craig has been removed from {guild.Name}");
+        await _discordService.NukeServer(guild.Id);
     }
 
     private async Task ClientOnReady()
@@ -103,14 +110,14 @@ public class Craig
             new MicrosoftDependencyInjectionJobFactory(_services, new OptionsWrapper<QuartzOptions>(null));
         var secondDelay = _craigService.GetSecondsDelay();
         await _scheduler.Start();
-        var job = JobBuilder.Create<InternJob>()
+        _job = JobBuilder.Create<InternJob>()
             .WithIdentity("CraigsInternJob", "Intern")
             .Build();
         _trigger = TriggerBuilder.Create()
             .WithIdentity("CraigsInternTrigger", "Intern")
             .WithSimpleSchedule(x => x.WithIntervalInSeconds(secondDelay).RepeatForever())
             .Build();
-        await _scheduler.ScheduleJob(job, _trigger);
+        await _scheduler.ScheduleJob(_job, _trigger);
 
         // prod: 1126703029618475118
         // dev: 1133469416458301510
@@ -347,6 +354,12 @@ public class Craig
 
     private async Task ClientOnSlashCommandExecuted(SocketSlashCommand arg)
     {
+        if (arg.IsDMInteraction)
+        {
+            await arg.RespondAsync("Craig currently does not support commands over DM.");
+            return;
+        }
+
         var jsonArgs = new JObject();
         foreach (var o in arg.Data.Options)
         {

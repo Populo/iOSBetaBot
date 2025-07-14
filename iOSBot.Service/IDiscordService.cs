@@ -12,10 +12,10 @@ public interface IDiscordService
     public DiscordServer GetServerAndChannels(ulong serverId);
     public Task<RestChannel> GetChannel(ulong channelId);
     public Task<IUserMessage> SendMessage(ulong channelId, string message, Embed? embed = null);
-    public Task<IThreadChannel> CreateThread(Thread thread, Update2 update);
-    public Task<IThreadChannel> CreateForum(Forum forum, Update2 update);
+    public Task<IThreadChannel> CreateThread(Thread thread, MqUpdate update);
+    public Task<IThreadChannel> CreateForum(Forum forum, MqUpdate update);
 
-    public Task<IUserMessage> PostUpdate(Server server, Update2 update, List<string>? postedThreads = null,
+    public Task<IUserMessage> PostUpdate(Server server, MqUpdate update, List<string>? postedThreads = null,
         List<string>? postedForums = null);
 
     Task SetStatus(UserStatus status);
@@ -23,6 +23,7 @@ public interface IDiscordService
     int GetServerCount();
     Task PostError(string message);
     List<ErrorServer> GetErrorServers();
+    Task NukeServer(ulong serverId);
 }
 
 public class DiscordService(
@@ -96,7 +97,7 @@ public class DiscordService(
         return null;
     }
 
-    public async Task<IThreadChannel> CreateThread(Thread thread, Update2 update)
+    public async Task<IThreadChannel> CreateThread(Thread thread, MqUpdate update)
     {
         var channel = await RestClient.GetChannelAsync(thread.ChannelId) as ITextChannel;
         if (channel == null)
@@ -109,7 +110,7 @@ public class DiscordService(
         return await channel.CreateThreadAsync($"{update.Version} Release Thread");
     }
 
-    public async Task<IThreadChannel> CreateForum(Forum forum, Update2 update)
+    public async Task<IThreadChannel> CreateForum(Forum forum, MqUpdate update)
     {
         var dForum = await RestClient.GetChannelAsync(forum.ChannelId) as IForumChannel;
         if (null == dForum)
@@ -140,7 +141,7 @@ public class DiscordService(
             archiveDuration: ThreadArchiveDuration.OneWeek);
     }
 
-    public async Task<IUserMessage> PostUpdate(Server server, Update2 update, List<string>? postedThreads = null,
+    public async Task<IUserMessage> PostUpdate(Server server, MqUpdate update, List<string>? postedThreads = null,
         List<string>? postedForums = null)
     {
         ITextChannel channel;
@@ -161,8 +162,16 @@ public class DiscordService(
             logger.LogError(e, e.Message);
             if (e.Message.Contains("Guild"))
             {
+                var member = socketClient.Guilds.Any(g => g.Id == server.ServerId);
                 await PostError(
-                    $"Cannot get guild {server.ServerId}. Member: {socketClient.Guilds.Any(g => g.Id == server.ServerId)} Track: {update.TrackName}");
+                    $"Cannot get guild {server.ServerId}. Member: {member} Track: {update.TrackName}");
+                if (member) return null;
+
+                await using var db = new BetaContext();
+                var toDelete = db.Servers.Where(s => s.ServerId == server.ServerId).ToList();
+                db.Servers.RemoveRange(toDelete);
+                await db.SaveChangesAsync();
+                await PostError($"Deleted server {server.ServerId} from database.");
             }
             else
             {
@@ -207,13 +216,34 @@ public class DiscordService(
         }
         catch (Exception ex)
         {
-            logger.LogError(420, ex, "Error posting to {ChannelName} ({channelId}). {ErrorMessage}", channel.Name, server.ChannelId, ex.Message);
+            logger.LogError(420, ex, "Error posting to {ChannelName} ({channelId}). {ErrorMessage}", channel.Name,
+                server.ChannelId, ex.Message);
 
             await PostError($"Error posting to {channel.Name}. {ex.Message}");
             StartRecovery(server, update);
         }
 
         return null!;
+    }
+
+    public async Task NukeServer(ulong serverId)
+    {
+        await using var db = new BetaContext();
+
+        // update posts
+        var server = db.Servers.Where(s => s.ServerId == serverId).ToList();
+        db.Servers.RemoveRange(server);
+
+        // threads
+        var threads = db.Threads.Where(t => t.ServerId == serverId).ToList();
+        db.Threads.RemoveRange(threads);
+
+        // forums
+        var forums = db.Forums.Where(f => f.ServerId == serverId).ToList();
+        db.Forums.RemoveRange(forums);
+
+        await db.SaveChangesAsync();
+        await PostError($"Deleted server {serverId} from database.");
     }
 
     private string GetImagePath(string category)
@@ -237,7 +267,7 @@ public class DiscordService(
         return string.Empty;
     }
 
-    private void StartRecovery(Server server, Update2 update)
+    private void StartRecovery(Server server, MqUpdate update)
     {
         // get server owner
         var owner = socketClient.Guilds.First(g => g.Id == server.ServerId).Owner

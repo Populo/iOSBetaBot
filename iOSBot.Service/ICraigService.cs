@@ -12,7 +12,7 @@ public interface ICraigService
     string GetStatusContent();
     string GetOperationStatus();
     string GetVersion();
-    Task PostUpdateNotification(Server server, Update2 update, bool skipExtras = false);
+    Task PostUpdateNotification(Server server, MqUpdate update, bool skipExtras = false);
     string GetTier();
 }
 
@@ -83,7 +83,7 @@ public class CraigService(
     }
 
 
-    public async Task PostUpdateNotification(Server server, Update2 update, bool skipExtras = false)
+    public async Task PostUpdateNotification(Server server, MqUpdate update, bool skipExtras = false)
     {
         await using var craigDb = new BetaContext();
         var postedThreads = new List<string>();

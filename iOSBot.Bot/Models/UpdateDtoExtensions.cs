@@ -4,7 +4,7 @@ namespace iOSBot.Bot.Models;
 
 public static class UpdateDtoExtensions
 {
-    public static Update2 ConvertUpdate(this UpdateDto updateDto) => new()
+    public static MqUpdate ConvertUpdate(this UpdateDto updateDto) => new()
     {
         ReleaseDate = updateDto.ReleaseDate,
         Version = updateDto.Version,
