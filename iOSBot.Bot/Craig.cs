@@ -135,7 +135,7 @@ public class Craig
         {
             HostName = "rabbitmq",
             UserName = mqUsername,
-            Password = await File.ReadAllTextAsync("/run/secrets/mqPass")
+            Password = (await File.ReadAllTextAsync("/run/secrets/mqPass")).Trim()
         };
 
         _mqConnection = await factory.CreateConnectionAsync();
