@@ -1,5 +1,4 @@
-﻿using Apache.NMS;
-using Apache.NMS.ActiveMQ;
+﻿using System.Text;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -16,9 +15,12 @@ using Newtonsoft.Json.Linq;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Simpl;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using Serilog;
-using IConnection = Apache.NMS.IConnection;
-using IMessage = Apache.NMS.IMessage;
+using IChannel = RabbitMQ.Client.IChannel;
+using IConnection = RabbitMQ.Client.IConnection;
+using ITrigger = Quartz.ITrigger;
 
 namespace iOSBot.Bot;
 
@@ -33,13 +35,11 @@ public class Craig
     private readonly ILogger<Craig> _logger;
     private readonly string _tier;
 
-    // mq heartbeat
-    private Timer _heartbeatTimer;
     private IJobDetail _job;
+    private IChannel _mqChannel;
 
     private IConnection _mqConnection;
-    private IMessageConsumer _mqConsumer;
-    private ISession _mqSession;
+    private AsyncEventingBasicConsumer _mqConsumer;
 
     private IScheduler _scheduler;
     private IServiceProvider _services;
@@ -58,8 +58,6 @@ public class Craig
                           ?? throw new Exception("Cannot get discord service from factory");
         _craigService = _services.GetRequiredService<ICraigService>()
                         ?? throw new Exception("Cannot get craig service from factory");
-
-        _heartbeatTimer = new Timer(MqHeartbeat, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(60));
 
         _tier = _craigService.GetTier();
     }
@@ -133,107 +131,47 @@ public class Craig
         var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
         var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
 
-        var factory = new ConnectionFactory("tcp://dale-server:61616")
+        var factory = new ConnectionFactory
         {
+            HostName = "rabbitmq",
             UserName = mqUsername,
             Password = await File.ReadAllTextAsync("/run/secrets/mqPass")
         };
+
         _mqConnection = await factory.CreateConnectionAsync();
-        _mqConnection.ExceptionListener += MqConnectionOnExceptionListener;
-        await _mqConnection.StartAsync();
-        _mqSession = await _mqConnection.CreateSessionAsync();
+        _mqChannel = await _mqConnection.CreateChannelAsync();
+        await _mqChannel.ExchangeDeclareAsync("updates-exchange", type: ExchangeType.Fanout, durable: true);
 
-        var destination = await _mqSession.GetQueueAsync(mqQueue);
-        _mqConsumer = await _mqSession.CreateConsumerAsync(destination);
-        _mqConsumer.Listener += ConsumerOnListener;
+        var queueDeclare = await _mqChannel.QueueDeclareAsync(
+            queue: mqQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false);
+
+        await _mqChannel.QueueBindAsync(
+            queue: queueDeclare.QueueName,
+            exchange: "updates-exchange",
+            routingKey: mqQueue);
+
+        _mqConsumer = new AsyncEventingBasicConsumer(_mqChannel);
+        _mqConsumer.ReceivedAsync += ConsumerOnReceivedAsync;
+        _mqConnection.ConnectionShutdownAsync += MqConnectionOnExceptionListener;
+
+
+        await _mqChannel.BasicConsumeAsync(
+            queue: queueDeclare.QueueName,
+            autoAck: true,
+            consumer: _mqConsumer);
     }
 
-    private async Task ReconnectMqAsync()
+    private async Task ConsumerOnReceivedAsync(object sender, BasicDeliverEventArgs @event)
     {
-        try
-        {
-            // Clean up existing resources
-            await DisposeMqResourcesAsync();
+        var body = @event.Body.ToArray();
+        var textMsg = Encoding.UTF8.GetString(body);
 
-            await ConnectMqAsync();
-
-            _logger.LogInformation("Successfully reconnected to ActiveMQ");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in reconnection attempt");
-            throw;
-        }
-    }
-
-    private void MqConnectionOnExceptionListener(Exception exception)
-    {
-        _logger.LogError(exception, "ActiveMQ connection error");
-        // Attempt to reconnect
-        Task.Run(async () =>
-        {
-            try
-            {
-                await ReconnectMqAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to reconnect to ActiveMQ");
-                await _discordService.PostError("Failed to reconnect to ActiveMQ\n" + ex.Message);
-            }
-        });
-    }
-
-    private async Task DisposeMqResourcesAsync()
-    {
-        try
-        {
-            if (_mqConnection?.IsStarted == true)
-            {
-                _mqConsumer.Listener -= ConsumerOnListener;
-                await _mqConsumer.CloseAsync();
-            }
-
-            await _mqSession.CloseAsync();
-            await _mqConnection.CloseAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Error disposing MQ resources");
-        }
-    }
-
-    private void MqHeartbeat(object? state)
-    {
-        try
-        {
-            if (_client.ConnectionState == ConnectionState.Connected && !_mqConnection.IsStarted)
-            {
-                _logger.LogWarning("Connection is not active, attempting to reconnect");
-                Task.Run(ReconnectMqAsync);
-                return;
-            }
-
-            // forcefully interact with mq to keep connection alive
-            _logger.LogDebug("Sending ActiveMQ heartbeat");
-            var tempQueue = _mqSession.CreateTemporaryQueue();
-            var tempProducer = _mqSession.CreateProducer(tempQueue);
-            tempProducer.Close();
-            tempQueue.Delete();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in heartbeat");
-            Task.Run(ReconnectMqAsync);
-        }
-    }
-
-    private async void ConsumerOnListener(IMessage message)
-    {
-        var textMsg = message as ITextMessage;
         if (textMsg == null) throw new Exception("Could not read message");
 
-        var update = JsonConvert.DeserializeObject<UpdateDto>(textMsg.Text);
+        var update = JsonConvert.DeserializeObject<UpdateDto>(textMsg);
         if (null == update) throw new Exception("Could not parse message");
         await using var craigDb = new BetaContext();
 
@@ -269,6 +207,66 @@ public class Craig
                 _logger.LogError(e, "Error posting update to server {ServerId}", server.Id);
                 await _discordService.PostError($"Error posting update to server {server.Id}\n{e.Message}");
             }
+        }
+    }
+
+    private async Task ReconnectMqAsync()
+    {
+        try
+        {
+            // Clean up existing resources
+            await DisposeMqResourcesAsync();
+
+            await ConnectMqAsync();
+
+            _logger.LogInformation("Successfully reconnected to RabbitMQ");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in reconnection attempt");
+            throw;
+        }
+    }
+
+    private async Task MqConnectionOnExceptionListener(object sender, ShutdownEventArgs args)
+    {
+        _logger.LogError(args.Exception, "RabbitMQ connection error");
+        // Attempt to reconnect
+        await Task.Run(async () =>
+        {
+            try
+            {
+                await ReconnectMqAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to reconnect to RabbitMQ");
+                await _discordService.PostError("Failed to reconnect to RabbitMQ\n" + ex.Message);
+            }
+        });
+    }
+
+    private async Task DisposeMqResourcesAsync()
+    {
+        try
+        {
+            if (_mqChannel != null)
+            {
+                await _mqChannel.CloseAsync();
+                _mqChannel.Dispose();
+                _mqChannel = null;
+            }
+
+            if (_mqConnection != null && _mqConnection.IsOpen)
+            {
+                await _mqConnection.CloseAsync();
+                _mqConnection.Dispose();
+                _mqConnection = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error disposing RabbitMQ resources");
         }
     }
 

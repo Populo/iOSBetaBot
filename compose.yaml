@@ -4,6 +4,8 @@
     container_name: CraigBot-Dev
     extra_hosts:
       - "dale-server:172.17.0.1"
+    networks:
+      - rabbit
     restart: unless-stopped
     build:
       context: .
@@ -41,3 +43,6 @@ secrets:
     file: ./secrets/dbPass.txt
   mqPass:
     file: ./secrets/mqPass.txt
+networks:
+  rabbit:
+    external: true
