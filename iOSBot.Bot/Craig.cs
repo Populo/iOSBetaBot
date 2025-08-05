@@ -129,6 +129,7 @@ public class Craig
         // Reconnect using the same setup code
         var isProd = _tier == "Prod";
         var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
+        var mqExchange = isProd ? "updates-exchange" : "updates-exchange-dev";
         var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
 
         var factory = new ConnectionFactory
@@ -140,7 +141,7 @@ public class Craig
 
         _mqConnection = await factory.CreateConnectionAsync();
         _mqChannel = await _mqConnection.CreateChannelAsync();
-        await _mqChannel.ExchangeDeclareAsync("updates-exchange", type: ExchangeType.Fanout, durable: true);
+        await _mqChannel.ExchangeDeclareAsync(mqExchange, type: ExchangeType.Fanout, durable: true);
 
         var queueDeclare = await _mqChannel.QueueDeclareAsync(
             queue: mqQueue,
@@ -150,7 +151,7 @@ public class Craig
 
         await _mqChannel.QueueBindAsync(
             queue: queueDeclare.QueueName,
-            exchange: "updates-exchange",
+            exchange: mqExchange,
             routingKey: mqQueue);
 
         _mqConsumer = new AsyncEventingBasicConsumer(_mqChannel);
