@@ -126,43 +126,60 @@ public class Craig
 
     private async Task ConnectMqAsync()
     {
-        // Reconnect using the same setup code
-        var isProd = _tier == "Prod";
-        var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
-        var mqExchange = isProd ? "updates-exchange" : "updates-exchange-dev";
-        var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
+        ConnectionFactory? factory;
+        QueueDeclareOk? queueDeclare;
 
-        var factory = new ConnectionFactory
+        try
         {
-            HostName = "rabbitmq",
-            UserName = mqUsername,
-            Password = (await File.ReadAllTextAsync("/run/secrets/mqPass")).Trim()
-        };
+            // Reconnect using the same setup code
+            var isProd = _tier == "Prod";
+            var mqUsername = isProd ? "CraigBot" : "CraigBotDev";
+            var mqExchange = isProd ? "updates-exchange" : "updates-exchange-dev";
+            var mqQueue = isProd ? "updates-queue" : "updates-queue-dev";
 
-        _mqConnection = await factory.CreateConnectionAsync();
-        _mqChannel = await _mqConnection.CreateChannelAsync();
-        await _mqChannel.ExchangeDeclareAsync(mqExchange, type: ExchangeType.Fanout, durable: true);
+            factory = new ConnectionFactory
+            {
+                HostName = "rabbitmq",
+                UserName = mqUsername,
+                Password = (await File.ReadAllTextAsync("/run/secrets/mqPass")).Trim()
+            };
 
-        var queueDeclare = await _mqChannel.QueueDeclareAsync(
-            queue: mqQueue,
-            durable: true,
-            exclusive: false,
-            autoDelete: false);
+            _mqConnection = await factory.CreateConnectionAsync();
+            _mqChannel = await _mqConnection.CreateChannelAsync();
+            await _mqChannel.ExchangeDeclareAsync(mqExchange, type: ExchangeType.Fanout, durable: true);
 
-        await _mqChannel.QueueBindAsync(
-            queue: queueDeclare.QueueName,
-            exchange: mqExchange,
-            routingKey: mqQueue);
+            queueDeclare = await _mqChannel.QueueDeclareAsync(
+                queue: mqQueue,
+                durable: true,
+                exclusive: false,
+                autoDelete: false);
 
-        _mqConsumer = new AsyncEventingBasicConsumer(_mqChannel);
-        _mqConsumer.ReceivedAsync += ConsumerOnReceivedAsync;
-        _mqConnection.ConnectionShutdownAsync += MqConnectionOnExceptionListener;
+            await _mqChannel.QueueBindAsync(
+                queue: queueDeclare.QueueName,
+                exchange: mqExchange,
+                routingKey: mqQueue);
+
+            _mqConsumer = new AsyncEventingBasicConsumer(_mqChannel);
+            _mqConsumer.ReceivedAsync += ConsumerOnReceivedAsync;
+            _mqConnection.ConnectionShutdownAsync += MqConnectionOnExceptionListener;
 
 
-        await _mqChannel.BasicConsumeAsync(
-            queue: queueDeclare.QueueName,
-            autoAck: true,
-            consumer: _mqConsumer);
+            await _mqChannel.BasicConsumeAsync(
+                queue: queueDeclare.QueueName,
+                autoAck: true,
+                consumer: _mqConsumer);
+        }
+        catch
+        {
+            _logger.LogError("Could not connect to RabbitMQ. Trying again in 1 minute.");
+            await _discordService.PostError("Could not connect to RabbitMQ. Trying again in 1 minute.");
+
+            factory = null; // probably not necessary idk
+            queueDeclare = null; // probably not necessary idk
+
+            await Task.Delay(100 * 60 * 1); // 1 minute
+            await ReconnectMqAsync();
+        }
     }
 
     private async Task ConsumerOnReceivedAsync(object sender, BasicDeliverEventArgs @event)
