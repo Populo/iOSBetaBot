@@ -18,10 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-      <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.1"/>
-      <PackageReference Include="Discord.Net" Version="3.17.4"/>
-      <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.2.0"/>
-      <PackageReference Include="RestSharp" Version="112.1.0"/>
+      <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0-beta.98"/>
+      <PackageReference Include="Discord.Net" Version="3.18.0"/>
+      <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0"/>
       <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1"/>
   </ItemGroup>
 

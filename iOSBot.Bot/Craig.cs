@@ -359,6 +359,12 @@ public class Craig
                 await post.ModifyAsync(t => { t.Archived = false; });
 
             await post.SendMessageAsync($"{arg.Content}\n-@{arg.Author.Username}");
+            // if (arg.Attachments.Count != 0)
+            // {
+            //     var attachments = arg.Attachments.Cast<IAttachment>().ToList();
+            //
+            //     await post.SendFilesAsync(attachments);
+            // }
         }
         else
         {
@@ -527,7 +533,7 @@ public class Craig
         }
 
         _discordService.PostError(
-            $"Bot error:\n{arg.Exception.Message}\n\n{arg.Exception.InnerException?.StackTrace}");
+            $"Bot error:\n{arg.Exception.Message}\n\n{arg.Exception.InnerException?.StackTrace}\n\n{arg.Message}");
         _logger.LogError(1, arg.Exception, "Bot error:\n{ExMessage}\n\n{InnerStackTrace}", arg.Exception.Message,
             arg.Exception.InnerException?.StackTrace);
 
