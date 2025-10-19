@@ -341,6 +341,31 @@ public class CommandObjects
         }
     };
 
+    private static SlashCommandBuilder archiveBuilder = new()
+    {
+        Name = "archive",
+        Description = "see past updates for a given version",
+        DefaultMemberPermissions = GuildPermission.SendMessages,
+        Options = new List<SlashCommandOptionBuilder>()
+        {
+            new()
+            {
+                Name = "category",
+                Description = "Which OS updates",
+                IsRequired = true,
+                Type = ApplicationCommandOptionType.String,
+                Choices = GetDeviceCategories()
+            },
+            new()
+            {
+                Name = "version",
+                Description = "Version (18.3, 26.1, etc.)",
+                IsRequired = true,
+                Type = ApplicationCommandOptionType.String
+            }
+        }
+    };
+
     public static List<SlashCommandBuilder> CommandBuilders = new()
     {
         // admin commands
@@ -368,6 +393,7 @@ public class CommandObjects
         noThreadBuilder,
         yesForumBuilder,
         noForumBuilder,
+        archiveBuilder,
         // misc commands
         craigInfoBuilder,
         whyGMBuilder

@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Text;
+using Discord;
 using Discord.WebSocket;
 using iOSBot.Bot.Helpers;
 using iOSBot.Data;
@@ -213,5 +214,80 @@ public class AppleCommands
         db.Forums.Remove(dbF);
         await db.SaveChangesAsync();
         await arg.FollowupAsync($"Forum posts for {track.Name} will no longer happen in {forum.Name}", ephemeral: true);
+    }
+
+    public static async Task ArchiveCommand(SocketSlashCommand arg)
+    {
+        await arg.DeferAsync(ephemeral: true);
+
+        var trackId = arg.Data.Options.First(o => o.Name == "category").Value.ToString();
+        var version = arg.Data.Options.First(o => o.Name == "version").Value.ToString();
+
+        using var db = new InternContext();
+
+        var track = db.Tracks.FirstOrDefault(t => t.TrackId == Guid.Parse(trackId))
+                    ?? throw new Exception($"Could not get track with id {trackId}");
+        // trailing space to get only this version
+        // 8.4 -> returns 8.4 beta 1, 2, 3 etc but not 8.4.1 or 8.4.2
+        var updates = db.Updates.Where(u => u.TrackId == track.TrackId &&
+                                            u.Version.Contains($"{version} "));
+
+        if (!updates.Any())
+        {
+            await arg.FollowupAsync("Could not find any updates.");
+            return;
+        }
+
+        int longestVersion = updates
+            .OrderByDescending(u => u.Version.Length)
+            .First()
+            .Version
+            .Length;
+        int longestBuild = updates
+            .OrderByDescending(u => u.Build.Length)
+            .First()
+            .Build
+            .Length;
+        var dates = updates.Select(u => u.ReleaseDate);
+        var dateStrings = dates.Select(u => u.ToString("dddd MMMM dd, yyyy"));
+        int longestDate = dateStrings.ToList()
+            .OrderByDescending(u => u.Length)
+            .First()
+            .Length;
+
+        string titleVersion = "Version",
+            titleBuild = "Build",
+            titleDate = "Release Date";
+
+        longestVersion = longestVersion < titleVersion.Length ? titleVersion.Length : longestVersion;
+        longestBuild = longestBuild < titleBuild.Length ? titleBuild.Length : longestBuild;
+        longestDate = longestDate < titleDate.Length ? titleDate.Length : longestDate;
+
+        var versionHeader = titleVersion.CenterString(longestVersion);
+        var buildHeader = titleBuild.CenterString(longestBuild);
+        var dateHeader = titleDate.CenterString(longestDate);
+
+        var header = $"| {versionHeader} | {buildHeader} | {dateHeader} |";
+        var builder = new StringBuilder();
+
+        builder.AppendLine("```");
+        builder.AppendLine(
+            $"\u256d{string.Concat(Enumerable.Repeat('\u2015', longestVersion + 2))}\u252c{string.Concat(Enumerable.Repeat('\u2015', longestBuild + 2))}\u252c{string.Concat(Enumerable.Repeat('\u2015', longestDate + 2))}\u256e");
+        builder.AppendLine(header);
+        builder.AppendLine(
+            $"\u251c{string.Concat(Enumerable.Repeat('\u2015', longestVersion + 2))}\u007c{string.Concat(Enumerable.Repeat('\u2015', longestBuild + 2))}\u007c{string.Concat(Enumerable.Repeat('\u2015', longestDate + 2))}\u2524");
+        var sorted = updates.OrderByDescending(u => u.ReleaseDate);
+
+        foreach (var up in sorted)
+        {
+            builder.AppendLine(
+                $"| {up.Version.CenterString(longestVersion)} | {up.Build.CenterString(longestBuild)} | {up.ReleaseDate.ToString("dddd MMMM dd, yyyy").CenterString(longestDate)} |");
+        }
+
+        builder.AppendLine(
+            $"\u2570{string.Concat(Enumerable.Repeat('\u2015', longestVersion + 2))}\u2534{string.Concat(Enumerable.Repeat('\u2015', longestBuild + 2))}\u2534{string.Concat(Enumerable.Repeat('\u2015', longestDate + 2))}\u256f");
+        builder.Append("```");
+
+        await arg.FollowupAsync(builder.ToString(), ephemeral: true);
     }
 }

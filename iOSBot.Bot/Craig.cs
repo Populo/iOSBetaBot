@@ -177,7 +177,7 @@ public class Craig
             factory = null; // probably not necessary idk
             queueDeclare = null; // probably not necessary idk
 
-            await Task.Delay(100 * 60 * 1); // 1 minute
+            await Task.Delay(1000 * 60 * 1); // 1 minute
             await ReconnectMqAsync();
         }
     }
@@ -497,6 +497,9 @@ public class Craig
                     break;
                 case "noforum":
                     _ = AppleCommands.NoForum(arg, _client);
+                    break;
+                case "archive":
+                    _ = AppleCommands.ArchiveCommand(arg);
                     break;
                 // misc commands
                 case "whygm":
