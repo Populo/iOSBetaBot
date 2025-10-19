@@ -498,6 +498,9 @@ public class Craig
                 case "noforum":
                     _ = AppleCommands.NoForum(arg, _client);
                     break;
+                case "archive":
+                    _ = AppleCommands.ArchiveCommand(arg);
+                    break;
                 // misc commands
                 case "whygm":
                     _ = arg.RespondAsync(

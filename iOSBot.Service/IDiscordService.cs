@@ -212,7 +212,12 @@ public class DiscordService(
         logger.LogInformation($"Posting {update.Version} to {channel.Name}");
         try
         {
-            return await channel.SendMessageAsync(text: mention, embed: embed.Build());
+            var message = await channel.SendMessageAsync(text: mention, embed: embed.Build());
+            await message.CrosspostAsync();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("crossposting"))
+        {
+            // not a news channel, dont care
         }
         catch (Exception ex)
         {
