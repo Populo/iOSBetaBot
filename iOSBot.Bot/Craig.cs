@@ -177,7 +177,7 @@ public class Craig
             factory = null; // probably not necessary idk
             queueDeclare = null; // probably not necessary idk
 
-            await Task.Delay(100 * 60 * 1); // 1 minute
+            await Task.Delay(1000 * 60 * 1); // 1 minute
             await ReconnectMqAsync();
         }
     }

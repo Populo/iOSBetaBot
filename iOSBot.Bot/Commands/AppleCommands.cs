@@ -248,8 +248,9 @@ public class AppleCommands
             .First()
             .Build
             .Length;
-        var dates = updates.Select(u => u.ReleaseDate.ToString("dddd MMMM dd, yyyy"));
-        int longestDate = dates
+        var dates = updates.Select(u => u.ReleaseDate);
+        var dateStrings = dates.Select(u => u.ToString("dddd MMMM dd, yyyy"));
+        int longestDate = dateStrings.ToList()
             .OrderByDescending(u => u.Length)
             .First()
             .Length;
