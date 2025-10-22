@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace iOSBot.Data
 {
@@ -12,21 +12,18 @@ namespace iOSBot.Data
                 dbtier = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             }
 
-            switch (dbtier)
+            var tier = dbtier switch
             {
-                case "Release":
-                    DbName = "CraigBot";
-                    DbUser = "BetaBot";
-                    break;
-                default:
-                    DbName = "CraigBotDev";
-                    DbUser = "BetaBotDev";
-                    break;
-            }
+                "Release" => "prod",
+                _ => "dev"
+            };
+
+            _dbName = $"db_craigbot_{tier}";
+            _dbUser = $"user_craigbot_{tier}";
         }
 
-        private string DbName { get; set; }
-        private string DbUser { get; set; }
+        private string _dbName { get; set; }
+        private string _dbUser { get; set; }
 
         public DbSet<Server> Servers { get; set; }
         public DbSet<Thread> Threads { get; set; }
@@ -38,24 +35,24 @@ namespace iOSBot.Data
         {
             if (optionsBuilder.IsConfigured) return;
 
-            var connection = new MySqlConnectionStringBuilder();
-            connection.Server = "dale-server";
+            var connectionString = new SqlConnectionStringBuilder
+            {
+                DataSource = "dale-server",
+                InitialCatalog = _dbName,
+                UserID = _dbUser,
+                TrustServerCertificate = true,
+                Encrypt = true,
+                Password = File.ReadAllText("/run/secrets/dbPassBot")
+            }.ConnectionString;
 
-            connection.Database = DbName;
-
-            connection.UserID = DbUser;
-
-            //connection.Password = "";
-            connection.Password = File.ReadAllText("/run/secrets/dbPass");
-
-            //connection.ForceSynchronous = true;
-
-            optionsBuilder.UseMySql(connection.ConnectionString,
-                ServerVersion.AutoDetect(connection.ConnectionString),
+            optionsBuilder.UseSqlServer(connectionString,
                 options =>
                 {
-                    options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
-                    options.CommandTimeout(600);
+                    options.EnableRetryOnFailure(
+                        maxRetryCount: 20,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorNumbersToAdd: null
+                    );
                 });
         }
     }
