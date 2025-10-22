@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
 
 namespace iOSBot.Data;
 
@@ -13,17 +13,14 @@ public class InternContext : DbContext
     {
         dbtier ??= Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-        switch (dbtier)
+        var tier = dbtier switch
         {
-            case "Release":
-                _dbUser = "BetaBot";
-                _dbName = "CraigsIntern";
-                break;
-            default:
-                _dbName = "CraigsInternDev";
-                _dbUser = "BetaBotDev";
-                break;
-        }
+            "Release" => "prod",
+            _ => "dev"
+        };
+
+        _dbName = $"db_craigintern_{tier}";
+        _dbUser = $"user_craigintern_{tier}";
     }
 
     public DbSet<Update> Updates { get; set; }
@@ -33,22 +30,27 @@ public class InternContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (!optionsBuilder.IsConfigured)
-        {
-            var connection = new MySqlConnectionStringBuilder();
-            connection.Server = "dale-server";
-            connection.Database = _dbName;
-            connection.UserID = _dbUser;
-            connection.Password = File.ReadAllText("/run/secrets/dbPass");
+        if (optionsBuilder.IsConfigured) return;
 
-            optionsBuilder.UseMySql(connection.ConnectionString,
-                ServerVersion.AutoDetect(connection.ConnectionString),
-                options =>
-                {
-                    options.EnableRetryOnFailure(20, TimeSpan.FromSeconds(10), new List<int>());
-                    options.CommandTimeout(600);
-                });
-        }
+        var connectionString = new SqlConnectionStringBuilder
+        {
+            DataSource = "dale-server",
+            InitialCatalog = _dbName,
+            UserID = _dbUser,
+            TrustServerCertificate = true,
+            Encrypt = true,
+            Password = File.ReadAllText("/run/secrets/dbPassIntern")
+        }.ConnectionString;
+
+        optionsBuilder.UseSqlServer(connectionString,
+            options =>
+            {
+                options.EnableRetryOnFailure(
+                    maxRetryCount: 20,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null
+                );
+            });
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

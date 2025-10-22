@@ -17,19 +17,19 @@ namespace iOSBot.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.6")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("ProductVersion", "8.0.21")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("iOSBot.Data.Config", b =>
                 {
                     b.Property<string>("Name")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Name");
 
@@ -40,13 +40,13 @@ namespace iOSBot.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("decimal(20,0)");
 
-                    b.Property<ulong>("ServerId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ServerId")
+                        .HasColumnType("decimal(20,0)");
 
                     b.HasKey("Id");
 
@@ -57,16 +57,16 @@ namespace iOSBot.Data.Migrations
                 {
                     b.Property<Guid>("id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("decimal(20,0)");
 
-                    b.Property<ulong>("ServerId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ServerId")
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<Guid>("Track")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("id");
 
@@ -77,20 +77,20 @@ namespace iOSBot.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("decimal(20,0)");
 
-                    b.Property<ulong>("ServerId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ServerId")
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("TagId")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("Track")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -101,16 +101,16 @@ namespace iOSBot.Data.Migrations
                 {
                     b.Property<Guid>("id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("decimal(20,0)");
 
-                    b.Property<ulong>("ServerId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ServerId")
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<Guid>("Track")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("id");
 
