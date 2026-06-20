@@ -558,8 +558,8 @@ public class Craig
     {
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.DirectMessages | GatewayIntents.Guilds | GatewayIntents.GuildMessages |
-                             GatewayIntents.MessageContent,
+            GatewayIntents = GatewayIntents.DirectMessages | GatewayIntents.Guilds | GatewayIntents.GuildMessages, 
+                       // | GatewayIntents.MessageContent,
             MessageCacheSize = 15
         };
 
