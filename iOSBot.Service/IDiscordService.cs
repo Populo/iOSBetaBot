@@ -255,16 +255,16 @@ public class DiscordService(
     {
         if (category.Contains("ios", StringComparison.CurrentCultureIgnoreCase))
             return
-                "https://raw.githubusercontent.com/Populo/CraigBotAssets/8cd0f1d8e1f04b96033f4018dc844b94efd5c34a/EmbedImages/ios.png";
+                "https://raw.githubusercontent.com/Populo/CraigBotAssets/refs/heads/main/EmbedImages/ios.png";
         if (category.Contains("mac", StringComparison.CurrentCultureIgnoreCase))
             return
-                "https://raw.githubusercontent.com/Populo/CraigBotAssets/8cd0f1d8e1f04b96033f4018dc844b94efd5c34a/EmbedImages/macos.png";
+                "https://raw.githubusercontent.com/Populo/CraigBotAssets/refs/heads/main/EmbedImages/macos.png";
         if (category.Contains("tv", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/tv.png";
         if (category.Contains("watch", StringComparison.CurrentCultureIgnoreCase))
             return
-                "https://raw.githubusercontent.com/Populo/CraigBotAssets/8cd0f1d8e1f04b96033f4018dc844b94efd5c34a/EmbedImages/watchos.png";
+                "https://raw.githubusercontent.com/Populo/CraigBotAssets/refs/heads/main/EmbedImages/watchos.png";
         if (category.Contains("vision", StringComparison.CurrentCultureIgnoreCase))
             return
                 "https://raw.githubusercontent.com/Populo/iOSBetaBot/dfde2d531977c471caad016788960127f2f09f6a/iOSBot.Bot/Images/vision.png";
