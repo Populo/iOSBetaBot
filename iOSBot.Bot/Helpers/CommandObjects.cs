@@ -112,7 +112,7 @@ public class CommandObjects
                 Name = "serverid",
                 Description = "Server ID to send the notification to",
                 IsRequired = false,
-                Type = ApplicationCommandOptionType.Integer
+                Type = ApplicationCommandOptionType.String
             }
         }
     };
