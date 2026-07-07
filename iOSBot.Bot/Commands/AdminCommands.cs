@@ -131,6 +131,7 @@ public class AdminCommands
         var track = (string)arg.Data.Options.First(o => o.Name == "track").Value;
         var fakeBuild = (string)"42069f";
         var fakeVersion = (string)arg.Data.Options.First(o => o.Name == "version").Value;
+        var specificServer = arg.Data.Options.Any(o => o.Name == "serverid") ? (ulong)arg.Data.Options.First(o => o.Name == "serverid").Value : 0;
 
         var db = new BetaContext();
         var internDb = new InternContext();
@@ -143,16 +144,25 @@ public class AdminCommands
             Build = fakeBuild,
             Version = fakeVersion,
             ReleaseDate = DateTime.Today,
-            Size = "69.42tb",
+            Size = "67.42tb",
             TrackName = dbTrack.Name,
             ReleaseType = dbTrack.ReleaseType,
             TrackId = dbTrack.TrackId
         };
 
-        foreach (var s in servers)
+        if (specificServer != 0)
         {
+            foreach (var s in servers)
+            {
+                _ = craig.PostUpdateNotification(s, fakeUpdate);
+            }
+        }
+        else
+        {
+            var s = servers.FirstOrDefault(c => c.ServerId == specificServer);
             _ = craig.PostUpdateNotification(s, fakeUpdate);
         }
+        
 
         await arg.FollowupAsync("Posted update", ephemeral: true);
     }

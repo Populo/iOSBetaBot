@@ -106,6 +106,13 @@ public class CommandObjects
                 Description = "Build version of the update",
                 IsRequired = true,
                 Type = ApplicationCommandOptionType.String,
+            },
+            new()
+            {
+                Name = "serverid",
+                Description = "Server ID to send the notification to",
+                IsRequired = false,
+                Type = ApplicationCommandOptionType.Integer
             }
         }
     };
